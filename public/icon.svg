@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="logoFoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8ab4ff" />
+      <stop offset="100%" stop-color="#005bf6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- White Background for app icon -->
+  <rect width="512" height="512" rx="128" fill="#ffffff" />
+  
+  <!-- Document Outline (centered and properly padded) -->
+  <path d="M 330,90 L 150,90 A 40 40 0 0 0 110,130 L 110,382 A 40 40 0 0 0 150,422 L 362,422 A 40 40 0 0 0 402,382 L 402,162 Z" 
+        stroke="#005bf6" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <!-- Fold Triangle -->
+  <path d="M 330,90 L 330,162 L 402,162 Z" fill="url(#logoFoldGrad)" stroke="#005bf6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+        
+  <!-- Horizontal lines -->
+  <rect x="155" y="220" width="130" height="38" rx="19" fill="#005bf6" />
+  <rect x="155" y="295" width="210" height="38" rx="19" fill="#005bf6" />
+</svg>

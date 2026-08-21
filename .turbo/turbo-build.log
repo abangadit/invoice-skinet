@@ -1,0 +1,117 @@
+
+> @faktur-online/web@0.0.0 build /Volumes/SSD_LEXAR_512/workspace/workspaceSkinet/source-code/apps/web
+> next build
+
+  ▲ Next.js 14.2.3
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/77) ...
+   Generating static pages (19/77) 
+   Generating static pages (38/77) 
+   Generating static pages (57/77) 
+ ✓ Generating static pages (77/77)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    13.5 kB         171 kB
+├ ○ /_not-found                          880 B          88.2 kB
+├ ○ /accounts                            6.5 kB          164 kB
+├ ○ /accounts/reconciliation             9.63 kB         170 kB
+├ ○ /admin/dashboard                     2.79 kB         160 kB
+├ ○ /admin/users                         4.71 kB          92 kB
+├ ƒ /api/admin/auth-profile              0 B                0 B
+├ ƒ /api/admin/users                     0 B                0 B
+├ ƒ /api/billing/checkout                0 B                0 B
+├ ƒ /api/billing/webhook/ipaymu          0 B                0 B
+├ ƒ /api/billing/webhook/paypal          0 B                0 B
+├ ƒ /api/email                           0 B                0 B
+├ ƒ /api/files/[...key]                  0 B                0 B
+├ ƒ /api/stock-out                       0 B                0 B
+├ ƒ /api/upload                          0 B                0 B
+├ ○ /assets                              5.04 kB         159 kB
+├ ƒ /auth/callback                       0 B                0 B
+├ ○ /catalog                             8.57 kB         162 kB
+├ ○ /customer                            5.75 kB         159 kB
+├ ○ /delivery                            3.32 kB         164 kB
+├ ƒ /delivery/[id]                       4.29 kB         165 kB
+├ ○ /delivery/new                        6.67 kB         157 kB
+├ ○ /employees                           10.1 kB         164 kB
+├ ○ /employees/attendance                11.1 kB         165 kB
+├ ○ /employees/leave                     10.6 kB         161 kB
+├ ○ /employees/payslips                  10.7 kB         161 kB
+├ ○ /employees/reimbursement             10.8 kB         161 kB
+├ ○ /expenses                            5.19 kB         159 kB
+├ ○ /expired                             820 B            95 kB
+├ ○ /forgot-password                     2.1 kB          159 kB
+├ ƒ /inv/[token]                         7.53 kB         171 kB
+├ ○ /inventory                           7.87 kB         168 kB
+├ ○ /inventory/adjustments               8.49 kB         166 kB
+├ ○ /inventory/production                11 kB           171 kB
+├ ○ /inventory/stock-card                3.76 kB         164 kB
+├ ○ /inventory/stock-out                 4.28 kB         155 kB
+├ ○ /inventory/transfer                  9.84 kB         170 kB
+├ ○ /inventory/warehouses                5.8 kB          163 kB
+├ ○ /invoice                             5.61 kB         166 kB
+├ ƒ /invoice/[id]                        9.98 kB         183 kB
+├ ƒ /invoice/[id]/edit                   12.9 kB         176 kB
+├ ○ /invoice/due                         6.26 kB         164 kB
+├ ○ /invoice/new                         12.5 kB         179 kB
+├ ○ /leads                               4.45 kB         165 kB
+├ ƒ /leads/[id]                          5.02 kB         166 kB
+├ ○ /leads/new                           5.75 kB         163 kB
+├ ○ /ledger                              5.33 kB         159 kB
+├ ○ /login                               2.15 kB         159 kB
+├ ƒ /p/[id]                              4.53 kB         155 kB
+├ ○ /payment                             10.5 kB         164 kB
+├ ○ /payroll                             8.61 kB         159 kB
+├ ○ /pos                                 15.5 kB         166 kB
+├ ○ /pos/history                         10.6 kB         161 kB
+├ ○ /project                             7.22 kB         165 kB
+├ ƒ /project/[id]                        9.67 kB         170 kB
+├ ○ /project/new                         7.13 kB         158 kB
+├ ○ /purchase                            7.79 kB         168 kB
+├ ƒ /purchase/[id]                       9.27 kB         163 kB
+├ ○ /purchase/new                        11.7 kB         162 kB
+├ ○ /quotation                           4.74 kB         165 kB
+├ ƒ /quotation/[id]/edit                 12.2 kB         163 kB
+├ ○ /quotation/new                       14 kB           165 kB
+├ ○ /register                            973 B          95.1 kB
+├ ○ /reports                             2.5 kB          163 kB
+├ ○ /reports/attendance                  6.42 kB         160 kB
+├ ○ /reports/financial                   6.95 kB         157 kB
+├ ○ /reports/inventory                   6.23 kB         157 kB
+├ ○ /reports/invoice                     6.65 kB         157 kB
+├ ○ /reports/pos                         105 kB          262 kB
+├ ○ /reports/sales                       7.34 kB         158 kB
+├ ○ /reset-password                      2.39 kB         153 kB
+├ ○ /sales                               3.21 kB         164 kB
+├ ƒ /sales/[id]                          5.67 kB         166 kB
+├ ○ /sales/new                           7.58 kB         158 kB
+├ ○ /settings                            14.5 kB         175 kB
+├ ○ /settings/audit-logs                 8.92 kB         169 kB
+├ ○ /settings/import                     7.92 kB         165 kB
+├ ○ /settings/security                   4.98 kB         162 kB
+├ ○ /settings/shifts                     3.46 kB         157 kB
+├ ○ /settings/sidebar                    8.99 kB         163 kB
+├ ○ /settings/users                      10.5 kB         164 kB
+├ ○ /suspended                           812 B          94.9 kB
+├ ○ /tax                                 7.67 kB         165 kB
+├ ○ /terms                               8.66 kB         103 kB
+├ ○ /unauthorized                        1.48 kB        95.6 kB
+└ ○ /vendor                              8.79 kB         162 kB
++ First Load JS shared by all            87.3 kB
+  ├ chunks/1801-b62048a6c4a2f9ee.js      31.6 kB
+  ├ chunks/65d48fa5-5e54a585c1350c30.js  53.6 kB
+  └ other shared chunks (total)          2.04 kB
+
+
+ƒ Middleware                             81 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
