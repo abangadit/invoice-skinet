@@ -39,7 +39,8 @@ import {
   Shield,
   UserCog,
   Crown,
-  Sparkles
+  Sparkles,
+  HelpCircle
 } from "lucide-react";
 import { createWebBrowserClient } from "../../lib/supabase/client";
 import { BusinessProvider, useBusiness } from "../../lib/context/BusinessContext";
@@ -84,12 +85,13 @@ function checkPathPermission(path: string, role: string | null, permissions: any
     if (match("/report")) return "report";
     if (match("/settings/security")) return "settings_security";
     if (match("/settings")) return "settings";
+    if (match("/help")) return "help";
     if (match("/admin")) return "admin";
     return null;
   };
 
   const menuKey = getMenuKey();
-  if (!menuKey) return true;
+  if (!menuKey || menuKey === "help") return true;
 
   if (["employee_attendance", "employee_payslips"].includes(menuKey)) {
     return true;
@@ -598,7 +600,8 @@ function AppLayoutInner({
         items: [
           
           { id: "settings_security", menuKey: "settings_security", href: "/settings/security", icon: <Lock className="w-5 h-5" />, label: locale === "en" ? "Security & Sessions" : "Keamanan & Sesi", show: true },
-          { id: "settings", menuKey: "settings", href: "/settings", icon: <Settings className="w-5 h-5" />, label: t("settings"), show: showLink("settings") }
+          { id: "settings", menuKey: "settings", href: "/settings", icon: <Settings className="w-5 h-5" />, label: t("settings"), show: showLink("settings") },
+          { id: "help", menuKey: "help", href: "/help", icon: <HelpCircle className="w-5 h-5 text-blue-600" />, label: locale === "en" ? "Help & Tutorials" : "Pusat Panduan & Tutorial", show: true }
         ]
       },
       {
@@ -915,6 +918,15 @@ function AppLayoutInner({
             </Link>
           )}
           
+          {/* Help Center Direct Link */}
+          <Link
+            href="/help"
+            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-full transition relative flex items-center justify-center"
+            title="Pusat Panduan & Tutorial"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </Link>
+
           {/* Bell Icon & Dropdown */}
           <div className="relative flex items-center">
             <button 
