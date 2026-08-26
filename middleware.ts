@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
   const isStaticAsset =
     path.startsWith('/_next') ||
     path.includes('.') ||
-    path.startsWith('/api/');
+    path.startsWith('/api/') ||
+    path.startsWith('/supabase') ||
+    path.startsWith('/help');
 
   const isPublicPage = isLoginPage || isForgotPassword || isResetPassword ||
     isAuthCallback || isPublicInvoice || isTermsPage ||
