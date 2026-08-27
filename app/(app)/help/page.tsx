@@ -95,27 +95,49 @@ function HelpCenterContent() {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // Load screenshots from localStorage on mount
+  // Load screenshots from server API on mount (with localStorage automatic migration)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("help_center_screenshots");
-      if (saved) {
-        setUploadedScreenshots(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error("Failed to load saved screenshots", e);
-    }
-  }, []);
+    const fetchScreenshots = async () => {
+      try {
+        const res = await fetch("/api/help-center");
+        const data = await res.json();
+        let serverScreenshots = data.screenshots || {};
 
-  // Save screenshots to localStorage
-  const saveScreenshots = (updated: Record<string, string>) => {
-    setUploadedScreenshots(updated);
-    try {
-      localStorage.setItem("help_center_screenshots", JSON.stringify(updated));
-    } catch (e) {
-      console.error("Failed to persist screenshot to localStorage", e);
-    }
-  };
+        // Check if there are locally cached screenshots in this browser that should be synced to server
+        const localSaved = localStorage.getItem("help_center_screenshots");
+        if (localSaved) {
+          try {
+            const localObj = JSON.parse(localSaved);
+            const needsSync = Object.keys(localObj).some((k) => !serverScreenshots[k]);
+            if (needsSync) {
+              const syncRes = await fetch("/api/help-center", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ screenshots: localObj }),
+              });
+              const syncData = await syncRes.json();
+              if (syncData.screenshots) {
+                serverScreenshots = syncData.screenshots;
+              }
+            }
+          } catch {}
+        }
+
+        setUploadedScreenshots(serverScreenshots);
+        localStorage.setItem("help_center_screenshots", JSON.stringify(serverScreenshots));
+      } catch (e) {
+        console.error("Failed to load help center screenshots from server:", e);
+        const saved = localStorage.getItem("help_center_screenshots");
+        if (saved) {
+          try {
+            setUploadedScreenshots(JSON.parse(saved));
+          } catch {}
+        }
+      }
+    };
+
+    fetchScreenshots();
+  }, []);
 
   const handleFileUpload = async (topicId: string, stepNumber: number, file: File) => {
     const key = `${topicId}_step_${stepNumber}`;
@@ -138,8 +160,17 @@ function HelpCenterContent() {
       }
 
       if (data.url) {
-        const updated = { ...uploadedScreenshots, [key]: data.url };
-        saveScreenshots(updated);
+        // Persist to server manifest
+        const saveRes = await fetch("/api/help-center", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, url: data.url }),
+        });
+        const saveData = await saveRes.json();
+        const updated = saveData.screenshots || { ...uploadedScreenshots, [key]: data.url };
+        
+        setUploadedScreenshots(updated);
+        localStorage.setItem("help_center_screenshots", JSON.stringify(updated));
       }
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -150,12 +181,23 @@ function HelpCenterContent() {
     }
   };
 
-  const handleRemoveImage = (topicId: string, stepNumber: number) => {
+  const handleRemoveImage = async (topicId: string, stepNumber: number) => {
     if (confirm("Apakah Anda yakin ingin menghapus screenshot untuk langkah ini?")) {
       const key = `${topicId}_step_${stepNumber}`;
-      const updated = { ...uploadedScreenshots };
-      delete updated[key];
-      saveScreenshots(updated);
+      try {
+        const res = await fetch("/api/help-center", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", key }),
+        });
+        const data = await res.json();
+        const updated = data.screenshots || { ...uploadedScreenshots };
+        delete updated[key];
+        setUploadedScreenshots(updated);
+        localStorage.setItem("help_center_screenshots", JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to remove image from server:", err);
+      }
     }
   };
 
