@@ -27,15 +27,10 @@ else
   pnpm build
 fi
 
-# 4. Reload PM2 dengan cwd yang benar
+# 4. Reload PM2
 echo "♻️  [4/4] Me-reload server PM2..."
-if [ -d "$HOME/skinet/apps/web" ]; then
-  cd ~/skinet/apps/web
-  pm2 restart skinet-web || pm2 start "pnpm start" --name "skinet-web" --cwd "$HOME/skinet/apps/web"
-else
-  cd ~/skinet
-  pm2 restart skinet-web || pm2 start "pnpm start" --name "skinet-web"
-fi
+cd ~/skinet/apps/web
+pm2 reload skinet-web || pm2 start ./node_modules/next/dist/bin/next --name "skinet-web" -- start -p 3000
 pm2 save
 
 echo "=========================================="
