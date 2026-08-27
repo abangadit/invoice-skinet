@@ -16,7 +16,9 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-  Eye
+  Eye,
+  Search,
+  Download
 } from "lucide-react";
 import { useBusiness } from "../../../../lib/context/BusinessContext";
 import { createWebBrowserClient } from "../../../../lib/supabase/client";
@@ -91,6 +93,8 @@ export default function AttendancePage() {
   // Admin Logs & Settings States
   const [logs, setLogs] = useState<AttendanceRecord[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [logSearch, setLogSearch] = useState("");
+  const [logStatusFilter, setLogStatusFilter] = useState("all");
   const [settingsForm, setSettingsForm] = useState({
     latitude: "",
     longitude: "",
@@ -732,36 +736,32 @@ export default function AttendancePage() {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-slate-200 text-xs font-bold gap-4">
-        {currentEmployee && (
-          <>
-            <button
-              onClick={() => setActiveTab("portal")}
-              className={`pb-3 transition ${
-                activeTab === "portal"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              Portal Absen Saya
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`pb-3 transition ${
-                activeTab === "history"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              Riwayat Absen Saya
-            </button>
-          </>
-        )}
+      <div className="flex border-b border-slate-200 text-xs font-bold gap-6 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("portal")}
+          className={`pb-3 transition font-extrabold shrink-0 ${
+            activeTab === "portal"
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          Portal Absen Saya
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`pb-3 transition font-extrabold shrink-0 ${
+            activeTab === "history"
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          Riwayat Absen Saya
+        </button>
         {(userRole === "owner" || userRole === "admin") && (
           <>
             <button
               onClick={() => setActiveTab("logs")}
-              className={`pb-3 transition ${
+              className={`pb-3 transition font-extrabold shrink-0 ${
                 activeTab === "logs"
                   ? "border-b-2 border-blue-600 text-blue-600"
                   : "text-slate-500 hover:text-slate-900"
@@ -771,7 +771,7 @@ export default function AttendancePage() {
             </button>
             <button
               onClick={() => setActiveTab("settings")}
-              className={`pb-3 transition ${
+              className={`pb-3 transition font-extrabold shrink-0 ${
                 activeTab === "settings"
                   ? "border-b-2 border-blue-600 text-blue-600"
                   : "text-slate-500 hover:text-slate-900"
@@ -790,6 +790,27 @@ export default function AttendancePage() {
         </div>
       ) : activeTab === "portal" ? (
         // PORTAL ABSEN VIEW
+        !currentEmployee ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm my-6 card-shadow">
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
+              <Camera className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-extrabold text-slate-900">Hubungkan Profil Karyawan Anda</h3>
+              <p className="text-xs text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+                Anda sedang login sebagai Administrator / Pemilik Bisnis. Daftarkan dan hubungkan akun Anda sebagai karyawan untuk dapat mencoba absensi selfie wajah biometrik dan validasi GPS secara mandiri.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRegisterSelfAsEmployee}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg shadow-blue-500/25 transition active:scale-95 text-xs inline-flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Daftarkan Diri & Coba Absensi (1-Klik)</span>
+            </button>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-semibold">
           
           {/* Geofence GPS status */}
@@ -1140,6 +1161,7 @@ export default function AttendancePage() {
           </div>
 
         </div>
+        )
       ) : activeTab === "history" ? (
         <div className="space-y-4 text-xs font-semibold">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -1209,21 +1231,57 @@ export default function AttendancePage() {
       ) : activeTab === "logs" ? (
         // LOGS VIEW (Admin/Owner)
         <div className="space-y-4 text-xs font-semibold">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-            <Users className="w-4.5 h-4.5 text-blue-600" /> Log Riwayat Absensi Karyawan
-          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <Users className="w-4.5 h-4.5 text-blue-600" /> Log Riwayat Absensi Karyawan
+            </h3>
+
+            {/* Filter & Search Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[180px]">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  placeholder="Cari nama karyawan..."
+                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 font-semibold shadow-2xs"
+                />
+              </div>
+
+              <select
+                value={logStatusFilter}
+                onChange={(e) => setLogStatusFilter(e.target.value)}
+                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs"
+              >
+                <option value="all">Semua Status</option>
+                <option value="present">Tepat Waktu</option>
+                <option value="late">Terlambat</option>
+                <option value="overtime">Lembur</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={fetchAllLogs}
+                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition flex items-center justify-center shadow-2xs"
+                title="Muat Ulang Data"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
           
           {logsLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl">
+            <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-3xl">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs text-slate-500 font-semibold mt-2">Memuat riwayat log absensi...</p>
             </div>
           ) : logs.length > 0 ? (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden card-shadow">
+            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden card-shadow">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                       <th className="py-3 px-4">Nama Karyawan</th>
                       <th className="py-3 px-4">Tanggal Kerja</th>
                       <th className="py-3 px-4">Check-In</th>
@@ -1234,69 +1292,95 @@ export default function AttendancePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {logs.map((log) => {
-                      const empShift = Array.isArray(log.employee?.working_shifts) 
-                        ? log.employee?.working_shifts[0] 
-                        : log.employee?.working_shifts;
+                    {logs
+                      .filter(log => {
+                        const q = logSearch.toLowerCase().trim();
+                        const matchesSearch = !q || 
+                          log.employee?.name?.toLowerCase().includes(q) ||
+                          log.employee?.email?.toLowerCase().includes(q);
+                        const matchesStatus = logStatusFilter === "all" 
+                          ? true 
+                          : logStatusFilter === "overtime" 
+                            ? !!log.overtime_in 
+                            : log.status === logStatusFilter;
+                        return matchesSearch && matchesStatus;
+                      })
+                      .map((log) => {
+                        const empShift = Array.isArray(log.employee?.working_shifts) 
+                          ? log.employee?.working_shifts[0] 
+                          : log.employee?.working_shifts;
 
-                      return (
-                        <tr key={log.id} className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-4 font-bold text-slate-900">
-                            {log.employee?.name}
-                            <div className="text-[10px] text-slate-400 font-mono font-medium">{log.employee?.email}</div>
-                            {empShift && (
-                              <span className="inline-flex items-center gap-1 text-[9px] text-blue-600 font-bold bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded mt-0.5">
-                                <Clock className="w-2.5 h-2.5" /> {empShift.name} ({empShift.start_time.substring(0, 5)} - {empShift.end_time.substring(0, 5)})
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-bold text-slate-650">
-                            {new Date(log.date).toLocaleDateString("id-ID", { dateStyle: "long" })}
-                          </td>
-                          <td className="py-3 px-4 font-extrabold text-slate-800">
-                            {log.check_in ? new Date(log.check_in).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "-"}
-                          </td>
-                          <td className="py-3 px-4 font-extrabold text-slate-800">
-                            {log.check_out ? new Date(log.check_out).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "-"}
-                            {empShift?.end_time && (
-                              <div className="text-[9px] text-slate-400 font-normal">Target: {empShift.end_time.substring(0, 5)}</div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-bold text-purple-700">
-                            {log.overtime_in ? (
-                              <div className="text-[11px]">
-                                {new Date(log.overtime_in).toLocaleTimeString("id-ID", { timeStyle: "short" })}
-                                {" - "}
-                                {log.overtime_out ? new Date(log.overtime_out).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "Berlangsung..."}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 font-normal">-</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {log.status === "present" && (
-                              <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded font-bold text-[10px]">Tepat Waktu</span>
-                            )}
-                            {log.status === "late" && (
-                              <span className="bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 rounded font-bold text-[10px]">Terlambat</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-mono text-slate-500">
-                            {log.check_in_latitude && log.check_in_longitude 
-                              ? `${log.check_in_latitude.toFixed(6)}, ${log.check_in_longitude.toFixed(6)}` 
-                              : "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3 px-4 font-bold text-slate-900">
+                              {log.employee?.name}
+                              <div className="text-[10px] text-slate-400 font-mono font-medium">{log.employee?.email}</div>
+                              {empShift && (
+                                <span className="inline-flex items-center gap-1 text-[9px] text-blue-600 font-bold bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-md mt-0.5">
+                                  <Clock className="w-2.5 h-2.5" /> {empShift.name} ({empShift.start_time.substring(0, 5)} - {empShift.end_time.substring(0, 5)})
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-bold text-slate-650">
+                              {new Date(log.date).toLocaleDateString("id-ID", { dateStyle: "long" })}
+                            </td>
+                            <td className="py-3 px-4 font-extrabold text-slate-800">
+                              {log.check_in ? new Date(log.check_in).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "-"}
+                            </td>
+                            <td className="py-3 px-4 font-extrabold text-slate-800">
+                              {log.check_out ? new Date(log.check_out).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "-"}
+                              {empShift?.end_time && (
+                                <div className="text-[9px] text-slate-400 font-normal">Target: {empShift.end_time.substring(0, 5)}</div>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-bold text-purple-700">
+                              {log.overtime_in ? (
+                                <div className="text-[11px]">
+                                  {new Date(log.overtime_in).toLocaleTimeString("id-ID", { timeStyle: "short" })}
+                                  {" - "}
+                                  {log.overtime_out ? new Date(log.overtime_out).toLocaleTimeString("id-ID", { timeStyle: "short" }) : "Berlangsung..."}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 font-normal">-</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {log.status === "present" && (
+                                <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-md font-bold text-[10px]">Tepat Waktu</span>
+                              )}
+                              {log.status === "late" && (
+                                <span className="bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 rounded-md font-bold text-[10px]">Terlambat</span>
+                              )}
+                              {log.status === "absent" && (
+                                <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md font-bold text-[10px]">Alpa</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-slate-500 text-xs">
+                              {log.check_in_latitude && log.check_in_longitude ? (
+                                <a
+                                  href={`https://maps.google.com/?q=${log.check_in_latitude},${log.check_in_longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline flex items-center gap-1 font-bold"
+                                >
+                                  <MapPin className="w-3 h-3" />
+                                  <span>{log.check_in_latitude.toFixed(4)}, {log.check_in_longitude.toFixed(4)}</span>
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-450 shadow-sm">
-              <ClipboardCheck className="w-10 h-10 mx-auto text-slate-200 mb-2" />
-              <p className="font-bold">Belum ada data riwayat absensi tercatat</p>
+            <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center text-slate-400 shadow-sm flex flex-col items-center justify-center">
+              <ClipboardCheck className="w-12 h-12 text-slate-300 mb-3" />
+              <p className="font-bold text-slate-600 text-sm">Belum ada data riwayat absensi tercatat</p>
             </div>
           )}
         </div>
@@ -1307,140 +1391,118 @@ export default function AttendancePage() {
             <Settings className="w-4.5 h-4.5 text-blue-600" /> Konfigurasi Kehadiran & Geofence
           </h3>
 
-          {/* Owner Test Helper Notice */}
-          {!currentEmployee && userRole === "owner" && (
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex gap-2 text-blue-700 font-medium">
-                <Info className="w-5 h-5 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">Mode Penguji Pemilik Bisnis</p>
-                  <p className="text-blue-600 mt-0.5">Daftarkan profil Anda sebagai karyawan agar dapat mencoba melakukan simulasi absensi biometrik secara langsung.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleRegisterSelfAsEmployee}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-2 px-4 rounded-xl shrink-0 transition"
-              >
-                Daftarkan Diri
-              </button>
-            </div>
-          )}
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm card-shadow">
-            <form onSubmit={handleSaveGeofenceSettings} className="space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm card-shadow">
+            <form onSubmit={handleSaveGeofenceSettings} className="space-y-5">
               
               {/* Toggles for Geofence & Face Recognition */}
-              <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-4 space-y-4">
-                <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Fitur Absensi Aktif</h4>
+              <div className="bg-slate-50/80 border border-slate-200/70 rounded-2xl p-5 space-y-4">
+                <h4 className="font-extrabold text-slate-900 border-b border-slate-200/60 pb-2.5 text-xs">Fitur Absensi Aktif</h4>
                 
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={settingsForm.geofenceEnabled}
                     onChange={(e) => setSettingsForm({ ...settingsForm, geofenceEnabled: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 border-slate-350 focus:ring-blue-500 mt-0.5"
+                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 mt-0.5 cursor-pointer"
                   />
                   <div>
-                    <span className="font-bold text-slate-700">Aktifkan GPS Geofencing</span>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Karyawan wajib berada dalam radius tertentu dari koordinat kantor agar dapat absen.</p>
+                    <span className="font-bold text-slate-800">Aktifkan GPS Geofencing</span>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-relaxed">Karyawan wajib berada dalam radius tertentu dari koordinat kantor agar dapat absen.</p>
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer border-t border-slate-100 pt-3">
+                <label className="flex items-start gap-3 cursor-pointer border-t border-slate-200/60 pt-3">
                   <input
                     type="checkbox"
                     checked={settingsForm.faceRecognitionEnabled}
                     onChange={(e) => setSettingsForm({ ...settingsForm, faceRecognitionEnabled: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 border-slate-350 focus:ring-blue-500 mt-0.5"
+                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 mt-0.5 cursor-pointer"
                   />
                   <div>
-                    <span className="font-bold text-slate-700">Aktifkan Verifikasi Wajah (Face Recognition)</span>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Karyawan wajib melakukan verifikasi wajah biometrik (selfie verifikasi) untuk check-in/out.</p>
+                    <span className="font-bold text-slate-800">Aktifkan Verifikasi Wajah (Face Recognition)</span>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-relaxed">Karyawan wajib melakukan verifikasi wajah biometrik (selfie verifikasi) untuk check-in/out.</p>
                   </div>
                 </label>
 
-                <div className="border-t border-slate-100 pt-3 flex flex-col gap-1">
-                  <span className="font-bold text-slate-700">Jam Masuk Default Kantor (Global)</span>
-                  <p className="text-[10px] text-slate-400 font-medium mb-1">Digunakan untuk menghitung keterlambatan jika karyawan tidak memiliki shift khusus.</p>
-                  <input
-                    type="time"
-                    required
-                    value={settingsForm.defaultStartTime}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, defaultStartTime: e.target.value })}
-                    className="w-full max-w-[120px] bg-white border border-slate-200 px-3 py-2 rounded-lg text-slate-800 focus:outline-none focus:border-blue-500 font-semibold"
-                  />
+                <div className="border-t border-slate-200/60 pt-3 flex flex-col gap-1">
+                  <span className="font-bold text-slate-800">Jam Masuk Default Kantor (Global)</span>
+                  <p className="text-[10px] text-slate-400 font-medium mb-1.5">Digunakan untuk menghitung keterlambatan jika karyawan tidak memiliki shift khusus.</p>
+                  <div className="relative max-w-[140px]">
+                    <input
+                      type="time"
+                      required
+                      value={settingsForm.defaultStartTime}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, defaultStartTime: e.target.value })}
+                      className="w-full bg-white border border-slate-200 px-3.5 py-2 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {settingsForm.geofenceEnabled && (
-                <div className="space-y-4 border-t border-slate-100 pt-4">
-                  <div className="bg-slate-50 border border-slate-255/35 rounded-xl p-3 flex items-start gap-2 leading-relaxed text-slate-600">
-                    <Navigation className="w-4.5 h-4.5 text-blue-600 shrink-0 mt-0.5 animate-pulse" />
-                    <span>
-                      Tentukan lokasi pusat kantor bisnis Anda. Karyawan hanya diperbolehkan melakukan absensi jika koordinat GPS peranti mereka berada dalam radius geofencing di bawah.
-                    </span>
+              {/* Geofence Coordinate Configuration */}
+              <div className="space-y-4">
+                <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 flex items-start gap-3 leading-relaxed text-slate-700 text-xs">
+                  <Navigation className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <span className="font-medium">
+                    Tentukan lokasi pusat kantor bisnis Anda. Karyawan hanya diperbolehkan melakukan absensi jika koordinat GPS peranti mereka berada dalam radius geofencing di bawah.
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-600 font-bold text-[11px]">Latitude Pusat Kantor</label>
+                    <input
+                      type="text"
+                      value={settingsForm.latitude}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, latitude: e.target.value })}
+                      placeholder="e.g. -6.2088"
+                      className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold text-xs"
+                    />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-slate-500">Latitude Pusat Kantor</label>
-                      <input
-                        type="text"
-                        required={settingsForm.geofenceEnabled}
-                        value={settingsForm.latitude}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, latitude: e.target.value })}
-                        placeholder="e.g. -6.2088"
-                        className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-slate-500">Longitude Pusat Kantor</label>
-                      <input
-                        type="text"
-                        required={settingsForm.geofenceEnabled}
-                        value={settingsForm.longitude}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, longitude: e.target.value })}
-                        placeholder="e.g. 106.8456"
-                        className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-                    <div className="space-y-1">
-                      <label className="text-slate-500">Radius Toleransi Geofence (Meter)</label>
-                      <input
-                        type="number"
-                        required={settingsForm.geofenceEnabled}
-                        min="10"
-                        max="10000"
-                        value={settingsForm.radius}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, radius: e.target.value })}
-                        placeholder="e.g. 100"
-                        className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-1 flex items-end">
-                      <button
-                        type="button"
-                        onClick={handleFetchCurrentCoords}
-                        className="w-full bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95"
-                      >
-                        <Locate className="w-4 h-4 text-blue-600" /> Ambil Lokasi Saya
-                      </button>
-                    </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-600 font-bold text-[11px]">Longitude Pusat Kantor</label>
+                    <input
+                      type="text"
+                      value={settingsForm.longitude}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, longitude: e.target.value })}
+                      placeholder="e.g. 106.8456"
+                      className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold text-xs"
+                    />
                   </div>
                 </div>
-              )}
 
-              <div className="border-t border-slate-100 pt-4 flex justify-end">
+                <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-600 font-bold text-[11px]">Radius Toleransi Geofence (Meter)</label>
+                    <input
+                      type="number"
+                      min="10"
+                      max="10000"
+                      value={settingsForm.radius}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, radius: e.target.value })}
+                      placeholder="100"
+                      className="w-full bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500 font-bold text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1 flex items-end">
+                    <button
+                      type="button"
+                      onClick={handleFetchCurrentCoords}
+                      className="w-full bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-800 font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition active:scale-95 text-xs shadow-2xs"
+                    >
+                      <Locate className="w-4 h-4 text-blue-600" /> Ambil Lokasi Saya
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-sm transition active:scale-95 disabled:opacity-50"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-3 rounded-xl shadow-md shadow-blue-500/20 transition active:scale-95 disabled:opacity-50 text-xs"
                 >
                   {savingSettings ? "Menyimpan..." : "Simpan Pengaturan Kehadiran"}
                 </button>
