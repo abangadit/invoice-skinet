@@ -34,6 +34,16 @@ import {
   Area
 } from "recharts";
 
+// Recharts JSX element compatibility fix for React 18/TypeScript
+const ResponsiveContainerComponent = ResponsiveContainer as any;
+const BarChartComponent = BarChart as any;
+const BarComponent = Bar as any;
+const XAxisComponent = XAxis as any;
+const YAxisComponent = YAxis as any;
+const CartesianGridComponent = CartesianGrid as any;
+const TooltipComponent = Tooltip as any;
+const LegendComponent = Legend as any;
+
 interface ShiftData {
   id: string;
   opened_at: string;
@@ -348,18 +358,18 @@ export default function POSReportsPage() {
               
               <div className="w-full">
                 {isMounted ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                      <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} contentStyle={{ fontSize: '11px', borderRadius: '12px' }} />
-                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      <Bar dataKey="Modal Awal" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Kas Akhir" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="Uang Masuk (Net)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <ResponsiveContainerComponent width="100%" height={320}>
+                    <BarChartComponent data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGridComponent strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxisComponent dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <YAxisComponent tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <TooltipComponent formatter={(value: any) => formatCurrency(Number(value))} contentStyle={{ fontSize: '11px', borderRadius: '12px' }} />
+                      <LegendComponent wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      <BarComponent dataKey="Modal Awal" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                      <BarComponent dataKey="Kas Akhir" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <BarComponent dataKey="Uang Masuk (Net)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    </BarChartComponent>
+                  </ResponsiveContainerComponent>
                 ) : (
                   <div className="h-[320px] flex items-center justify-center text-slate-400">
                     Memuat grafik analisis...
