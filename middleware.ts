@@ -30,6 +30,7 @@ export async function middleware(request: NextRequest) {
     path.includes('.') ||
     path.startsWith('/api/') ||
     path.startsWith('/supabase') ||
+    path.startsWith('/uploads') ||
     path.startsWith('/help');
 
   const isPublicPage = isLoginPage || isForgotPassword || isResetPassword ||

@@ -18,6 +18,9 @@ echo "🔄 [2/4] Menyinkronkan struktur aplikasi..."
 if [ -d "$HOME/skinet/apps/web" ]; then
   rsync -av --delete --exclude 'node_modules' --exclude '.next' ~/skinet/app/ ~/skinet/apps/web/app/
   cp ~/skinet/next.config.js ~/skinet/apps/web/next.config.js 2>/dev/null || true
+  cp ~/skinet/middleware.ts ~/skinet/apps/web/middleware.ts 2>/dev/null || true
+  mkdir -p ~/skinet/apps/web/public/uploads
+  mkdir -p ~/skinet/public/uploads
   
   echo "🏗️  [3/4] Menjalankan proses build (Next.js)..."
   cd ~/skinet/apps/web
