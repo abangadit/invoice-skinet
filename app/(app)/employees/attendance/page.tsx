@@ -72,7 +72,8 @@ const getLocalDateString = () => {
 };
 
 export default function AttendancePage() {
-  const { activeBusiness, userRole, reloadBusiness } = useBusiness();
+  const { activeBusiness, userRole, systemRole, reloadBusiness } = useBusiness();
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin";
   const [activeTab, setActiveTab] = useState<"portal" | "history" | "logs" | "settings">("portal");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -283,7 +284,7 @@ export default function AttendancePage() {
       setCurrentEmployee(emp);
 
       // Route default view
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         if (!emp) {
           setActiveTab("logs");
         }
@@ -303,7 +304,7 @@ export default function AttendancePage() {
         await fetchTodayAttendance(emp.id);
         await fetchMyLogs(emp.id);
       }
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         await fetchAllLogs();
       }
 
@@ -326,7 +327,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     initializeUserSession();
-  }, [activeBusiness, userRole]);
+  }, [activeBusiness, userRole, systemRole]);
 
   // Stream reference state to keep track of the stream
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -505,7 +506,7 @@ export default function AttendancePage() {
 
     stopVideoFeed();
     await fetchTodayAttendance(currentEmployee.id);
-    if (userRole === "owner" || userRole === "admin") {
+    if (isOwnerOrAdmin) {
       await fetchAllLogs();
     }
   };
@@ -545,7 +546,7 @@ export default function AttendancePage() {
       }
 
       await fetchTodayAttendance(currentEmployee.id);
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         await fetchAllLogs();
       }
     } catch (err: any) {
@@ -757,7 +758,7 @@ export default function AttendancePage() {
         >
           Riwayat Absen Saya
         </button>
-        {(userRole === "owner" || userRole === "admin") && (
+        {isOwnerOrAdmin && (
           <>
             <button
               onClick={() => setActiveTab("logs")}
