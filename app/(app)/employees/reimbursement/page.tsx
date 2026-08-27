@@ -63,7 +63,8 @@ interface Employee {
 }
 
 export default function ReimbursementPage() {
-  const { activeBusiness, userRole } = useBusiness();
+  const { activeBusiness, userRole, systemRole } = useBusiness();
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin";
   const [activeTab, setActiveTab] = useState<"ess" | "admin">("ess");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -223,7 +224,7 @@ export default function ReimbursementPage() {
       setCurrentEmployee(emp);
 
       // Routing tab default view
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         if (!emp) {
           setActiveTab("admin");
         }
@@ -232,7 +233,7 @@ export default function ReimbursementPage() {
       if (emp) {
         await fetchESSData(emp.id);
       }
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         await fetchAdminData();
       }
 
@@ -245,7 +246,7 @@ export default function ReimbursementPage() {
 
   useEffect(() => {
     initializeUserSession();
-  }, [activeBusiness, userRole]);
+  }, [activeBusiness, userRole, systemRole]);
 
   // Handle File Input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -321,7 +322,7 @@ export default function ReimbursementPage() {
 
       // Reload Data
       await fetchESSData(currentEmployee.id);
-      if (userRole === "owner" || userRole === "admin") {
+      if (isOwnerOrAdmin) {
         await fetchAdminData();
       }
       alert("Klaim reimbursement Anda berhasil dikirim untuk ditinjau.");
@@ -518,23 +519,21 @@ export default function ReimbursementPage() {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-slate-200 text-xs font-bold gap-4">
-        {currentEmployee && (
-          <button
-            onClick={() => setActiveTab("ess")}
-            className={`pb-3 transition ${
-              activeTab === "ess"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Portal Mandiri Karyawan (ESS)
-          </button>
-        )}
-        {(userRole === "owner" || userRole === "admin") && (
+      <div className="flex border-b border-slate-200 text-xs font-bold gap-6">
+        <button
+          onClick={() => setActiveTab("ess")}
+          className={`pb-3 transition font-extrabold ${
+            activeTab === "ess"
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-slate-500 hover:text-slate-900"
+          }`}
+        >
+          Portal Mandiri Karyawan (ESS)
+        </button>
+        {isOwnerOrAdmin && (
           <button
             onClick={() => setActiveTab("admin")}
-            className={`pb-3 transition ${
+            className={`pb-3 transition font-extrabold ${
               activeTab === "admin"
                 ? "border-b-2 border-blue-600 text-blue-600"
                 : "text-slate-500 hover:text-slate-900"
@@ -661,7 +660,7 @@ export default function ReimbursementPage() {
         <div className="space-y-6">
           
           {/* Owner Test Helper Notice */}
-          {!currentEmployee && userRole === "owner" && (
+          {!currentEmployee && isOwnerOrAdmin && (
             <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
               <div className="flex gap-2 text-blue-700 font-medium">
                 <Info className="w-5 h-5 shrink-0 mt-0.5" />

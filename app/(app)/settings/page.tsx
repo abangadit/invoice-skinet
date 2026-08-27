@@ -28,7 +28,9 @@ import { useLanguage } from "../../../lib/context/LanguageContext";
 import { uploadImageToR2 } from "../../../lib/utils/upload";
 
 export default function SettingsPage() {
-  const { activeBusiness, businesses, userRole, reloadBusiness, setActiveBusiness } = useBusiness();
+  const { activeBusiness, businesses, userRole, systemRole, reloadBusiness, setActiveBusiness } = useBusiness();
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin";
+  const isOwner = userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
   const { t, locale, setLocale } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -464,7 +466,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Team / User Management Settings Card */}
-      {(userRole === "owner" || userRole === "admin") && (
+      {isOwnerOrAdmin && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -486,7 +488,7 @@ export default function SettingsPage() {
       )}
 
       {/* Master Shift Settings Card */}
-      {(userRole === "owner" || userRole === "admin") && (
+      {isOwnerOrAdmin && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -506,7 +508,7 @@ export default function SettingsPage() {
       )}
 
       {/* Audit Logs Settings Card */}
-      {(userRole === "owner" || userRole === "admin") && (
+      {isOwnerOrAdmin && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -528,7 +530,7 @@ export default function SettingsPage() {
       )}
 
       {/* Kustomisasi Sidebar Menu Card (Owner Only) */}
-      {userRole === "owner" && (
+      {isOwner && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">

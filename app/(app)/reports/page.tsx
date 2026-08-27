@@ -14,12 +14,12 @@ import {
 import { useBusiness } from "../../../lib/context/BusinessContext";
 
 export default function ReportsHubPage() {
-  const { activeBusiness, userRole, userPermissions, loading } = useBusiness();
+  const { activeBusiness, userRole, systemRole, userPermissions, loading } = useBusiness();
 
   // Helper check consistent with layout role presets
   const showLink = (menuKey: string) => {
     if (loading || !userRole) return false;
-    if (userRole === "owner" || userRole === "admin") return true;
+    if (userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin") return true;
     if (userRole === "employee") return false;
     if (userRole === "custom") return !!userPermissions?.[menuKey];
     
