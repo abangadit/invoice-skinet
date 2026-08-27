@@ -674,6 +674,51 @@ function HelpCenterContent() {
               </div>
             </div>
 
+            {/* PANDUAN KOLOM & TOMBOL (ANTARMUKA) */}
+            {currentTopic.uiGuide && currentTopic.uiGuide.length > 0 && (
+              <div className="space-y-4 pt-2 break-inside-avoid">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  Panduan Kolom Isian & Tombol Aksi (Antarmuka)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {currentTopic.uiGuide.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm hover:border-blue-300 transition space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-black text-slate-900 tracking-tight">
+                          {item.name}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            item.type === "Tombol"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : item.type === "Dropdown"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : item.type === "Toggle / Switch"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : item.type === "Tab Navigasi"
+                              ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                              : item.type === "Badge Status"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}
+                        >
+                          {item.type}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* FITUR UTAMA */}
             <div className="space-y-4 pt-2 break-inside-avoid">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">

@@ -14,6 +14,12 @@ export interface HelpFeatureItem {
   description: string;
 }
 
+export interface UIElement {
+  name: string;
+  type: "Tombol" | "Kolom Isian" | "Dropdown" | "Toggle / Switch" | "Tab Navigasi" | "Tabel Data" | "Badge Status";
+  description: string;
+}
+
 export interface HelpTopic {
   id: string;
   menuKey: string;
@@ -27,6 +33,7 @@ export interface HelpTopic {
   path: string;
   overview: string;
   workflow: HelpStep[];
+  uiGuide?: UIElement[];
   keyFeatures: HelpFeatureItem[];
   tipsAndTricks: string[];
   faq: { question: string; answer: string }[];
@@ -97,1396 +104,2867 @@ export const HELP_CATEGORIES: HelpCategory[] = [
 ];
 
 export const HELP_TOPICS: HelpTopic[] = [
-  // 1. DASHBOARD
   {
-    id: "dashboard",
-    menuKey: "dashboard",
-    title: "Dashboard & Ringkasan Bisnis",
-    category: "Menu Utama & POS",
-    categoryId: "main",
-    iconName: "Layers",
-    badge: "Utama",
-    targetRole: "Semua Pengguna / Owner / Admin",
-    path: "/",
-    summary: "Pusat visualisasi performa bisnis, grafik penjualan, status piutang, dan aktivitas terbaru secara real-time.",
-    overview: "Halaman Dashboard adalah halaman pertama yang tampil setelah login. Halaman ini memberikan rangkuman indikator kinerja utama (KPI) usaha Anda seperti Total Penjualan, Tagihan Belum Terbayar (Unpaid Invoices), Pengeluaran Bulan Ini, serta Peringatan Stok Minimum.",
-    workflow: [
+    "id": "dashboard",
+    "menuKey": "dashboard",
+    "title": "Dashboard & Ringkasan Bisnis",
+    "category": "Menu Utama & POS",
+    "categoryId": "main",
+    "iconName": "Layers",
+    "badge": "Utama",
+    "targetRole": "Semua Pengguna / Owner / Admin",
+    "path": "/",
+    "summary": "Pusat visualisasi performa bisnis, grafik penjualan, status piutang, dan aktivitas terbaru secara real-time.",
+    "overview": "Halaman Dashboard adalah halaman pertama yang tampil setelah login. Halaman ini memberikan rangkuman indikator kinerja utama (KPI) usaha Anda seperti Total Penjualan, Tagihan Belum Terbayar (Unpaid Invoices), Pengeluaran Bulan Ini, serta Peringatan Stok Minimum.",
+    "workflow": [
       {
-        step: 1,
-        title: "Pilih Periode Waktu",
-        description: "Gunakan filter tanggal di bagian atas dashboard untuk melihat data Hari Ini, 7 Hari Terakhir, Bulan Ini, atau Kustom.",
-        tip: "Data grafik akan otomatis diperbarui secara instan saat Anda mengganti filter periode.",
-        screenshotPlaceholder: {
-          caption: "Tampilan Ringkasan Metrik Dashboard",
-          description: "Screenshot kartu ringkasan omset, profit estimasi, dan grafik tren mingguan."
+        "step": 1,
+        "title": "Pilih Periode Waktu",
+        "description": "Gunakan filter tanggal di bagian atas dashboard untuk melihat data Hari Ini, 7 Hari Terakhir, Bulan Ini, atau Kustom.",
+        "tip": "Data grafik akan otomatis diperbarui secara instan saat Anda mengganti filter periode.",
+        "screenshotPlaceholder": {
+          "caption": "Tampilan Ringkasan Metrik Dashboard",
+          "description": "Screenshot kartu ringkasan omset, profit estimasi, dan grafik tren mingguan."
         }
       },
       {
-        step: 2,
-        title: "Pantau Notifikasi & Peringatan Penting",
-        description: "Periksa widget peringatan jatuh tempo nota pelanggan dan peringatan produk dengan stok di bawah batas aman.",
-        tip: "Klik langsung pada kartu peringatan stok untuk menuju modul penambahan stok (Restock)."
+        "step": 2,
+        "title": "Pantau Notifikasi & Peringatan Penting",
+        "description": "Periksa widget peringatan jatuh tempo nota pelanggan dan peringatan produk dengan stok di bawah batas aman.",
+        "tip": "Klik langsung pada kartu peringatan stok untuk menuju modul penambahan stok (Restock)."
       },
       {
-        step: 3,
-        title: "Akses Cepat Transaksi",
-        description: "Gunakan tombol aksi cepat di pojok kanan atau sidebar untuk langsung membuat Faktur Baru (+ Buat Invoice) atau buka POS Kasir.",
-        screenshotPlaceholder: {
-          caption: "Aksi Cepat & Navigasi Cepat",
-          description: "Screenshot tombol aksi cepat (+ Invoice Baru, + POS) di dashboard."
+        "step": 3,
+        "title": "Akses Cepat Transaksi",
+        "description": "Gunakan tombol aksi cepat di pojok kanan atau sidebar untuk langsung membuat Faktur Baru (+ Buat Invoice) atau buka POS Kasir.",
+        "screenshotPlaceholder": {
+          "caption": "Aksi Cepat & Navigasi Cepat",
+          "description": "Screenshot tombol aksi cepat (+ Invoice Baru, + POS) di dashboard."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Widget Metrik KPI", description: "Menampilkan kartu total omzet, laba kotor, piutang tertahan, dan kas masuk." },
-      { name: "Grafik Tren Penjualan", description: "Visualisasi tren penjualan harian dan bulanan untuk analisa pertumbuhan." },
-      { name: "Peringatan Stok Rendah", description: "Daftar otomatis barang-barang yang kuantitasnya mendekati nol / batas minimum." },
-      { name: "Feed Aktivitas Terbaru", description: "Riwayat pembuatan invoice dan transaksi terakhir yang dilakukan staf." }
+    "uiGuide": [
+      {
+        "name": "Filter Rentang Waktu",
+        "type": "Dropdown",
+        "description": "Memilih periode analitik data (Hari Ini, Kemarin, 7 Hari Terakhir, Bulan Ini, Tahun Ini, atau Kustom Tanggal)."
+      },
+      {
+        "name": "Kartu Total Omset / Penjualan",
+        "type": "Tabel Data",
+        "description": "Menampilkan akumulasi nilai bruto dari seluruh invoice dan transaksi POS dalam periode yang dipilih."
+      },
+      {
+        "name": "Kartu Piutang Belum Lunas (Unpaid)",
+        "type": "Badge Status",
+        "description": "Total tagihan invoice yang belum dibayar atau masih berstatus cicilan oleh pelanggan."
+      },
+      {
+        "name": "Kartu Total Pengeluaran",
+        "type": "Tabel Data",
+        "description": "Total beban biaya operasional, pembelian barang, dan reimbursement yang tercatat dalam periode aktif."
+      },
+      {
+        "name": "Grafik Tren Penjualan & Laba",
+        "type": "Tabel Data",
+        "description": "Grafik batang/garis interaktif yang menunjukkan fluktuasi pendapatan harian/bulanan."
+      },
+      {
+        "name": "Widget Peringatan Stok Minimum",
+        "type": "Tabel Data",
+        "description": "Daftar barang inventaris yang jumlah fisiknya berada di bawah batas minimum stok yang telah ditentukan."
+      },
+      {
+        "name": "Tombol '+ Buat Invoice'",
+        "type": "Tombol",
+        "description": "Pintasan cepat untuk langsung membuka formulir pembuatan faktur tagihan penjualan baru."
+      },
+      {
+        "name": "Tombol '+ Buka Kasir POS'",
+        "type": "Tombol",
+        "description": "Pintasan langsung untuk membuka layar kasir Point of Sale retail."
+      }
     ],
-    tipsAndTricks: [
+    "keyFeatures": [
+      {
+        "name": "Widget Metrik KPI",
+        "description": "Menampilkan kartu total omzet, laba kotor, piutang tertahan, dan kas masuk."
+      },
+      {
+        "name": "Grafik Tren Penjualan",
+        "description": "Visualisasi tren penjualan harian dan bulanan untuk analisa pertumbuhan."
+      },
+      {
+        "name": "Peringatan Stok Rendah",
+        "description": "Daftar otomatis barang-barang yang kuantitasnya mendekati nol / batas minimum."
+      },
+      {
+        "name": "Feed Aktivitas Terbaru",
+        "description": "Riwayat pembuatan invoice dan transaksi terakhir yang dilakukan staf."
+      }
+    ],
+    "tipsAndTricks": [
       "Periksa dashboard setiap pagi untuk memprioritaskan penagihan piutang jatuh tempo hari ini.",
       "Gunakan tombol refresh profil jika data baru belum terupdate karena kendala koneksi."
     ],
-    faq: [
-      { question: "Mengapa angka total pendapatan belum bertambah?", answer: "Angka pendapatan bertambah saat invoice dibuat atau status pembayaran tercatat lunas, periksa filter rentang tanggal di pojok atas." }
+    "faq": [
+      {
+        "question": "Mengapa angka total pendapatan di dashboard belum bertambah?",
+        "answer": "Pastikan filter periode tanggal di bagian atas sudah sesuai. Angka penjualan bertambah otomatis saat invoice baru dibuat atau transaksi kasir POS selesai."
+      },
+      {
+        "question": "Apakah staf biasa bisa melihat metrik laba dan pengeluaran?",
+        "answer": "Tidak, staf divisi biasa (seperti kasir atau gudang) hanya melihat ringkasan sesuai izin hak akses mereka. Laba kotor hanya tampil untuk Owner dan Admin."
+      },
+      {
+        "question": "Bagaimana cara menyegarkan (refresh) data di dashboard?",
+        "answer": "Anda cukup mengubah filter periode tanggal atau memuat ulang halaman browser. Sistem juga memperbarui data secara berkala saat terjadi transaksi baru."
+      }
     ]
   },
-
-  // 2. POS KASIR
   {
-    id: "pos",
-    menuKey: "pos",
-    title: "Point of Sale (POS / Kasir)",
-    category: "Menu Utama & POS",
-    categoryId: "main",
-    iconName: "ShoppingCart",
-    badge: "Transaksi Cepat",
-    targetRole: "Kasir / Sales / Admin / Owner",
-    path: "/pos",
-    summary: "Antarmuka kasir cepat untuk melayani transaksi retail, scan barcode, diskon langsung, dan cetak struk nota.",
-    overview: "Modul POS dirancang khusus untuk kecepatan pelayanan kasir langsung di toko fisik atau outlet. Dilengkapi dukungan barcode scanner, tombol pintas kategori produk, keranjang belanja dinamis, kalkulator kembalian, dan cetak struk printer thermal (Bluetooth/USB/Dot Matrix).",
-    workflow: [
+    "id": "pos",
+    "menuKey": "pos",
+    "title": "Point of Sale (POS / Kasir)",
+    "category": "Menu Utama & POS",
+    "categoryId": "main",
+    "iconName": "ShoppingCart",
+    "badge": "Transaksi Cepat",
+    "targetRole": "Kasir / Sales / Admin / Owner",
+    "path": "/pos",
+    "summary": "Antarmuka kasir cepat untuk melayani transaksi retail, scan barcode, diskon langsung, dan cetak struk nota.",
+    "overview": "Modul POS dirancang khusus untuk kecepatan pelayanan kasir langsung di toko fisik atau outlet. Dilengkapi dukungan barcode scanner, tombol pintas kategori produk, keranjang belanja dinamis, modal pembayaran terpadu, kalkulator kembalian, dan cetak struk printer thermal (Bluetooth/USB/Dot Matrix).",
+    "workflow": [
       {
-        step: 1,
-        title: "Buka Shift Kasir",
-        description: "Masukkan modal awal (kas awal di laci kasir) sebelum memulai transaksi harian.",
-        tip: "Modal awal penting dicatat untuk mencocokkan laporan penerimaan fisik uang tunai saat tutup kasir di akhir hari.",
-        screenshotPlaceholder: {
-          caption: "Modal Awal Kasir",
-          description: "Screenshot pop-up input kas awal shift kasir."
+        "step": 1,
+        "title": "Buka Shift Kasir",
+        "description": "Masukkan modal awal (kas awal di laci kasir) sebelum memulai transaksi harian.",
+        "tip": "Modal awal penting dicatat untuk mencocokkan laporan penerimaan fisik uang tunai saat tutup kasir di akhir hari.",
+        "screenshotPlaceholder": {
+          "caption": "Modal Awal Kasir",
+          "description": "Screenshot pop-up input kas awal shift kasir."
         }
       },
       {
-        step: 2,
-        title: "Pilih Produk atau Scan Barcode",
-        description: "Klik pada kartu produk, gunakan filter kategori, atau arahkan scanner barcode ke barcode produk untuk memasukkannya ke keranjang.",
-        tip: "Klik item di keranjang untuk mengubah kuantitas atau memberikan diskon per item."
+        "step": 2,
+        "title": "Pilih Produk atau Scan Barcode",
+        "description": "Klik pada kartu produk, gunakan filter kategori, atau arahkan scanner barcode ke barcode produk untuk memasukkannya ke keranjang.",
+        "tip": "Klik item di keranjang untuk mengubah kuantitas atau memberikan diskon per item."
       },
       {
-        step: 3,
-        title: "Pilih Pelanggan & Metode Pembayaran",
-        description: "Pilih pelanggan (Umum / Pelanggan Terdaftar), lalu pilih metode bayar: Tunai (Cash), QRIS, Transfer Bank, atau Kartu Debit.",
-        screenshotPlaceholder: {
-          caption: "Antarmuka Kasir & Keranjang Transaksi",
-          description: "Screenshot katalog produk di sebelah kiri dan keranjang belanja dengan total di sebelah kanan."
+        "step": 3,
+        "title": "Buka Popup Pembayaran (Bayar Sekarang)",
+        "description": "Klik tombol 'BAYAR SEKARANG' di bawah keranjang belanja. Modal pembayaran akan muncul untuk memilih pelanggan, metode bayar (Tunai, QRIS, Transfer, Debit), serta nominal bayar.",
+        "screenshotPlaceholder": {
+          "caption": "Antarmuka Kasir & Keranjang Transaksi",
+          "description": "Screenshot katalog produk di sebelah kiri dan keranjang belanja dengan tombol Bayar Sekarang."
         }
       },
       {
-        step: 4,
-        title: "Selesaikan & Cetak Struk",
-        description: "Masukkan nominal uang diterima, sistem akan menghitung kembalian otomatis. Klik tombol Bayar lalu Cetak Struk (Thermal / Dot Matrix).",
-        tip: "Struk juga dapat dikirim secara digital melalui WhatsApp pelanggan jika nomor HP terisi."
+        "step": 4,
+        "title": "Selesaikan & Cetak Struk",
+        "description": "Masukkan nominal uang diterima, sistem akan menghitung kembalian otomatis. Klik tombol Selesaikan Pembayaran lalu Cetak Struk (Thermal 58mm/80mm atau Dot Matrix).",
+        "tip": "Struk juga dapat dibagikan langsung secara digital melalui WhatsApp pelanggan."
       }
     ],
-    keyFeatures: [
-      { name: "Pencarian Cepat & Barcode", description: "Mendukung input barcode otomatis dengan auto-add ke keranjang belanja." },
-      { name: "Diskon & Pajak Otomatis", description: "Pengaturan diskon persentase/nominal per item maupun per total nota." },
-      { name: "Split Payment / Multi Payment", description: "Fleksibilitas pembayaran sebagian tunai dan sebagian transfer." },
-      { name: "Manajemen Shift & Rekonsiliasi", description: "Laporan tutup kasir (Z-Report) untuk menghitung selisih kas fisik vs sistem." }
-    ],
-    tipsAndTricks: [
-      "Gunakan browser Chrome pada mode Fullscreen (F11) agar pandangan kasir lebih luas dan fokus.",
-      "Pastikan ukuran kertas thermal (58mm atau 80mm) telah disesuaikan di Pengaturan Printer."
-    ],
-    faq: [
-      { question: "Bisakah melakukan transaksi saat offline?", answer: "Sistem membutuhkan koneksi internet untuk sinkronisasi stok dan pencatatan kas secara terpusat." }
-    ]
-  },
-
-  // 3. PROSPEK (LEADS)
-  {
-    id: "leads",
-    menuKey: "sales",
-    title: "Prospek & Peluang (Leads)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "Target",
-    badge: "CRM Sales",
-    targetRole: "Sales / Marketing / Admin",
-    path: "/leads",
-    summary: "Manajemen calon pelanggan, tahapan follow-up (pipeline), estimasi nilai peluang, dan konversi ke pelanggan aktif.",
-    overview: "Modul Leads membantu tim penjualan melacak calon pembeli potensial mulai dari kontak pertama hingga siap melakukan pembelian. Anda dapat memantau status prospek dalam tampilan papan Kanban atau tabel data.",
-    workflow: [
+    "uiGuide": [
       {
-        step: 1,
-        title: "Tambah Prospek Baru",
-        description: "Klik '+ Tambah Prospek', isi nama kontak, nomor WhatsApp/Telepon, nama perusahaan, dan estimasi nilai potensi transaksi.",
-        screenshotPlaceholder: {
-          caption: "Form Input Prospek Baru",
-          description: "Screenshot formulir penambahan data prospek dan sumber referensi (Instagram, Referral, Iklan)."
-        }
+        "name": "Kolom Pencarian Produk & Barcode",
+        "type": "Kolom Isian",
+        "description": "Ketik nama barang, SKU, atau arahkan scanner barcode USB/Bluetooth untuk langsung memasukkan barang ke keranjang."
       },
       {
-        step: 2,
-        title: "Update Status Follow-Up",
-        description: "Geser kartu prospek di Kanban atau ubah statusnya: Baru -> Dihubungi -> Negosiasi -> Tertarik -> Deal / Lost.",
-        tip: "Catat riwayat percakapan atau janji temu di kolom catatan aktivitas."
+        "name": "Tombol Filter Kategori Produk",
+        "type": "Tab Navigasi",
+        "description": "Menyaring daftar produk yang ditampilkan di layar kasir berdasarkan kategori (Makanan, Minuman, Pakaian, Jasa, dll)."
       },
       {
-        step: 3,
-        title: "Konversi ke Customer & Buat Penawaran",
-        description: "Setelah prospek sepakat (Deal), klik tombol 'Konversi ke Pelanggan' untuk otomatis mendaftarkannya ke master Customer dan membuat Quotation.",
-        screenshotPlaceholder: {
-          caption: "Pipeline Prospek (Kanban Board)",
-          description: "Screenshot papan Kanban alur tahapan prospek dari kontak awal sampai deal."
-        }
+        "name": "Daftar Item Keranjang",
+        "type": "Tabel Data",
+        "description": "Menampilkan barang yang dipilih, harga satuan, jumlah qty (+/-), subtotal, dan tombol hapus item."
+      },
+      {
+        "name": "Tombol 'Kosongkan Keranjang'",
+        "type": "Tombol",
+        "description": "Membatalkan seluruh pesanan saat ini dan mengosongkan item keranjang belanja."
+      },
+      {
+        "name": "Tombol 'BAYAR SEKARANG'",
+        "type": "Tombol",
+        "description": "Membuka popup modal pembayaran untuk menyelesaikan transaksi kasir."
+      },
+      {
+        "name": "Dropdown 'Pilih Pelanggan'",
+        "type": "Dropdown",
+        "description": "Memilih apakah transaksi dilakukan oleh Pelanggan Umum (Walk-in Guest) atau Member terdaftar untuk akumulasi poin loyalitas."
+      },
+      {
+        "name": "Opsi Metode Pembayaran",
+        "type": "Tombol",
+        "description": "Pilihan cara pembayaran: Uang Tunai (Cash), QRIS Dinamis/Statis, Transfer Bank BCA/Mandiri/BRI, atau Mesin EDC Debit/Kredit."
+      },
+      {
+        "name": "Kolom 'Nominal Uang Diterima'",
+        "type": "Kolom Isian",
+        "description": "Nominal uang kertas yang diserahkan pelanggan. Sistem menghitung uang kembalian secara otomatis."
+      },
+      {
+        "name": "Tombol Uang Pas (Nominal Cepat)",
+        "type": "Tombol",
+        "description": "Pintasan nominal uang pecahan (Uang Pas, 50.000, 100.000, 200.000) untuk mempercepat pengembalian kembalian."
+      },
+      {
+        "name": "Tombol 'Cetak Struk'",
+        "type": "Tombol",
+        "description": "Mengirim perintah cetak langsung ke printer thermal 58mm/80mm atau printer dot matrix yang terhubung."
       }
     ],
-    keyFeatures: [
-      { name: "Kanban Pipeline View", description: "Visualisasi tahapan penjualan dengan drag-and-drop antar kolom status." },
-      { name: "One-Click Conversion", description: "Konversi data calon pelanggan menjadi Customer terdaftar tanpa input ulang." },
-      { name: "Pencatatan Sumber Prospek", description: "Analisis saluran pemasaran yang paling banyak menghasilkan penjualan." }
-    ],
-    tipsAndTricks: [
-      "Selalu jadwalkan tanggal follow-up berikutnya agar calon pembeli tidak terbengkalai."
-    ],
-    faq: [
-      { question: "Apa bedanya Leads dengan Customer?", answer: "Leads adalah kontak yang belum tentu membeli, sedangkan Customer adalah kontak yang sudah resmi bertransaksi atau terdaftar sebagai mitra." }
-    ]
-  },
-
-  // 4. QUOTATION
-  {
-    id: "quotation",
-    menuKey: "quotation",
-    title: "Surat Penawaran Harga (Quotations)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "FileSpreadsheet",
-    badge: "Pra-Penjualan",
-    targetRole: "Sales / Admin / Owner",
-    path: "/quotation",
-    summary: "Pembuatan estimasi harga resmi untuk klien, syarat & ketentuan, masa berlaku penawaran, serta ekspor PDF resmi.",
-    overview: "Modul Surat Penawaran Harga (Quotation) memungkinkan Anda membuat proposal penawaran harga yang rapi dan profesional untuk dikirimkan kepada calon pelanggan sebelum kesepakatan final dan penerbitan invoice.",
-    workflow: [
+    "keyFeatures": [
       {
-        step: 1,
-        title: "Buat Penawaran Baru",
-        description: "Masuk ke menu Quotation -> Klik '+ Buat Penawaran'. Pilih nama pelanggan atau masukkan pelanggan baru.",
-        screenshotPlaceholder: {
-          caption: "Form Pembuatan Surat Penawaran",
-          description: "Screenshot form pembuatan quotation lengkap dengan rincian item barang dan termin pembayaran."
-        }
+        "name": "Pencarian Cepat & Barcode",
+        "description": "Mendukung input barcode otomatis dengan auto-add ke keranjang belanja."
       },
       {
-        step: 2,
-        title: "Tambahkan Item Barang & Diskon",
-        description: "Pilih produk dari katalog atau ketik item kustom, atur kuantitas, harga khusus proyek, dan catatan syarat garansi.",
-        tip: "Anda dapat mengatur tanggal masa berlaku penawaran (misal: Berlaku 14 hari)."
+        "name": "Diskon & Pajak Otomatis",
+        "description": "Pengaturan diskon persentase/nominal per item maupun per total nota."
       },
       {
-        step: 3,
-        title: "Kirim PDF ke Klien",
-        description: "Klik 'Cetak PDF' atau 'Kirim via WhatsApp' untuk membagikan surat penawaran berkop resmi perusahaan.",
-        screenshotPlaceholder: {
-          caption: "Pratinjau PDF Quotation Resmi",
-          description: "Screenshot tampilan dokumen PDF penawaran lengkap dengan tanda tangan digital & logo perusahaan."
-        }
+        "name": "Split Payment / Multi Payment",
+        "description": "Fleksibilitas pembayaran sebagian tunai dan sebagian transfer."
       },
       {
-        step: 4,
-        title: "Konversi ke Sales Order / Invoice",
-        description: "Ketika penawaran disetujui klien, klik tombol 'Ubah ke Invoice' atau 'Ubah ke Sales Order' tanpa perlu mengetik ulang item.",
-        tip: "Status penawaran akan otomatis berubah menjadi Disetujui (Accepted)."
+        "name": "Manajemen Shift & Rekonsiliasi",
+        "description": "Laporan tutup kasir (Z-Report) untuk menghitung selisih kas fisik vs sistem."
       }
     ],
-    keyFeatures: [
-      { name: "Konversi 1-Klik ke Invoice", description: "Transformasi instan dari surat penawaran menjadi tagihan aktif." },
-      { name: "Masa Berlaku Penawaran", description: "Pengingat otomatis jika penawaran telah melewati batas waktu berlaku." },
-      { name: "Template Berkop Resmi", description: "Desain PDF elegan lengkap dengan logo perusahaan, nomor surat resmi, dan tanda tangan." }
+    "tipsAndTricks": [
+      "Gunakan tombol sembunyikan sidebar (ikon panah di pojok kiri atas) agar layar katalog kasir menjadi lebih lebar dan lega.",
+      "Gunakan browser Chrome pada mode Fullscreen (F11) agar pandangan kasir lebih fokus.",
+      "Pastikan ukuran kertas thermal (58mm atau 80mm) telah disesuaikan di Pengaturan Bisnis."
     ],
-    tipsAndTricks: [
-      "Sertakan syarat pembayaran yang jelas (misal DP 50% di awal) pada kolom Syarat & Ketentuan di bawah nota."
-    ],
-    faq: [
-      { question: "Apakah pembuatan Quotation memotong stok barang?", answer: "Tidak. Quotation hanya bersifat estimasi penawaran harga, stok baru terpotong saat Sales Order/Invoice dibuat atau Delivery Order diproses." }
+    "faq": [
+      {
+        "question": "Bagaimana cara melakukan retur atau pembatalan transaksi kasir?",
+        "answer": "Buka menu Riwayat Transaksi POS (/pos/history), cari nomor nota yang bersangkutan, lalu klik tombol 'Void / Retur' dengan memasukkan alasan pembatalan."
+      },
+      {
+        "question": "Apakah stok produk langsung berkurang saat transaksi POS selesai?",
+        "answer": "Ya, stok produk di gudang toko/outlet akan langsung terpotong secara realtime begitu pembayaran berhasil."
+      },
+      {
+        "question": "Printer apa saja yang kompatibel dengan modul POS?",
+        "answer": "Mendukung semua printer thermal 58mm & 80mm (USB, Bluetooth, LAN) dan Printer Kasir Dot Matrix (Epson TM-U220 / LX-310)."
+      }
     ]
   },
-
-  // 5. SALES ORDER
   {
-    id: "sales",
-    menuKey: "sales",
-    title: "Pesanan Penjualan (Sales Orders)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "ClipboardCheck",
-    badge: "Order Penjualan",
-    targetRole: "Sales / Warehouse / Admin",
-    path: "/sales",
-    summary: "Pencatatan pesanan resmi dari pembeli sebelum barang dipersiapkan di gudang dan dikirim ke lokasi.",
-    overview: "Sales Order (SO) berfungsi sebagai bukti kesepakatan pemesanan barang/jasa dari pembeli. Dokumen ini menjadi instruksi bagi bagian gudang untuk menyiapkan barang (packing) dan bagian pengiriman untuk membuat surat jalan.",
-    workflow: [
+    "id": "leads",
+    "menuKey": "sales",
+    "title": "Prospek & Peluang (Leads)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "Target",
+    "badge": "CRM Sales",
+    "targetRole": "Sales / Marketing / Admin",
+    "path": "/leads",
+    "summary": "Manajemen calon pelanggan, tahapan follow-up (pipeline), estimasi nilai peluang, dan konversi ke pelanggan aktif.",
+    "overview": "Modul Leads membantu tim penjualan melacak calon pembeli potensial mulai dari kontak pertama hingga siap melakukan pembelian. Anda dapat memantau status prospek dalam tampilan papan Kanban atau tabel data.",
+    "workflow": [
       {
-        step: 1,
-        title: "Terbitkan Sales Order",
-        description: "Buat SO langsung dari menu Pesanan Penjualan atau hasil konversi dari Surat Penawaran yang disetujui.",
-        screenshotPlaceholder: {
-          caption: "Daftar Sales Order",
-          description: "Screenshot tabel data pesanan penjualan dengan indikator status pemenuhan."
+        "step": 1,
+        "title": "Tambah Prospek Baru",
+        "description": "Klik '+ Tambah Prospek', isi nama kontak, nomor WhatsApp/Telepon, nama perusahaan, dan estimasi nilai potensi transaksi.",
+        "screenshotPlaceholder": {
+          "caption": "Form Input Prospek Baru",
+          "description": "Screenshot formulir penambahan data prospek dan sumber referensi."
         }
       },
       {
-        step: 2,
-        title: "Periksa Ketersediaan Stok",
-        description: "Sistem akan mengecek ketersediaan stok fisik di gudang. Jika stok mencukupi, status pesanan siap diproses.",
-        tip: "Jika stok kurang, sistem akan memberikan indikator peringatan untuk membuat Purchase Order ke supplier."
+        "step": 2,
+        "title": "Update Status Follow-Up",
+        "description": "Geser kartu prospek di Kanban atau ubah statusnya: Baru -> Dihubungi -> Negosiasi -> Tertarik -> Deal / Lost.",
+        "tip": "Catat riwayat percakapan atau janji temu di kolom catatan aktivitas."
       },
       {
-        step: 3,
-        title: "Proses Pengiriman (Delivery)",
-        description: "Klik 'Buat Surat Jalan (Delivery Order)' untuk mengalihkan pesanan ke tim logistik/gudang.",
-        screenshotPlaceholder: {
-          caption: "Detail Sales Order & Tombol Aksi Pengiriman",
-          description: "Screenshot rincian SO dengan tombol Buat Surat Jalan dan Buat Invoice."
+        "step": 3,
+        "title": "Konversi ke Customer & Buat Penawaran",
+        "description": "Setelah prospek sepakat (Deal), klik tombol 'Konversi ke Pelanggan' untuk otomatis mendaftarkannya ke master Customer dan membuat Quotation.",
+        "screenshotPlaceholder": {
+          "caption": "Pipeline Prospek (Kanban Board)",
+          "description": "Screenshot tahapan leads dari Baru hingga Deal."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Pelacakan Status Order", description: "Status: Menunggu Diproses -> Sedang Disiapkan -> Dikirim Sebagian -> Selesai." },
-      { name: "Integrasi Surat Jalan", description: "Terhubung langsung dengan modul Delivery Orders untuk kelancaran logistik." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Prospek'",
+        "type": "Tombol",
+        "description": "Membuka formulir modal untuk mendaftarkan kontak prospek/klien potensial baru."
+      },
+      {
+        "name": "Kolom 'Nama Lengkap / Kontak'",
+        "type": "Kolom Isian",
+        "description": "Nama personil perwakilan dari calon klien atau nama individu pembeli."
+      },
+      {
+        "name": "Kolom 'Nama Perusahaan / Organisasi'",
+        "type": "Kolom Isian",
+        "description": "Nama entitas bisnis atau institusi dari prospek bersangkutan."
+      },
+      {
+        "name": "Kolom 'Nomor WhatsApp / Telepon'",
+        "type": "Kolom Isian",
+        "description": "Nomor kontak aktif untuk kebutuhan follow-up via WhatsApp otomatis."
+      },
+      {
+        "name": "Dropdown 'Sumber Prospek (Lead Source)'",
+        "type": "Dropdown",
+        "description": "Kanal asal prospek didapatkan (Iklan Medsos, Rekomendasi/Referral, Pameran, Telemarketing, Website, dll)."
+      },
+      {
+        "name": "Kolom 'Estimasi Nilai Prospek (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Perkiraan nominal anggaran atau nilai potensi kesepakatan transaksi."
+      },
+      {
+        "name": "Tab Tampilan Kanban / Tabel",
+        "type": "Tab Navigasi",
+        "description": "Beralih antara visualisasi papan kartu geser (Kanban Pipeline) atau daftar baris tabel analitik."
+      },
+      {
+        "name": "Tombol 'Konversi ke Pelanggan'",
+        "type": "Tombol",
+        "description": "Mengubah status prospek yang sudah 'Deal' menjadi master data Customer resmi."
+      }
     ],
-    tipsAndTricks: [
-      "Gunakan Sales Order saat transaksi bernilai besar atau membutuhkan waktu beberapa hari sebelum pengiriman."
+    "keyFeatures": [
+      {
+        "name": "Pipeline Visual Kanban",
+        "description": "Memudahkan pemindahan status prospek hanya dengan metode drag and drop."
+      },
+      {
+        "name": "Log Aktivitas Follow-up",
+        "description": "Pencatatan panggilan telepon, janji temu demo produk, dan catatan negosiasi."
+      },
+      {
+        "name": "Konversi Otomatis 1-Klik",
+        "description": "Menyalin otomatis kontak prospek menjadi data Customer tanpa ketik ulang."
+      },
+      {
+        "name": "Analitik Lead Source",
+        "description": "Laporan persentase closing rate berdasarkan kanal marketing yang paling efektif."
+      }
     ],
-    faq: [
-      { question: "Kapan saya harus pakai SO dibanding langsung Invoice?", answer: "Gunakan SO jika barang perlu waktu disiapkan/dikemas dulu oleh tim gudang sebelum dikirim dan ditagih." }
+    "tipsAndTricks": [
+      "Selalu catat tanggal estimasi closing untuk membantu proyeksi arus kas bulan depan.",
+      "Gunakan fitur filter Sales Representative untuk mengevaluasi kinerja masing-masing sales person."
+    ],
+    "faq": [
+      {
+        "question": "Apa perbedaan data Prospek (Leads) dengan Pelanggan (Customer)?",
+        "answer": "Prospek adalah kontak yang masih dalam tahap penjajakan/penawaran. Pelanggan adalah entitas yang sudah resmi melakukan transaksi atau terikat kontrak."
+      },
+      {
+        "question": "Jika status prospek diubah ke 'Lost', apakah datanya terhapus?",
+        "answer": "Tidak. Data tetap disimpan sebagai riwayat analitik kegagalan prospek agar dapat di-follow up ulang di masa depan."
+      },
+      {
+        "question": "Bisakah mengekspor daftar prospek ke format Excel?",
+        "answer": "Ya, klik tombol 'Export Excel' di pojok kanan atas tabel data prospek."
+      }
     ]
   },
-
-  // 6. DELIVERY ORDERS (SURAT JALAN)
   {
-    id: "delivery",
-    menuKey: "delivery",
-    title: "Surat Jalan & Pengiriman (Delivery)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "Truck",
-    badge: "Logistik",
-    targetRole: "Gudang / Kurir / Admin",
-    path: "/delivery",
-    summary: "Pembuatan surat jalan pengiriman barang, detail armada/driver, nomor resi, dan konfirmasi penerimaan pelanggan.",
-    overview: "Surat Jalan (Delivery Order / DO) adalah dokumen wajib yang dibawa oleh kurir atau supir saat mengirimkan barang pesanan ke lokasi pelanggan sebagai bukti sah pengeluaran dan penyerahan barang.",
-    workflow: [
+    "id": "quotation",
+    "menuKey": "quotation",
+    "title": "Surat Penawaran Harga (Quotation)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "FileSpreadsheet",
+    "badge": "Penawaran",
+    "targetRole": "Sales / Estimator / Admin / Owner",
+    "path": "/quotation",
+    "summary": "Penyusunan estimasi harga formal kepada klien, masa berlaku penawaran, dan konversi instan ke Sales Order atau Invoice.",
+    "overview": "Quotation adalah dokumen resmi penawaran harga dan spesifikasi barang/jasa sebelum klien memutuskan membeli. Sistem memudahkan pembuatan penawaran profesional berlogo, bertanda tangan digital, dengan perhitungan pajak dan diskon otomatis.",
+    "workflow": [
       {
-        step: 1,
-        title: "Buat Surat Jalan",
-        description: "Pilih Sales Order atau Invoice yang akan dikirim, tentukan kuantitas barang yang diberangkatkan.",
-        screenshotPlaceholder: {
-          caption: "Pembuatan Surat Jalan Pengiriman",
-          description: "Screenshot formulir DO dengan pemilihan alamat tujuan, nama driver, dan plat nomor kendaraan."
+        "step": 1,
+        "title": "Buat Penawaran Baru",
+        "description": "Klik '+ Buat Penawaran', pilih nama pelanggan, nomor referensi, tanggal dokumen, dan masa berlaku (valid until).",
+        "screenshotPlaceholder": {
+          "caption": "Form Pembuatan Surat Penawaran",
+          "description": "Screenshot pengisian daftar item barang, harga penawaran, dan syarat pembayaran."
         }
       },
       {
-        step: 2,
-        title: "Cetak Surat Jalan Rangkap",
-        description: "Cetak dokumen Surat Jalan dalam format A4/A5 untuk dibawa oleh pengemudi dan ditandatangani penerima barang.",
-        tip: "Surat jalan biasanya dicetak 2-3 rangkap (untuk arsip gudang, finance, dan tanda terima pelanggan)."
+        "step": 2,
+        "title": "Tambahkan Rincian Produk & Biaya",
+        "description": "Pilih item dari katalog barang/jasa, tentukan kuantitas, harga khusus penawaran, diskon bertingkat, dan opsi pajak PPN.",
+        "tip": "Anda juga dapat mengetik item kustom non-katalog secara langsung."
       },
       {
-        step: 3,
-        title: "Konfirmasi Penerimaan (Delivered)",
-        description: "Setelah barang diterima, perbarui status menjadi 'Terkirim / Diterima' dan upload foto bukti tanda terima fisik.",
-        screenshotPlaceholder: {
-          caption: "Format Cetak Surat Jalan Resmi",
-          description: "Screenshot pratinjau cetak surat jalan dengan kolom tanda tangan pengirim, supir, dan penerima."
+        "step": 3,
+        "title": "Kirim Dokumen & Cetak PDF",
+        "description": "Simpan dokumen penawaran. Cetak menjadi PDF berdesain elegan atau kirim link penawaran online melalui WhatsApp/Email.",
+        "screenshotPlaceholder": {
+          "caption": "Preview PDF Surat Penawaran Resmi",
+          "description": "Screenshot layout PDF surat penawaran dengan kop surat dan syarat ketentuan."
+        }
+      },
+      {
+        "step": 4,
+        "title": "Konversi ke Sales Order / Invoice",
+        "description": "Saat pelanggan menyetujui penawaran, klik tombol 'Konversi ke Invoice' atau 'Buat Sales Order' untuk memproses pesanan tanpa ketik ulang.",
+        "tip": "Status penawaran akan otomatis berubah menjadi Disetujui (Accepted)."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Buat Penawaran'",
+        "type": "Tombol",
+        "description": "Membuka lembar kerja pembuatan surat penawaran harga baru."
+      },
+      {
+        "name": "Dropdown 'Pilih Pelanggan'",
+        "type": "Dropdown",
+        "description": "Memilih customer tujuan. Alamat dan kontak akan otomatis terisi pada kop penawaran."
+      },
+      {
+        "name": "Kolom 'Nomor Penawaran'",
+        "type": "Kolom Isian",
+        "description": "Nomor seri otomatis (misal: SPH/2026/08/001) yang formatnya dapat dikustomisasi di Pengaturan."
+      },
+      {
+        "name": "Kolom 'Tanggal Dokumen & Masa Berlaku'",
+        "type": "Kolom Isian",
+        "description": "Batas akhir keberlakuan harga penawaran (misal berlaku 14 hari kerja)."
+      },
+      {
+        "name": "Tabel Item Penawaran",
+        "type": "Tabel Data",
+        "description": "Tabel input produk/jasa, deskripsi rincian, jumlah volume, satuan, harga per unit, diskon %, dan total."
+      },
+      {
+        "name": "Toggle 'Kenakan PPN (Pajak)'",
+        "type": "Toggle / Switch",
+        "description": "Mengaktifkan perhitungan otomatis PPN (11% atau tarif kustom) pada subtotal penawaran."
+      },
+      {
+        "name": "Kolom 'Syarat & Ketentuan (Terms)'",
+        "type": "Kolom Isian",
+        "description": "Catatan khusus garansi, metode pengiriman, ketentuan DP, dan nomor rekening pembayaran."
+      },
+      {
+        "name": "Tombol 'Konversi ke Invoice / Sales Order'",
+        "type": "Tombol",
+        "description": "Mengubah penawaran menjadi tagihan faktur penjualan resmi secara otomatis."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Generator PDF Profesional",
+        "description": "Mencetak dokumen penawaran siap kirim dengan logo usaha, watermark status, dan tanda tangan."
+      },
+      {
+        "name": "Pelacakan Status Penawaran",
+        "description": "Status Draft, Terkirim, Diterima (Accepted), Ditolak (Rejected), dan Kedaluwarsa (Expired)."
+      },
+      {
+        "name": "Konversi Instan ke Invoice",
+        "description": "Menghemat waktu administrasi tanpa risiko kesalahan ketik ulang nominal barang."
+      },
+      {
+        "name": "Kirim via WhatsApp",
+        "description": "Menyediakan tautan langsung untuk mengirim pesan WA berisi ringkasan penawaran kepada klien."
+      }
+    ],
+    "tipsAndTricks": [
+      "Selalu isi masa berlaku penawaran untuk melindungi margin bisnis Anda dari fluktuasi harga bahan baku.",
+      "Gunakan template syarat & ketentuan default di menu Pengaturan agar tidak perlu mengetik ulang setiap kali membuat penawaran."
+    ],
+    "faq": [
+      {
+        "question": "Apakah penawaran harga akan memotong stok barang di gudang?",
+        "answer": "Tidak. Quotation hanya berupa penawaran harga administratif dan tidak mempengaruhi jumlah stok fisik gudang."
+      },
+      {
+        "question": "Bagaimana jika klien meminta revisi harga pada penawaran?",
+        "answer": "Buka detail penawaran, klik tombol 'Edit Penawaran', lakukan penyesuaian harga item, lalu simpan dan cetak ulang revisi dokumen."
+      },
+      {
+        "question": "Apakah penawaran yang sudah dikonversi ke Invoice bisa diedit?",
+        "answer": "Bisa, namun sebaiknya revisi dilakukan pada dokumen Invoice hasil konversinya agar sinkron dengan bagian keuangan."
+      }
+    ]
+  },
+  {
+    "id": "sales",
+    "menuKey": "sales",
+    "title": "Pesanan Penjualan (Sales Orders)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "ClipboardCheck",
+    "badge": "Pesanan",
+    "targetRole": "Sales / Warehouse / Admin",
+    "path": "/sales",
+    "summary": "Pencatatan pesanan resmi dari pembeli sebelum barang dikirim dan faktur diterbitkan.",
+    "overview": "Sales Order (SO) berfungsi sebagai bukti kesepakatan pemesanan barang/jasa dari pelanggan. SO menjadi rujukan bagi tim gudang untuk menyiapkan pengiriman (Surat Jalan) dan bagian keuangan untuk menerbitkan faktur.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Buat Sales Order Baru",
+        "description": "Klik '+ Buat Pesanan', pilih pelanggan dan masukkan item barang yang dipesan beserta jadwal pengiriman yang diminta.",
+        "screenshotPlaceholder": {
+          "caption": "Form Sales Order",
+          "description": "Screenshot pembuatan Sales Order dari konversi penawaran atau input manual."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Verifikasi Ketersediaan Stok",
+        "description": "Sistem akan menampilkan indikator ketersediaan stok fisik di gudang untuk setiap item yang dipesan.",
+        "tip": "Jika stok tidak mencukupi, sistem akan memberi opsi untuk membuat Purchase Order ke supplier."
+      },
+      {
+        "step": 3,
+        "title": "Proses Pengiriman (Surat Jalan)",
+        "description": "Klik tombol 'Buat Surat Jalan / Delivery Order' untuk menginstruksikan tim gudang dan kurir melakukan pengantaran barang.",
+        "screenshotPlaceholder": {
+          "caption": "Status Pemenuhan Pesanan (Fulfillment)",
+          "description": "Screenshot progress pengiriman sebagian (Partial Delivery) atau selesai penuh."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Partial Delivery", description: "Mendukung pengiriman bertahap (sebagian barang dikirim hari ini, sisanya besok)." },
-      { name: "Pengurangan Stok Fisik", description: "Mengurangi saldo stok gudang tepat saat status surat jalan diberangkatkan." },
-      { name: "Bukti Foto Penerimaan", description: "Kemampuan melampirkan foto tanda terima atau tanda tangan digital penerima." }
-    ],
-    tipsAndTricks: [
-      "Pastikan driver selalu meminta stempel atau tanda tangan jelas nama penerima di lembar surat jalan fisik."
-    ],
-    faq: [
-      { question: "Apakah bisa kirim barang dari 1 SO menjadi 2 Surat Jalan terpisah?", answer: "Bisa, Anda cukup memasukkan kuantitas sesuai yang siap dikirim saat membuat Surat Jalan pertama, lalu buat DO kedua untuk sisanya." }
-    ]
-  },
-
-  // 7. INVOICE
-  {
-    id: "invoice",
-    menuKey: "invoice",
-    title: "Faktur & Penagihan (Invoices)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "FileText",
-    badge: "Finansial Utama",
-    targetRole: "Finance / Sales / Admin / Owner",
-    path: "/invoice",
-    summary: "Pembuatan tagihan penjualan resmi, pengingat jatuh tempo, pengiriman invoice online, dan pelacakan pembayaran.",
-    overview: "Modul Faktur (Invoice) adalah inti dari penerbitan tagihan komersial kepada klien. Dilengkapi dengan nomor invoice otomatis, perhitungan pajak (PPN), diskon, pilihan rekening bank tujuan transfer, tautan publik tagihan, dan rekonsiliasi pembayaran.",
-    workflow: [
+    "uiGuide": [
       {
-        step: 1,
-        title: "Buat Faktur Baru",
-        description: "Klik '+ Buat Invoice' di menu Invoice atau tombol cepat di pojok kanan atas layar.",
-        screenshotPlaceholder: {
-          caption: "Formulir Pembuatan Invoice Lengkap",
-          description: "Screenshot halaman input invoice dengan pilihan pelanggan, rincian barang, termin pembayaran, dan rekening bank."
-        }
+        "name": "Tombol '+ Buat Sales Order'",
+        "type": "Tombol",
+        "description": "Membuka formulir input pesanan penjualan baru."
       },
       {
-        step: 2,
-        title: "Isi Rincian Tagihan & Jatuh Tempo",
-        description: "Pilih nama pelanggan, tanggal terbit, tanggal jatuh tempo (Due Date), pilih produk/jasa, dan tentukan PPN jika ada.",
-        tip: "Gunakan fitur 'Termin Pembayaran' seperti Net 14 atau Net 30 agar tanggal jatuh tempo terhitung otomatis."
+        "name": "Kolom 'Nomor SO'",
+        "type": "Kolom Isian",
+        "description": "Nomor referensi pesanan penjualan (misal: SO-2026-0012)."
       },
       {
-        step: 3,
-        title: "Kirim Invoice ke Pelanggan",
-        description: "Gunakan tombol 'Kirim WhatsApp' untuk mengirim pesan dan link invoice langsung ke WhatsApp pelanggan, atau 'Cetak PDF'.",
-        screenshotPlaceholder: {
-          caption: "Pratinjau Dokumen Invoice & Tombol Bagikan WhatsApp",
-          description: "Screenshot tampilan invoice siap kirim dengan tombol Share WA, Download PDF, dan Catat Bayar."
-        }
+        "name": "Dropdown 'Pilih Gudang Pengeluaran'",
+        "type": "Dropdown",
+        "description": "Menentukan gudang asal barang yang akan dialokasikan untuk pesanan ini."
       },
       {
-        step: 4,
-        title: "Pencatatan Pembayaran",
-        description: "Ketika pelanggan mentransfer, klik 'Catat Pembayaran', masukkan jumlah diterima dan rekening tujuan (BCA, Mandiri, Kas Tunai).",
-        tip: "Status invoice otomatis berganti dari 'Belum Dibayar' (Unpaid) -> 'Dibayar Sebagian' (Partial) -> 'Lunas' (Paid)."
+        "name": "Badge Status Pemenuhan (Fulfillment)",
+        "type": "Badge Status",
+        "description": "Menunjukkan status logistik pesanan: Menunggu Diproses, Dikirim Sebagian (Partial), atau Selesai Dikirim (Fulfilled)."
+      },
+      {
+        "name": "Tombol 'Buat Surat Jalan (DO)'",
+        "type": "Tombol",
+        "description": "Menerbitkan surat jalan pengiriman untuk tim logistik."
+      },
+      {
+        "name": "Tombol 'Terbitkan Invoice'",
+        "type": "Tombol",
+        "description": "Membuat tagihan faktur penjualan berdasarkan item yang telah dipesan."
       }
     ],
-    keyFeatures: [
-      { name: "Nomor Faktur Otomatis", description: "Format nomor invoice yang fleksibel dan berurutan sesuai pola konfigurasi usaha." },
-      { name: "Public Invoice Link", description: "Tautan online unik yang bisa diakses pelanggan langsung dari HP untuk melihat tagihan & bukti bayar." },
-      { name: "Dukungan Multi-Termin (DP / Termin)", description: "Fleksibilitas pembayaran bertahap (Down Payment) hingga pelunasan akhir." },
-      { name: "Cetak Format Dot Matrix & Laser PDF", description: "Pilihan cetak format kertas continuous form dot matrix atau format PDF modern." }
-    ],
-    tipsAndTricks: [
-      "Tambahkan catatan rekening bank dan QRIS statis perusahaan pada catatan kaki invoice agar klien mudah mentransfer."
-    ],
-    faq: [
-      { question: "Bagaimana cara membatalkan invoice yang salah?", answer: "Buka detail invoice, lalu pilih menu Opsi -> Batalkan Invoice (Void). Invoice batal tidak akan dihitung dalam laporan keuangan." }
-    ]
-  },
-
-  // 8. NOTA JATUH TEMPO
-  {
-    id: "invoice_due",
-    menuKey: "invoice",
-    title: "Peringatan Jatuh Tempo (Due Alerts)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "Clock",
-    badge: "Monitoring Piutang",
-    targetRole: "Finance / Collector / Admin",
-    path: "/invoice/due",
-    summary: "Monitoring terpusat invoice yang telah melewati batas tanggal jatuh tempo untuk mempercepat penagihan piutang.",
-    overview: "Halaman ini menyaring semua tagihan yang terlambat dibayar (Overdue) dan yang mendekati tanggal jatuh tempo dalam 3-7 hari ke depan. Membantu tim finance dan penagihan melakukan follow-up tepat waktu.",
-    workflow: [
+    "keyFeatures": [
       {
-        step: 1,
-        title: "Periksa Daftar Tagihan Jatuh Tempo",
-        description: "Lihat daftar invoice yang diurutkan berdasarkan hari keterlambatan (Overdue Days: 1-30 hari, 31-60 hari, >90 hari).",
-        screenshotPlaceholder: {
-          caption: "Tabel Monitoring Nota Jatuh Tempo",
-          description: "Screenshot daftar piutang jatuh tempo dengan badge warna merah untuk tagihan kritis."
-        }
+        "name": "Alokasi Stok Otomatis",
+        "description": "Mengunci kuantitas stok barang agar tidak terjual ganda ke pelanggan lain."
       },
       {
-        step: 2,
-        title: "Kirim Pengingat Tagihan (Reminder)",
-        description: "Klik tombol 'Kirim Pengingat WhatsApp' untuk mengirimkan template pesan pengingat sopan beserta link invoice ke pelanggan.",
-        tip: "Pesan WhatsApp sudah terisi otomatis nama pelanggan, nomor nota, nominal tagihan, dan nomor rekening."
+        "name": "Pengiriman Parsial (Partial Fulfillment)",
+        "description": "Mendukung pengiriman bertahap jika barang dikirim dalam beberapa kali pengantaran."
+      },
+      {
+        "name": "Integrasi Dokumen Lengkap",
+        "description": "Tautan otomatis dari Prospek -> Penawaran -> Sales Order -> Surat Jalan -> Invoice."
       }
     ],
-    keyFeatures: [
-      { name: "Pengelompokan Umur Piutang (Aging AR)", description: "Melihat kesehatan arus kas berdasarkan umur keterlambatan tagihan." },
-      { name: "One-Click WhatsApp Reminder", description: "Mengirim template pesan pengingat tagihan ramah dalam satu sentuhan." }
+    "tipsAndTricks": [
+      "Periksa kolom 'Status Pengiriman' secara berkala untuk memantau pesanan yang belum terkirim ke pelanggan.",
+      "Gunakan catatan internal untuk menginformasikan instruksi packing khusus kepada tim gudang."
     ],
-    tipsAndTricks: [
-      "Lakukan follow-up rutin setiap hari Senin atau awal bulan untuk meminimalkan piutang macet (bad debts)."
-    ],
-    faq: [
-      { question: "Apakah ada biaya tambahan untuk mengirim pengingat WhatsApp?", answer: "Pengiriman menggunakan tautan WhatsApp Web / Aplikasi langsung dari perangkat Anda tanpa biaya SMS gateway." }
-    ]
-  },
-
-  // 9. PEMBAYARAN & BUKTI BAYAR
-  {
-    id: "payment",
-    menuKey: "payment",
-    title: "Penerimaan Pembayaran & Bukti Transfer",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "CreditCard",
-    badge: "Kas Masuk",
-    targetRole: "Finance / Kasir / Admin",
-    path: "/payment",
-    summary: "Pencatatan riwayat transaksi kas masuk, verifikasi bukti transfer yang diunggah pelanggan, dan kuitansi penerimaan.",
-    overview: "Modul Pembayaran menyimpan seluruh mutasi kas masuk yang diterima dari pelanggan. Selain itu, modul ini memiliki fitur verifikasi bukti transfer (Proof of Payment) yang diunggah oleh pelanggan melalui link invoice publik.",
-    workflow: [
+    "faq": [
       {
-        step: 1,
-        title: "Verifikasi Bukti Transfer Masuk",
-        description: "Periksa tab 'Menunggu Verifikasi'. Klik pada bukti transfer yang dikirim pelanggan untuk memeriksa keaslian struk bank.",
-        screenshotPlaceholder: {
-          caption: "Persetujuan Bukti Transfer Pelanggan",
-          description: "Screenshot pratinjau foto struk transfer pelanggan dengan tombol 'Setujui Pembayaran' dan 'Tolak'."
-        }
+        "question": "Kapan stok barang resmi berkurang?",
+        "answer": "Stok barang resmi berkurang dari gudang saat Surat Jalan (Delivery Order) berstatus Terkirim atau saat Invoice POS diterbitkan."
       },
       {
-        step: 2,
-        title: "Setujui & Terbitkan Kuitansi",
-        description: "Klik 'Setujui', pilih akun kas/bank penampung (misal: Bank BCA Bisnis). Sistem akan otomatis memperbarui status invoice menjadi Lunas.",
-        tip: "Kuitansi penerimaan pembayaran resmi dapat langsung dicetak atau dikirim ke WhatsApp pelanggan."
+        "question": "Bisakah satu Sales Order dibuatkan beberapa Surat Jalan?",
+        "answer": "Bisa. Anda dapat mengirimkan sebagian kuantitas terlebih dahulu, dan sisanya dibuatkan surat jalan kedua."
       }
-    ],
-    keyFeatures: [
-      { name: "Customer Self-Service Upload", description: "Pelanggan bisa langsung upload struk transfer lewat link invoice tanpa login." },
-      { name: "Cetak Kuitansi Resmi", description: "Format kuitansi pembayaran dengan terbilang nominal otomatis dalam bahasa Indonesia." }
-    ],
-    tipsAndTricks: [
-      "Selalu cocokkan mutasi di m-Banking sebelum menekan tombol setujui bukti transfer."
-    ],
-    faq: [
-      { question: "Apa yang terjadi jika pembayaran ditolak?", answer: "Jika ditolak, invoice tetap berstatus Unpaid dan pelanggan dapat mengunggah bukti transfer baru yang benar." }
     ]
   },
-
-  // 10. CUSTOMERS
   {
-    id: "customer",
-    menuKey: "customer",
-    title: "Data Pelanggan (Customers)",
-    category: "Penjualan & Piutang",
-    categoryId: "sales",
-    iconName: "Users",
-    badge: "Master Data",
-    targetRole: "Sales / Finance / Admin",
-    path: "/customer",
-    summary: "Database pelanggan, riwayat seluruh transaksi, total piutang berjalan, limit kredit, dan kontak penagihan.",
-    overview: "Master Pelanggan adalah pusat data seluruh klien Anda. Di sini Anda dapat melihat profil lengkap pelanggan, NPWP, alamat pengiriman, nomor PIC, riwayat pembelian, serta saldo total piutang yang masih belum dibayar.",
-    workflow: [
+    "id": "delivery",
+    "menuKey": "delivery",
+    "title": "Surat Jalan & Pengiriman (Delivery Orders)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "Truck",
+    "badge": "Logistik",
+    "targetRole": "Gudang / Kurir / Logistik / Admin",
+    "path": "/delivery",
+    "summary": "Dokumen pengantar barang resmi, instruksi pengemasan ekspedisi, bukti serah terima, dan pemotongan stok fisik.",
+    "overview": "Surat Jalan (Delivery Order / DO) adalah dokumen sah yang menyertai barang saat dikirim dari gudang menuju alamat penerima. Dokumen ini memuat detail barang tanpa menampilkan nominal harga dan dilengkapi kolom tanda tangan kurir serta penerima barang.",
+    "workflow": [
       {
-        step: 1,
-        title: "Tambah Pelanggan Baru",
-        description: "Klik '+ Tambah Pelanggan', lengkapi Nama Usaha/Individu, Nomor WhatsApp, Email, Alamat Lengkap, dan NPWP (opsional).",
-        screenshotPlaceholder: {
-          caption: "Form Pendaftaran Pelanggan",
-          description: "Screenshot formulir input master data pelanggan baru."
+        "step": 1,
+        "title": "Buat Surat Jalan dari Pesanan",
+        "description": "Pilih nomor Sales Order atau buat pengiriman langsung, pilih alamat pengantaran dan nama armada/kurir pengirim.",
+        "screenshotPlaceholder": {
+          "caption": "Form Surat Jalan Pengiriman",
+          "description": "Screenshot rincian barang yang akan dimuat ke kendaraan dan nama driver/ekspedisi."
         }
       },
       {
-        step: 2,
-        title: "Atur Limit Piutang & Termin Default",
-        description: "Tentukan batas maksimal plafon piutang (Credit Limit) dan jangka waktu pembayaran default (misal: Net 30).",
-        tip: "Sistem akan memberi peringatan jika pelanggan mencoba membuat order baru saat piutangnya melebihi limit."
+        "step": 2,
+        "title": "Cetak Surat Jalan Fisik",
+        "description": "Cetak rangkap dokumen (untuk arsip gudang, kurir, dan tanda terima pelanggan) dan serahkan bersama barang kepada kurir.",
+        "tip": "Format cetak telah dioptimasi untuk printer continuous form Dot Matrix maupun printer laser A4."
       },
       {
-        step: 3,
-        title: "Lihat Buku Pembantu Piutang (Statement of Account)",
-        description: "Buka profil pelanggan untuk melihat kartu piutang pelanggan (seluruh invoice vs pembayaran yang pernah dilakukan).",
-        screenshotPlaceholder: {
-          caption: "Kartu Profil Pelanggan & Riwayat Transaksi",
-          description: "Screenshot halaman detail pelanggan yang menampilkan riwayat invoice, pembayaran, dan sisa piutang."
+        "step": 3,
+        "title": "Konfirmasi Serah Terima (POD)",
+        "description": "Setelah barang sampai dan ditandatangani pelanggan, ubah status menjadi 'Terkirim / Selesai' dan unggah foto bukti serah terima (Proof of Delivery).",
+        "screenshotPlaceholder": {
+          "caption": "Konfirmasi Bukti Penerimaan Barang",
+          "description": "Screenshot status Surat Jalan yang telah ditandatangani dan selesai."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Buku Pembantu Piutang (Customer Ledger)", description: "Daftar mutasi saldo debit/kredit per pelanggan secara transparan." },
-      { name: "Plafon Kredit (Credit Limit)", description: "Mencegah terjadinya piutang macet dengan membatasi nilai transaksi tertunda." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Buat Surat Jalan'",
+        "type": "Tombol",
+        "description": "Membuka formulir pembuatan dokumen pengiriman baru."
+      },
+      {
+        "name": "Kolom 'Nomor Surat Jalan'",
+        "type": "Kolom Isian",
+        "description": "Nomor identifikasi surat jalan (misal: SJ/2026/08/005)."
+      },
+      {
+        "name": "Kolom 'Nama Pengemudi / Ekspedisi'",
+        "type": "Kolom Isian",
+        "description": "Nama driver internal atau nama ekspedisi pihak ketiga (JNE, J&T, SiCepat, Lalamove, dll)."
+      },
+      {
+        "name": "Kolom 'Nomor Plat Kendaraan / No Resi'",
+        "type": "Kolom Isian",
+        "description": "Nomor plat mobil pengantar atau nomor resi pelacakan ekspedisi."
+      },
+      {
+        "name": "Tabel Item Pengiriman",
+        "type": "Tabel Data",
+        "description": "Daftar barang dan kuantitas fisik yang dimasukkan ke dalam armada pengiriman."
+      },
+      {
+        "name": "Tombol 'Cetak Surat Jalan (A4 / Dot Matrix)'",
+        "type": "Tombol",
+        "description": "Mencetak dokumen resmi surat jalan 3 rangkap untuk serah terima fisik."
+      },
+      {
+        "name": "Tombol 'Konfirmasi Diterima'",
+        "type": "Tombol",
+        "description": "Mengubah status surat jalan menjadi 'Selesai' setelah ditandatangani oleh penerima."
+      }
     ],
-    tipsAndTricks: [
-      "Simpan nomor WhatsApp PIC penagihan terpisah dari PIC teknis agar pengiriman nota tagihan langsung tepat sasaran."
+    "keyFeatures": [
+      {
+        "name": "Cetak Standar Industri",
+        "description": "Layout siap cetak tanpa nominal harga untuk menjaga kerahasiaan harga saat diantar kurir."
+      },
+      {
+        "name": "Pelacakan No Resi & Armada",
+        "description": "Pencatatan nomor kendaraan dan resi ekspedisi untuk monitoring status kiriman."
+      },
+      {
+        "name": "Pengurangan Stok Riil",
+        "description": "Mengurangi saldo inventaris gudang secara akurat pada saat pengiriman divalidasi."
+      }
     ],
-    faq: [
-      { question: "Bisakah mengimpor data pelanggan dari Excel?", answer: "Bisa, gunakan tombol 'Import Data' di pojok kanan atas tabel pelanggan dengan template CSV yang disediakan." }
+    "tipsAndTricks": [
+      "Pastikan selalu meminta tanda tangan dan stempel basah penerima pada lembar kedua surat jalan sebagai bukti penagihan invoice.",
+      "Gunakan fitur lampiran foto untuk mengunggah foto paket yang telah diterima customer di lokasi."
+    ],
+    "faq": [
+      {
+        "question": "Apakah harga produk ditampilkan di lembar Surat Jalan?",
+        "answer": "Secara default tidak. Surat Jalan difokuskan untuk bagian logistik dan penerima gudang sehingga hanya menampilkan kuantitas, deskripsi barang, dan nomor seri."
+      },
+      {
+        "question": "Bagaimana jika ada barang yang rusak atau ditolak saat sampai?",
+        "answer": "Ubah kuantitas barang yang diterima di sistem, dan buatkan Surat Jalan pengganti atau catat retur penjualan."
+      }
     ]
   },
-
-  // 11. PROJECTS
   {
-    id: "project",
-    menuKey: "project",
-    title: "Manajemen Proyek (Projects)",
-    category: "Proyek & Operasional",
-    categoryId: "project",
-    iconName: "Briefcase",
-    badge: "Operasional",
-    targetRole: "Project Manager / Admin / Owner",
-    path: "/project",
-    summary: "Pelacakan alur kerja proyek, tahapan milestone, biaya bahan/operasional proyek, dan profitabilitas per proyek.",
-    overview: "Modul Proyek dirancang untuk usaha berbasis pengerjaan (kontraktor, jasa IT, event organizer, percetakan khusus). Modul ini mengaitkan invoice penjualan dengan pengeluaran belanja riil untuk menghitung laba bersih aktual per proyek.",
-    workflow: [
+    "id": "invoice",
+    "menuKey": "invoice",
+    "title": "Faktur Penjualan (Invoices)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "FileText",
+    "badge": "Penagihan",
+    "targetRole": "Finance / Admin / Owner",
+    "path": "/invoice",
+    "summary": "Penerbitan faktur tagihan resmi, perhitungan jatuh tempo, pajak PPN, pengiriman tagihan WhatsApp, dan pelacakan pembayaran.",
+    "overview": "Modul Invoice adalah inti dari pencatatan piutang dan arus kas penjualan usaha Anda. Anda dapat menerbitkan faktur dengan berbagai opsi termin pembayaran (Cash on Delivery, Net 7, Net 15, Net 30, Net 60), menambahkan diskon, biaya ongkos kirim, serta memantau status lunas/terlambat.",
+    "workflow": [
       {
-        step: 1,
-        title: "Buat Proyek Baru",
-        description: "Klik '+ Proyek Baru', beri nama proyek, hubungkan ke Pelanggan, tentukan nilai kontrak dan tanggal target selesai.",
-        screenshotPlaceholder: {
-          caption: "Daftar Proyek Aktif",
-          description: "Screenshot daftar proyek dengan bar persentase progress pengerjaan."
+        "step": 1,
+        "title": "Buat Invoice Baru",
+        "description": "Klik '+ Buat Invoice', pilih pelanggan, tentukan tanggal invoice, dan pilih termin pembayaran (misal: Net 30).",
+        "screenshotPlaceholder": {
+          "caption": "Form Pembuatan Invoice Tagihan",
+          "description": "Screenshot pengisian formulir invoice baru dengan nomor seri dan rincian produk."
         }
       },
       {
-        step: 2,
-        title: "Catat Pengeluaran Khusus Proyek",
-        description: "Setiap kali membeli bahan baku atau membayar tukang/subkontraktor, kaitkan biaya (Expense/PO) ke nama proyek ini.",
-        tip: "Sistem akan otomatis mengalkulasi total biaya riil (Cost of Goods Sold) untuk proyek tersebut."
+        "step": 2,
+        "title": "Input Rincian Barang / Jasa",
+        "description": "Tambahkan barang dari katalog atau ketik deskripsi pekerjaan jasa, tentukan harga, diskon, dan centang PPN jika dikenakan pajak.",
+        "tip": "Sistem otomatis menghitung subtotal, diskon global, pajak, dan grand total penagihan."
       },
       {
-        step: 3,
-        title: "Pantau Profitabilitas Proyek",
-        description: "Lihat kartu keuangan proyek: Nilai Kontrak - Total Biaya Riil = Keuntungan Bersih Proyek (Net Margin).",
-        screenshotPlaceholder: {
-          caption: "Detail Keuangan & Milestone Proyek",
-          description: "Screenshot dashboard proyek yang membandingkan pendapatan tagihan vs biaya operasional yang dikeluarkan."
+        "step": 3,
+        "title": "Kirim Tagihan ke Pelanggan",
+        "description": "Simpan invoice, lalu klik 'Kirim WhatsApp' untuk mengirim pesan pengingat tagihan dengan link invoice online atau cetak PDF.",
+        "screenshotPlaceholder": {
+          "caption": "Dokumen Faktur PDF & Opsi Pembayaran",
+          "description": "Screenshot PDF Invoice resmi lengkap dengan instruksi transfer bank dan QRIS."
+        }
+      },
+      {
+        "step": 4,
+        "title": "Catat Pembayaran Masuk",
+        "description": "Saat pelanggan mentransfer dana, klik tombol 'Catat Pembayaran', pilih akun bank penampung, dan masukkan nominal yang diterima.",
+        "tip": "Status invoice akan otomatis berubah menjadi 'Lunas (Paid)' atau 'Dibayar Sebagian (Partial)'."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Buat Invoice'",
+        "type": "Tombol",
+        "description": "Membuka halaman formulir pembuatan faktur tagihan penjualan baru."
+      },
+      {
+        "name": "Dropdown 'Pilih Pelanggan'",
+        "type": "Dropdown",
+        "description": "Memilih customer tujuan tagihan. Data email, alamat, dan nomor HP akan terisi otomatis."
+      },
+      {
+        "name": "Kolom 'Nomor Invoice'",
+        "type": "Kolom Isian",
+        "description": "Nomor seri faktur unik (misal: INV-202608-0021) dengan format penomoran otomatis."
+      },
+      {
+        "name": "Dropdown 'Termin Pembayaran (Terms)'",
+        "type": "Dropdown",
+        "description": "Ketentuan jatuh tempo pembayaran (Jatuh Tempo Langsung, Net 7, Net 14, Net 30, Net 60, Akhir Bulan)."
+      },
+      {
+        "name": "Kolom 'Tanggal Jatuh Tempo (Due Date)'",
+        "type": "Kolom Isian",
+        "description": "Tanggal batas akhir pembayaran yang dihitung otomatis dari termin atau ditentukan manual."
+      },
+      {
+        "name": "Tabel Item Tagihan",
+        "type": "Tabel Data",
+        "description": "Daftar produk/jasa yang ditagihkan lengkap dengan kolom Kuantitas, Satuan, Harga Unit, Diskon, dan Subtotal."
+      },
+      {
+        "name": "Toggle 'Kenakan PPN (Pajak Penjualan)'",
+        "type": "Toggle / Switch",
+        "description": "Mengaktifkan pajak pertambahan nilai (PPN) secara otomatis pada total tagihan."
+      },
+      {
+        "name": "Kolom 'Biaya Pengiriman / Tambahan'",
+        "type": "Kolom Isian",
+        "description": "Nominal ongkos kirim atau biaya penanganan tambahan di luar harga produk."
+      },
+      {
+        "name": "Kolom 'Catatan & Rekening Bank'",
+        "type": "Kolom Isian",
+        "description": "Instruksi transfer bank penerima (BCA, Mandiri, dll) dan pesan terima kasih kepada klien."
+      },
+      {
+        "name": "Tombol 'Catat Pembayaran (Pay)'",
+        "type": "Tombol",
+        "description": "Membuka modal pencatatan bukti transfer atau pembayaran tunai dari pelanggan."
+      },
+      {
+        "name": "Tombol 'Kirim WhatsApp'",
+        "type": "Tombol",
+        "description": "Membuka WhatsApp Web / Aplikasi dengan draf pesan penagihan dan tautan faktur."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Portal Invoice Online",
+        "description": "Pelanggan dapat membuka link tagihan interaktif dan mengunduh struk nota secara mandiri."
+      },
+      {
+        "name": "Pengingat Jatuh Tempo Otomatis",
+        "description": "Notifikasi visual untuk faktur yang mendekati atau telah melewati batas jatuh tempo."
+      },
+      {
+        "name": "Pembayaran Bertahap (Cicilan)",
+        "description": "Mencatat pembayaran termin/DP bertahap hingga seluruh sisa saldo lunas."
+      },
+      {
+        "name": "Integrasi Jurnal Keuangan",
+        "description": "Otomatis membukukan jurnal piutang usaha dan pendapatan ke modul Akuntansi."
+      }
+    ],
+    "tipsAndTricks": [
+      "Gunakan tombol 'Salin Link Invoice' untuk membagikan faktur melalui chat atau email dalam 1 klik.",
+      "Atur rekening bank penerima utama di menu Pengaturan agar otomatis muncul pada setiap faktur baru."
+    ],
+    "faq": [
+      {
+        "question": "Apakah invoice yang sudah berstatus 'Lunas' masih bisa diubah rinciannya?",
+        "answer": "Demi integritas pembukuan akuntansi, invoice yang sudah lunas tidak disarankan diubah. Anda perlu membatalkan/menghapus pembayaran terkait terlebih dahulu jika ingin mengedit item."
+      },
+      {
+        "question": "Bagaimana cara memberi diskon nominal langsung (bukan persentase)?",
+        "answer": "Anda dapat memasukkan nominal diskon langsung pada kolom 'Diskon Faktur (Rp)' di bagian bawah ringkasan total tagihan."
+      },
+      {
+        "question": "Apakah format nomor invoice bisa disesuaikan dengan pola perusahaan kami?",
+        "answer": "Bisa. Anda dapat mengatur prefiks, format tahun/bulan, dan nomor urut di menu Pengaturan -> Nomor Seri Dokumen."
+      }
+    ]
+  },
+  {
+    "id": "invoice_due",
+    "menuKey": "invoice",
+    "title": "Monitoring Jatuh Tempo Piutang",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "Clock",
+    "badge": "Piutang",
+    "targetRole": "Finance / Collector / Admin",
+    "path": "/invoice?filter=due",
+    "summary": "Pemantauan khusus tagihan yang mendekati jatuh tempo dan faktur menunggak (overdue).",
+    "overview": "Fitur Monitoring Jatuh Tempo menyaring seluruh invoice yang belum lunas berdasarkan umur piutang (Aging Receivables): Jatuh Tempo Hari Ini, Lewat 1-30 Hari, Lewat 31-60 Hari, dan Menunggak >60 Hari. Memudahkan tim penagihan memprioritaskan follow-up.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Buka Filter Tagihan Menunggak",
+        "description": "Di halaman Invoice, klik tab filter 'Jatuh Tempo' atau 'Lewat Jatuh Tempo (Overdue)'.",
+        "screenshotPlaceholder": {
+          "caption": "Daftar Piutang Jatuh Tempo",
+          "description": "Screenshot tabel invoice dengan highlight warna merah pada tagihan yang lewat jatuh tempo."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Kirim Pesan Pengingat (Reminder)",
+        "description": "Klik ikon WhatsApp di baris tagihan untuk mengirim draf pesan pengingat sopan kepada penanggung jawab pembayaran klien.",
+        "tip": "Pesan otomatis memuat nomor invoice, sisa saldo yang harus dibayar, dan link faktur."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tab Filter 'Jatuh Tempo Hari Ini'",
+        "type": "Tab Navigasi",
+        "description": "Menampilkan seluruh nota yang batas akhir pembayarannya adalah hari ini."
+      },
+      {
+        "name": "Tab Filter 'Overdue / Menunggak'",
+        "type": "Tab Navigasi",
+        "description": "Menampilkan daftar tagihan yang telah melewati tanggal jatuh tempo dan belum dilunasi."
+      },
+      {
+        "name": "Badge Umur Piutang (Aging Badge)",
+        "type": "Badge Status",
+        "description": "Label warna merah/oranye yang menunjukkan berapa hari tagihan telah terlambat."
+      },
+      {
+        "name": "Tombol 'Kirim Pengingat WhatsApp'",
+        "type": "Tombol",
+        "description": "Mengirimkan template pesan pengingat tagihan ramah dan profesional dalam 1 klik."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Analisis Umur Piutang",
+        "description": "Mengkategorikan risiko piutang berdasarkan lama hari keterlambatan pembayaran."
+      },
+      {
+        "name": "Pintasan Pengingat WA 1-Klik",
+        "description": "Mempercepat tim collection menagih puluhan pelanggan tanpa ketik manual."
+      }
+    ],
+    "tipsAndTricks": [
+      "Jadwalkan pengiriman pesan pengingat 3 hari sebelum jatuh tempo untuk meminimalkan risiko keterlambatan pembayaran."
+    ],
+    "faq": [
+      {
+        "question": "Apakah sistem mengirim WhatsApp otomatis sendiri ke customer?",
+        "answer": "Saat ini sistem menyiapkan tombol kirim langsung ke WhatsApp Web / Aplikasi Anda untuk memastikan kontrol penuh pesan tetap di tangan Anda."
+      }
+    ]
+  },
+  {
+    "id": "payment",
+    "menuKey": "payment",
+    "title": "Pembayaran & Kas Masuk (Payments)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "CreditCard",
+    "badge": "Keuangan",
+    "targetRole": "Kasir / Finance / Admin",
+    "path": "/payment",
+    "summary": "Pencatatan riwayat pembayaran masuk dari pelanggan, rekonsiliasi bank, dan kuitansi penerimaan.",
+    "overview": "Modul Pembayaran merekam setiap mutasi kas masuk yang melunasi faktur pelanggan. Dilengkapi pencatatan nomor referensi bank, metode pembayaran, akun bank tujuan, dan cetak kuitansi resmi.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Pilih Invoice yang Dibayar",
+        "description": "Cari invoice terkait melalui nomor faktur atau nama pelanggan.",
+        "screenshotPlaceholder": {
+          "caption": "Form Pencatatan Pembayaran Masuk",
+          "description": "Screenshot modal pengisian nominal dana masuk dan pemilihan rekening bank penerima."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Isi Nominal & Akun Bank Penerima",
+        "description": "Masukkan jumlah uang yang diterima, pilih akun kas/bank penampung (misal Kas Toko, Rekening BCA), dan unggah bukti transfer jika ada.",
+        "tip": "Sistem otomatis mengupdate sisa tagihan pada invoice bersangkutan."
+      },
+      {
+        "step": 3,
+        "title": "Cetak Kuitansi Resmi",
+        "description": "Cetak dokumen kuitansi penerimaan pembayaran bermaterai/bernomor seri untuk diserahkan ke pelanggan.",
+        "screenshotPlaceholder": {
+          "caption": "Bukti Kuitansi Pembayaran Lunas",
+          "description": "Screenshot tanda terima kuitansi pembayaran resmi."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Perhitungan Margin Proyek Otomatis", description: "Laporan untung-rugi riil per proyek yang dikerjakan." },
-      { name: "Milestone & Task Tracking", description: "Daftar tugas pekerjaan untuk memantau tahapan kemajuan proyek." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Catat Pembayaran'",
+        "type": "Tombol",
+        "description": "Membuka formulir penerimaan kas masuk dari pelanggan."
+      },
+      {
+        "name": "Dropdown 'Pilih Akun Kas / Bank'",
+        "type": "Dropdown",
+        "description": "Menentukan rekening tujuan penerimaan dana (Kas Kasir, Bank BCA, Bank Mandiri, dll)."
+      },
+      {
+        "name": "Kolom 'Nominal Pembayaran'",
+        "type": "Kolom Isian",
+        "description": "Jumlah uang yang dibayarkan oleh klien."
+      },
+      {
+        "name": "Kolom 'Nomor Referensi / Ref Bank'",
+        "type": "Kolom Isian",
+        "description": "Nomor transaksi transfer bank atau kode transaksi EDC/QRIS."
+      },
+      {
+        "name": "Kolom 'Upload Bukti Transfer'",
+        "type": "Kolom Isian",
+        "description": "Mengunggah foto/dokumen slip bukti transfer bank dari pelanggan."
+      },
+      {
+        "name": "Tombol 'Cetak Kuitansi'",
+        "type": "Tombol",
+        "description": "Mencetak bukti kuitansi tanda terima sah berlogo perusahaan."
+      }
     ],
-    tipsAndTricks: [
-      "Pastikan setiap struk belanja tukang/material selalu dimasukkan ke sistem dengan memilih tag nama proyek terkait."
+    "keyFeatures": [
+      {
+        "name": "Riwayat Transaksi Lengkap",
+        "description": "Semua pembayaran terekam rapi dan dapat ditelusuri riwayat per pelanggan."
+      },
+      {
+        "name": "Kuitansi Otomatis",
+        "description": "Menerbitkan kuitansi berformat profesional dalam hitungan detik."
+      },
+      {
+        "name": "Sinkronisasi Buku Kas",
+        "description": "Saldo akun kas/bank akan bertambah secara otomatis sesuai nominal yang dibukukan."
+      }
     ],
-    faq: [
-      { question: "Apakah 1 proyek bisa memiliki banyak invoice bertahap?", answer: "Ya, Anda bisa menerbitkan beberapa invoice (DP, Termin 1, Termin 2, Pelunasan) yang semuanya ditautkan ke 1 proyek." }
+    "tipsAndTricks": [
+      "Selalu lampirkan nomor referensi bank untuk mempermudah proses rekonsiliasi rekening koran di akhir bulan."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana jika kasir salah menginput nominal pembayaran?",
+        "answer": "Buka menu Pembayaran, cari transaksi bersangkutan, klik tombol Hapus/Batalkan. Status saldo invoice akan otomatis kembali seperti semula."
+      }
     ]
   },
-
-  // 12. CATALOG
   {
-    id: "catalog",
-    menuKey: "catalog",
-    title: "Master Katalog Produk & Jasa",
-    category: "Pembelian & Gudang",
-    categoryId: "purchase",
-    iconName: "Briefcase",
-    badge: "Master Data",
-    targetRole: "Gudang / Purchasing / Admin",
-    path: "/catalog",
-    summary: "Daftar master produk barang dan jasa layanan, harga jual, harga pokok (HPP), satuan unit, dan barcode SKU.",
-    overview: "Katalog adalah pusat data seluruh barang yang Anda jual atau gunakan. Di sini Anda menentukan apakah suatu item merupakan barang berstok (Inventory Item) atau layanan jasa (Service Item), harga jual standar, serta batas stok aman.",
-    workflow: [
+    "id": "customer",
+    "menuKey": "customer",
+    "title": "Database Pelanggan (Customers)",
+    "category": "Penjualan & Piutang",
+    "categoryId": "sales",
+    "iconName": "Users",
+    "badge": "Master Data",
+    "targetRole": "Sales / CRM / Admin",
+    "path": "/customer",
+    "summary": "Master data pelanggan, kontak person, batas kredit (credit limit), riwayat transaksi, dan poin loyalitas.",
+    "overview": "Modul Pelanggan mengelola direktori profil klien perorangan maupun korporat (B2B). Anda dapat mengatur batas limit piutang, termin pembayaran khusus pelanggan, nomor NPWP untuk faktur pajak, serta memantau riwayat seluruh pembelian mereka.",
+    "workflow": [
       {
-        step: 1,
-        title: "Tambah Produk / Jasa Baru",
-        description: "Klik '+ Tambah Produk', masukkan Kode SKU, Nama Barang, Kategori (misal: Elektronik, Jasa Pasang), dan Satuan (Pcs, Box, Meter).",
-        screenshotPlaceholder: {
-          caption: "Form Tambah Produk / Jasa",
-          description: "Screenshot formulir input produk dengan pengaturan harga modal, harga jual, dan tipe barang."
+        "step": 1,
+        "title": "Tambah Data Pelanggan Baru",
+        "description": "Klik '+ Tambah Pelanggan', lengkapi nama perusahaan, nama kontak PIC, nomor WhatsApp, email, dan alamat pengiriman.",
+        "screenshotPlaceholder": {
+          "caption": "Form Master Pelanggan",
+          "description": "Screenshot pengisian informasi kontak, alamat penagihan, dan NPWP pelanggan."
         }
       },
       {
-        step: 2,
-        title: "Atur Harga Modal & Harga Jual",
-        description: "Masukkan Harga Pokok Pembelian (HPP) dan Harga Jual standar toko. Anda juga bisa mengatur diskon tetap atau batas minimum.",
-        tip: "Centang 'Lacak Stok Gudang' jika item adalah barang fisik yang kuantitasnya berkurang saat terjual."
+        "step": 2,
+        "title": "Atur Batas Kredit & Ketentuan Khusus",
+        "description": "Tentukan limit maksimal piutang (Credit Limit) dan termin pembayaran default (misal Net 30) untuk pelanggan B2B.",
+        "tip": "Sistem akan memberi peringatan jika invoice baru melebihi batas kredit pelanggan tersebut."
       },
       {
-        step: 3,
-        title: "Generate / Input Barcode",
-        description: "Ketik kode barcode produk atau biarkan sistem membuat kode SKU unik untuk dicetak pada label barcode produk fisik.",
-        screenshotPlaceholder: {
-          caption: "Katalog Produk & Tombol Aksi",
-          description: "Screenshot tabel katalog dengan foto produk, harga, dan indikator status stok."
+        "step": 3,
+        "title": "Pantau Buku Pembantu Piutang (Statement)",
+        "description": "Buka detail pelanggan untuk melihat riwayat invoice yang belum dibayar, total belanja seumur hidup (Lifetime Value), dan poin member.",
+        "screenshotPlaceholder": {
+          "caption": "Profil Lengkap Pelanggan & Riwayat Piutang",
+          "description": "Screenshot rincian kartu profil pelanggan dan daftar invoice terkait."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Tipe Barang vs Jasa", description: "Dukungan produk fisik (berkurang stok) dan jasa layanan (tanpa pengurangan stok)." },
-      { name: "Kategori & Satuan Kustom", description: "Pengelompokan produk yang memudahkan filter di POS dan laporan penjualan." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Pelanggan'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran profil pelanggan baru."
+      },
+      {
+        "name": "Kolom 'Nama Pelanggan / Perusahaan'",
+        "type": "Kolom Isian",
+        "description": "Nama entitas atau nama lengkap pembeli."
+      },
+      {
+        "name": "Kolom 'Nomor WhatsApp / HP'",
+        "type": "Kolom Isian",
+        "description": "Nomor kontak utama untuk pengiriman notifikasi invoice dan promo."
+      },
+      {
+        "name": "Kolom 'Email'",
+        "type": "Kolom Isian",
+        "description": "Alamat surat elektronik untuk pengiriman dokumen resmi."
+      },
+      {
+        "name": "Kolom 'Alamat Lengkap Penagihan & Pengiriman'",
+        "type": "Kolom Isian",
+        "description": "Alamat fisik untuk keperluan pencetakan pada invoice dan surat jalan."
+      },
+      {
+        "name": "Kolom 'Nomor NPWP'",
+        "type": "Kolom Isian",
+        "description": "Nomor Pokok Wajib Pajak untuk penerbitan faktur pajak elektronik."
+      },
+      {
+        "name": "Kolom 'Batas Kredit (Credit Limit)'",
+        "type": "Kolom Isian",
+        "description": "Batas plafon maksimal total piutang yang diizinkan untuk customer ini."
+      },
+      {
+        "name": "Tombol 'Cetak Rekening Koran (Statement)'",
+        "type": "Tombol",
+        "description": "Mencetak ringkasan mutasi piutang dan pembayaran pelanggan dalam format PDF."
+      }
     ],
-    tipsAndTricks: [
-      "Lengkapi foto produk dengan ukuran persegi (rasio 1:1) agar terlihat jelas dan menarik pada layar POS kasir."
+    "keyFeatures": [
+      {
+        "name": "Pencegahan Over-Limit Piutang",
+        "description": "Peringatan otomatis saat membuat transaksi jika hutang pelanggan sudah melewati batas limit."
+      },
+      {
+        "name": "Kartu Statement Piutang",
+        "description": "Cetak rekap tagihan pelanggan dalam 1 dokumen rangkuman untuk memudahkan rekonsiliasi B2B."
+      },
+      {
+        "name": "Poin Loyalitas Member",
+        "description": "Pemberian poin otomatis dari setiap transaksi belanja yang dapat ditukarkan diskon."
+      }
     ],
-    faq: [
-      { question: "Bagaimana cara mengubah harga jual barang yang sudah pernah ditransaksikan?", answer: "Anda bisa mengedit harga di katalog kapan saja. Perubahan harga tidak akan mengubah nominal transaksi lampau yang sudah lunas." }
+    "tipsAndTricks": [
+      "Pastikan nomor WhatsApp diawali format kode negara (misal: 62812xxx) agar tombol kirim WA otomatis berfungsi sempurna."
+    ],
+    "faq": [
+      {
+        "question": "Bisakah satu pelanggan memiliki beberapa alamat pengiriman berbeda?",
+        "answer": "Bisa. Anda dapat mencatat alamat utama di profil pelanggan dan mengubah alamat spesifik saat membuat Surat Jalan."
+      },
+      {
+        "question": "Bagaimana cara melihat total hutang seorang pelanggan?",
+        "answer": "Buka menu Pelanggan, cari nama customer bersangkutan, total piutang aktif akan tampil di kolom 'Saldo Piutang'."
+      }
     ]
   },
-
-  // 13. INVENTORY
   {
-    id: "inventory",
-    menuKey: "inventory",
-    title: "Manajemen Stok & Gudang (Inventory)",
-    category: "Pembelian & Gudang",
-    categoryId: "purchase",
-    iconName: "Package",
-    badge: "Stok Gudang",
-    targetRole: "Gudang / Purchasing / Admin",
-    path: "/inventory",
-    summary: "Pemantauan saldo stok fisik real-time, penyesuaian stok (Stock Opname), kartu mutasi stok, dan peringatan stok menipis.",
-    overview: "Modul Inventaris mencatat pergerakan masuk dan keluar setiap unit barang di gudang Anda. Terintegrasi langsung dengan penjualan di POS/Invoice (Stok Keluar) dan pembelian di Purchase Order (Stok Masuk).",
-    workflow: [
+    "id": "project",
+    "menuKey": "project",
+    "title": "Manajemen Proyek & Operasional",
+    "category": "Proyek & Operasional",
+    "categoryId": "project",
+    "iconName": "Briefcase",
+    "badge": "Proyek",
+    "targetRole": "Project Manager / Tim Lapangan / Owner",
+    "path": "/project",
+    "summary": "Perencanaan proyek, tahapan milestone, pencatatan waktu kerja (time log), dan pelacakan laba rugi per proyek.",
+    "overview": "Modul Proyek dirancang untuk bisnis berbasis jasa, kontraktor, event organizer, software house, atau agensi. Memungkinkan Anda melacak progres penyelesaian pekerjaan, mengalokasikan staf, mencatat biaya material/operasional langsung ke proyek, dan membandingkan anggaran (Budget) vs Realisasi Biaya.",
+    "workflow": [
       {
-        step: 1,
-        title: "Pantau Ketersediaan Stok Fisik",
-        description: "Buka menu Inventaris untuk melihat jumlah stok saat ini, stok dialokasikan untuk pesanan, dan nilai total aset persediaan.",
-        screenshotPlaceholder: {
-          caption: "Tabel Saldo Stok Gudang",
-          description: "Screenshot daftar inventaris dengan jumlah kuantitas, nilai rupiah stok, dan peringatan stok menipis."
+        "step": 1,
+        "title": "Buat Proyek Baru",
+        "description": "Klik '+ Buat Proyek', tentukan nama proyek, klien pemilik, tanggal mulai, target selesai, dan total nilai kontrak.",
+        "screenshotPlaceholder": {
+          "caption": "Form Input Proyek Baru",
+          "description": "Screenshot pembuatan proyek dengan estimasi anggaran biaya dan tenggat waktu."
         }
       },
       {
-        step: 2,
-        title: "Lakukan Penyesuaian Stok (Stock Opname)",
-        description: "Klik 'Penyesuaian Stok (Adjustment)' jika ada perbedaan antara hitungan fisik di rak toko dengan data di aplikasi.",
-        tip: "Pilih alasan penyesuaian: Hasil Opname Bulanan, Barang Rusak / Kadaluarsa, atau Selisih Input."
+        "step": 2,
+        "title": "Bagi Tahapan Pekerjaan (Milestone)",
+        "description": "Buat rincian tahapan milestone (misal: Perencanaan -> Pengadaan Material -> Instalasi Lapangan -> Serah Terima).",
+        "tip": "Milestone dapat dihubungkan dengan jadwal termin penagihan invoice proyek."
       },
       {
-        step: 3,
-        title: "Cek Kartu Riwayat Mutasi Stok",
-        description: "Klik pada nama barang untuk membuka buku mutasi stok (melihat riwayat masuk, keluar, dan sisa per transaksi).",
-        screenshotPlaceholder: {
-          caption: "Buku Mutasi Stok (Stock Card)",
-          description: "Screenshot riwayat pergerakan stok per transaksi lengkap dengan nomor dokumen referensi."
+        "step": 3,
+        "title": "Catat Pengeluaran & Biaya Proyek",
+        "description": "Setiap ada pembelian bahan atau biaya tukang/staf, hubungkan pengeluaran tersebut ke nama proyek untuk menghitung profitabilitas proyek secara presisi.",
+        "screenshotPlaceholder": {
+          "caption": "Laporan Laba Rugi Per Proyek (Profitability)",
+          "description": "Screenshot perbandingan nilai kontrak invoice vs total pengeluaran riil proyek."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Peringatan Stok Minimum", description: "Notifikasi otomatis ketika kuantitas barang berada di bawah batas aman." },
-      { name: "Penilaian Persediaan (Valuation)", description: "Perhitungan nilai total rupiah barang yang tersimpan di gudang." }
-    ],
-    tipsAndTricks: [
-      "Jadwalkan Stock Opname rutin secara berkala (mingguan atau bulanan) untuk mencegah kerugian akibat barang hilang."
-    ],
-    faq: [
-      { question: "Mengapa stok bisa bernilai minus?", answer: "Stok minus terjadi jika fitur penjualan tetap diizinkan saat stok sistem belum ditambahkan dari pembelian. Segera input PO penerimaan barang." }
-    ]
-  },
-
-  // 14. BARANG KELUAR (STOCK OUT)
-  {
-    id: "stock_out",
-    menuKey: "inventory",
-    title: "Barang Keluar Non-Invoice (Stock Out)",
-    category: "Pembelian & Gudang",
-    categoryId: "purchase",
-    iconName: "Package",
-    badge: "Pengurangan Stok",
-    targetRole: "Gudang / Admin",
-    path: "/inventory/stock-out",
-    summary: "Pencatatan pengeluaran barang tanpa faktur penjualan, seperti barang rusak (spoilage), sampel promosi, atau pemakaian sendiri.",
-    overview: "Tidak semua barang keluar karena dijual. Modul Stock Out digunakan untuk mencatat pengeluaran barang untuk keperluan internal perusahaan, barang kadaluarsa/pecah, atau sampel tester cuma-cuma sehingga pembukuan stok tetap akurat.",
-    workflow: [
+    "uiGuide": [
       {
-        step: 1,
-        title: "Catat Pengeluaran Barang",
-        description: "Klik '+ Catat Barang Keluar', pilih tanggal pengeluaran dan barang yang dikeluarkan.",
-        screenshotPlaceholder: {
-          caption: "Form Input Barang Keluar Non-Penjualan",
-          description: "Screenshot form pengeluaran stok dengan pemilihan alasan: Pemakaian Sendiri, Rusak, Sampel."
-        }
+        "name": "Tombol '+ Buat Proyek Baru'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran proyek baru."
       },
       {
-        step: 2,
-        title: "Tentukan Kategori Alasan & Beban",
-        description: "Pilih alasan: Pemakaian Sendiri, Kerusakan/Expired, atau Promosi. Sistem akan mencatat biaya HPP ke akun beban terkait.",
-        tip: "Sertakan catatan atau foto bukti barang yang rusak untuk kebutuhan audit internal."
+        "name": "Kolom 'Nama Proyek'",
+        "type": "Kolom Isian",
+        "description": "Judul atau nama kegiatan proyek pekerjaan."
+      },
+      {
+        "name": "Dropdown 'Pilih Klien / Customer'",
+        "type": "Dropdown",
+        "description": "Menentukan customer pemilik pekerjaan proyek."
+      },
+      {
+        "name": "Kolom 'Nilai Kontrak Proyek (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Total nominal kontrak yang disepakati dengan klien."
+      },
+      {
+        "name": "Kolom 'Anggaran Biaya (Budgeted Cost)'",
+        "type": "Kolom Isian",
+        "description": "Batas maksimal alokasi biaya pengeluaran untuk proyek ini."
+      },
+      {
+        "name": "Tab Navigasi Proyek (Milestone / Task / Biaya / Dokumen)",
+        "type": "Tab Navigasi",
+        "description": "Berpindah antar menu rincian tugas, tahapan pekerjaan, log pengeluaran, dan lampiran kontrak."
+      },
+      {
+        "name": "Tombol 'Catat Pengeluaran Proyek'",
+        "type": "Tombol",
+        "description": "Menghubungkan nota belanja atau biaya operasional langsung ke neraca proyek ini."
       }
     ],
-    keyFeatures: [
-      { name: "Alokasi Akun Beban", description: "Secara otomatis mencatat biaya kerugian ke pos beban operasional akuntansi." },
-      { name: "Audit Trail Pengeluaran", description: "Menghindari kebocoran barang di gudang dengan pencatatan nama staf penanggung jawab." }
-    ],
-    tipsAndTricks: [
-      "Wajibkan staf gudang mengisi keterangan jelas pada setiap formulir pengeluaran barang non-invoice."
-    ],
-    faq: [
-      { question: "Apakah pengeluaran ini memengaruhi laporan laba rugi?", answer: "Ya, HPP dari barang yang dikeluarkan akan dicatat sebagai beban operasional/kerugian pada periode tersebut." }
-    ]
-  },
-
-  // 15. PURCHASE ORDERS
-  {
-    id: "purchase",
-    menuKey: "purchase",
-    title: "Pesanan Pembelian (Purchase Orders)",
-    category: "Pembelian & Gudang",
-    categoryId: "purchase",
-    iconName: "Truck",
-    badge: "Pengadaan Barang",
-    targetRole: "Purchasing / Gudang / Finance",
-    path: "/purchase",
-    summary: "Pemesanan barang ke pemasok (supplier), persetujuan pengadaan, penerimaan barang ke gudang, dan pencatatan hutang dagang.",
-    overview: "Modul Purchase Order (PO) mengelola siklus pembelian barang atau bahan baku dari vendor. Mulai dari pembuatan surat pesanan resmi, pelacakan pengiriman dari supplier, penerimaan fisik di gudang, hingga pencatatan tagihan faktur pembelian.",
-    workflow: [
+    "keyFeatures": [
       {
-        step: 1,
-        title: "Buat Surat Pesanan (PO)",
-        description: "Klik '+ Buat PO Baru', pilih Vendor/Supplier, tambahkan item produk yang ingin dibeli beserta harga beli yang disepakati.",
-        screenshotPlaceholder: {
-          caption: "Form Pembuatan Purchase Order",
-          description: "Screenshot form input PO lengkap dengan daftar supplier dan estimasi tanggal kedatangan."
-        }
+        "name": "Kalkulasi Profitabilitas Otomatis",
+        "description": "Menampilkan margin laba bersih proyek (Nilai Kontrak - Total Biaya Riil)."
       },
       {
-        step: 2,
-        title: "Kirim PO ke Vendor & Konfirmasi",
-        description: "Cetak dokumen PO atau kirim via email/WhatsApp ke supplier. Status PO menjadi 'Menunggu Pengiriman'.",
-        tip: "Dokumen PO berisi nomor resmi pengadaan untuk memudahkan verifikasi saat kurir supplier tiba."
+        "name": "Pelacakan Milestone & Tugas",
+        "description": "Memantau persentase kemajuan pekerjaan fisik proyek secara real-time."
       },
       {
-        step: 3,
-        title: "Penerimaan Barang di Gudang (Goods Received)",
-        description: "Ketika barang sampai di gudang, klik 'Terima Barang'. Masukkan jumlah fisik yang diterima secara riil.",
-        screenshotPlaceholder: {
-          caption: "Penerimaan Barang & Penambahan Stok Otomatis",
-          description: "Screenshot form konfirmasi penerimaan barang yang menambah saldo kuantitas inventaris."
-        },
-        tip: "Stok gudang akan bertambah secara otomatis tepat saat Anda mengonfirmasi penerimaan barang."
-      },
-      {
-        step: 4,
-        title: "Catat Pembayaran Tagihan Vendor",
-        description: "Catat pelunasan faktur pembelian dari supplier melalui akun kas/bank untuk melunasi hutang dagang (Accounts Payable)."
+        "name": "Time Tracking Log",
+        "description": "Mencatat jam kerja staf/teknisi lapangan yang dialokasikan untuk proyek."
       }
     ],
-    keyFeatures: [
-      { name: "Auto-Restock Stok Gudang", description: "Penerimaan barang langsung menambah saldo stok fisik secara akurat." },
-      { name: "Pelacakan Hutang Usaha", description: "Mencatat sisa kewajiban hutang yang harus dibayar kepada pemasok." },
-      { name: "Penerimaan Parsial", description: "Mendukung penerimaan bertahap jika vendor mengirim pesanan dalam beberapa kloter." }
+    "tipsAndTricks": [
+      "Selalu pilih 'Proyek Terkait' saat mencatat nota pembelian barang di modul Pembelian agar biaya material otomatis terhitung ke proyek."
     ],
-    tipsAndTricks: [
-      "Cocokkan Surat Jalan dari vendor dengan dokumen PO sebelum menekan tombol konfirmasi penerimaan barang."
-    ],
-    faq: [
-      { question: "Apakah harga beli di PO otomatis memperbarui HPP barang di katalog?", answer: "Ya, sistem menghitung rata-rata bergerak (moving average) harga modal barang berdasarkan pembelian terbaru." }
+    "faq": [
+      {
+        "question": "Bisakah menagih invoice bertahap sesuai persentase progres proyek?",
+        "answer": "Bisa. Anda dapat menerbitkan Invoice DP, Invoice Termin Progres (misal 50%), dan Invoice Pelunasan (Retensi) yang terhubung ke satu proyek yang sama."
+      },
+      {
+        "question": "Bagaimana cara menutup proyek yang sudah selesai?",
+        "answer": "Ubah status proyek menjadi 'Selesai / Completed' di halaman detail proyek. Status anggaran akan dikunci dan laporan laba rugi final tersimpan."
+      }
     ]
   },
-
-  // 16. VENDORS
   {
-    id: "vendor",
-    menuKey: "vendor",
-    title: "Data Pemasok (Vendors / Suppliers)",
-    category: "Pembelian & Gudang",
-    categoryId: "purchase",
-    iconName: "Building2",
-    badge: "Master Data",
-    targetRole: "Purchasing / Finance / Admin",
-    path: "/vendor",
-    summary: "Database pemasok, nomor kontak sales, rekening tujuan transfer, syarat pembayaran, dan riwayat hutang dagang.",
-    overview: "Master Vendor menyimpan seluruh data mitra penyuplai barang atau jasa untuk operasional usaha Anda. Memudahkan pencarian kontak saat hendak restock barang dan memantau saldo total hutang yang jatuh tempo ke masing-masing vendor.",
-    workflow: [
+    "id": "catalog",
+    "menuKey": "catalog",
+    "title": "Katalog Produk & Jasa (Catalog)",
+    "category": "Pembelian & Gudang",
+    "categoryId": "purchase",
+    "iconName": "Package",
+    "badge": "Master Produk",
+    "targetRole": "Admin Gudang / Sales / Owner",
+    "path": "/catalog",
+    "summary": "Master data barang, jasa, SKU, barcode, harga beli (HPP), harga jual, kategori, dan foto produk.",
+    "overview": "Modul Katalog adalah pusat master data seluruh item barang dagangan, bahan baku, paket bundling, maupun layanan jasa yang dijual bisnis Anda. Mendukung multi-satuan, batas stok minimum, barcode, dan variasi harga grosir/retail.",
+    "workflow": [
       {
-        step: 1,
-        title: "Tambah Data Pemasok",
-        description: "Klik '+ Tambah Vendor', lengkapi Nama Perusahaan, Nama Kontak Sales, WhatsApp, Alamat Gudang Supplier, dan Rekening Bank.",
-        screenshotPlaceholder: {
-          caption: "Form Input Master Vendor",
-          description: "Screenshot formulir penambahan data pemasok dan nomor rekening pembayaran."
+        "step": 1,
+        "title": "Tambah Produk Baru",
+        "description": "Klik '+ Tambah Produk', pilih tipe (Barang Fisik atau Jasa/Layanan), isi nama produk, kode SKU, dan barcode.",
+        "screenshotPlaceholder": {
+          "caption": "Form Master Produk",
+          "description": "Screenshot pengisian nama barang, harga modal HPP, harga jual, dan foto produk."
         }
       },
       {
-        step: 2,
-        title: "Pantau Buku Pembantu Hutang (Vendor Statement)",
-        description: "Buka detail vendor untuk melihat daftar seluruh PO yang pernah diterbitkan dan status pembayaran hutang Anda ke mereka.",
-        screenshotPlaceholder: {
-          caption: "Profil Vendor & Riwayat Pembelian",
-          description: "Screenshot halaman detail vendor dengan rekap total pembelian dan sisa hutang usaha."
+        "step": 2,
+        "title": "Tentukan Harga Beli & Harga Jual",
+        "description": "Masukkan harga pokok pembelian (HPP/Cost) dan harga jual standar. Tentukan juga batas kuantitas minimum peringatan stok.",
+        "tip": "Sistem otomatis menghitung estimasi persentase margin laba kotor per produk."
+      },
+      {
+        "step": 3,
+        "title": "Unggah Foto & Label Barcode",
+        "description": "Unggah foto produk untuk tampilan kasir POS dan cetak stiker barcode untuk ditempel pada kemasan fisik barang.",
+        "screenshotPlaceholder": {
+          "caption": "Cetak Label Barcode Produk",
+          "description": "Screenshot fitur cetak stiker barcode produk siap tempel."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Rekening Bank Vendor Tersimpan", description: "Mencegah kesalahan nomor rekening saat tim finance mentransfer pelunasan." },
-      { name: "Riwayat Harga Beli Produk", description: "Membandingkan harga beli barang dari waktu ke waktu antar vendor berbeda." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Produk'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran barang/jasa baru."
+      },
+      {
+        "name": "Dropdown 'Tipe Produk'",
+        "type": "Dropdown",
+        "description": "Memilih jenis: Barang Fisik (Track Stok Inventaris) atau Jasa / Layanan (Non-Stok)."
+      },
+      {
+        "name": "Kolom 'Nama Produk'",
+        "type": "Kolom Isian",
+        "description": "Nama resmi barang yang akan muncul di nota dan katalog."
+      },
+      {
+        "name": "Kolom 'Kode SKU & Barcode'",
+        "type": "Kolom Isian",
+        "description": "Kode unik internal dan kode barcode untuk pemindaian scanner POS."
+      },
+      {
+        "name": "Dropdown 'Kategori Produk'",
+        "type": "Dropdown",
+        "description": "Mengelompokkan produk ke dalam kategori (misal: Suku Cadang, Makanan, Pakaian, Jasa Desain)."
+      },
+      {
+        "name": "Kolom 'Harga Beli Pokok (HPP / Cost)'",
+        "type": "Kolom Isian",
+        "description": "Harga modal rata-rata perolehan barang untuk perhitungan laba kotor."
+      },
+      {
+        "name": "Kolom 'Harga Jual Standar'",
+        "type": "Kolom Isian",
+        "description": "Harga jual kepada konsumen sebelum diskon."
+      },
+      {
+        "name": "Kolom 'Batas Stok Minimum'",
+        "type": "Kolom Isian",
+        "description": "Jumlah ambang batas di mana sistem akan menyalakan peringatan stok menipis."
+      },
+      {
+        "name": "Tombol 'Cetak Barcode'",
+        "type": "Tombol",
+        "description": "Mencetak lembar stiker barcode sesuai jumlah kuantitas yang diinginkan."
+      }
     ],
-    tipsAndTricks: [
-      "Simpan nomor rekening resmi perusahaan vendor untuk mencegah penipuan transfer ke rekening pribadi."
+    "keyFeatures": [
+      {
+        "name": "Dukungan Multi Kategori & Satuan",
+        "description": "Mendukung satuan Pcs, Box, Lusin, Kg, Liter, Meter, dan Jam."
+      },
+      {
+        "name": "Cetak Label Barcode Mandiri",
+        "description": "Fitur cetak barcode standar Code128 dan EAN13 siap pakai."
+      },
+      {
+        "name": "Import & Export Excel",
+        "description": "Upload ratusan produk sekaligus melalui template spreadsheet Excel."
+      }
     ],
-    faq: [
-      { question: "Bisakah satu produk dibeli dari beberapa vendor berbeda?", answer: "Bisa, Anda bebas memilih nama vendor mana saja saat membuat Purchase Order baru." }
+    "tipsAndTricks": [
+      "Gunakan kode SKU yang terstruktur (misal: BAJU-PRIA-HITAM-L) untuk mempermudah pencarian cepat kasir."
+    ],
+    "faq": [
+      {
+        "question": "Apa bedanya produk tipe 'Barang Fisik' dengan 'Jasa'?",
+        "answer": "Barang Fisik memiliki kuantitas stok yang akan bertambah saat dibeli dan berkurang saat dijual. Jasa tidak memiliki stok fisik sehingga tidak akan membatasi transaksi kasir."
+      },
+      {
+        "question": "Bagaimana cara mengubah harga jual secara massal?",
+        "answer": "Anda dapat mengekspor data katalog ke Excel, memperbarui kolom harga, lalu mengimpor kembali file tersebut ke sistem."
+      }
     ]
   },
-
-  // 17. EMPLOYEES
   {
-    id: "employees",
-    menuKey: "employees",
-    title: "Database Karyawan (Employees)",
-    category: "SDM & HR",
-    categoryId: "hr",
-    iconName: "Users",
-    badge: "Master HR",
-    targetRole: "HRD / Admin / Owner",
-    path: "/employees",
-    summary: "Manajemen data induk karyawan, jabatan, tanggal masuk kerja, struktur gaji pokok & tunjangan, serta dokumen kepegawaian.",
-    overview: "Modul Karyawan adalah pusat informasi kepegawaian perusahaan. Modul ini menjadi fondasi untuk sistem absensi, pengajuan cuti, klaim biaya (reimbursement), dan penghitungan slip gaji bulanan (Payroll).",
-    workflow: [
+    "id": "inventory",
+    "menuKey": "inventory",
+    "title": "Stok & Manajemen Gudang (Inventory)",
+    "category": "Pembelian & Gudang",
+    "categoryId": "purchase",
+    "iconName": "Building2",
+    "badge": "Inventaris",
+    "targetRole": "Admin Gudang / Supervisor / Owner",
+    "path": "/inventory",
+    "summary": "Monitoring stok riil, multi-gudang, kartu stok (mutasi keluar/masuk), penyesuaian stok opname, dan transfer antar gudang.",
+    "overview": "Modul Inventory memantau pergerakan fisik seluruh barang secara real-time. Anda dapat melacak riwayat mutasi barang (Kartu Stok), melakukan penyesuaian selisih stok fisik (Stock Opname), dan mentransfer barang antar cabang gudang.",
+    "workflow": [
       {
-        step: 1,
-        title: "Tambah Karyawan Baru",
-        description: "Klik '+ Tambah Karyawan', masukkan Nama Lengkap, NIK/Nomor Karyawan, Posisi/Jabatan, Departemen, dan Email Login.",
-        screenshotPlaceholder: {
-          caption: "Form Input Data Karyawan",
-          description: "Screenshot formulir biodata karyawan, jabatan, dan nomor rekening penerimaan gaji."
+        "step": 1,
+        "title": "Cek Saldo Stok Riil",
+        "description": "Lihat daftar kuantitas fisik barang per gudang/cabang toko lengkap dengan total nilai aset inventaris.",
+        "screenshotPlaceholder": {
+          "caption": "Tabel Stok Gudang Terintegrasi",
+          "description": "Screenshot tabel saldo stok, lokasi rak gudang, dan nilai valuasi aset."
         }
       },
       {
-        step: 2,
-        title: "Atur Komponen Gaji Pokok & Tunjangan",
-        description: "Tentukan nominal Gaji Pokok, Tunjangan Tetap (Makan/Transport), BPJS, dan nomor rekening bank karyawan.",
-        tip: "Data gaji ini akan otomatis ditarik saat Anda memproses Penggajian (Payroll) bulanan."
+        "step": 2,
+        "title": "Lihat Kartu Stok (Stock Card)",
+        "description": "Klik ikon Kartu Stok pada produk tertentu untuk menelusuri detail riwayat transaksi masuk (Pembelian) dan keluar (Penjualan / Rusak).",
+        "tip": "Setiap perubahan stok mencantumkan tanggal, nomor dokumen referensi, dan nama pengguna yang memproses."
       },
       {
-        step: 3,
-        title: "Atur Akun Login & Hak Akses",
-        description: "Tautkan data karyawan dengan akun login aplikasi dan pilih peran (*Role*): Karyawan, Sales, Kasir, atau Finance.",
-        screenshotPlaceholder: {
-          caption: "Tabel Data Induk Karyawan",
-          description: "Screenshot daftar karyawan lengkap dengan status keaktifan dan departemen."
+        "step": 3,
+        "title": "Lakukan Penyesuaian (Stock Opname)",
+        "description": "Jika ada barang hilang, rusak, atau selisih hitungan fisik, gunakan menu 'Stock Adjustment' untuk mencocokkan saldo sistem dengan fisik.",
+        "screenshotPlaceholder": {
+          "caption": "Form Penyesuaian Stok Opname",
+          "description": "Screenshot input selisih fisik barang dan alasan penyesuaian stok."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Struktur Kompensasi Fleksibel", description: "Pengaturan gaji pokok, tunjangan harian, bonus, dan potongan BPJS/PPH." },
-      { name: "Pemberian Hak Akses (Role-Based)", description: "Membatasi menu yang bisa dilihat staf sesuai tanggung jawab kerja." }
+    "uiGuide": [
+      {
+        "name": "Dropdown 'Pilih Cabang Gudang'",
+        "type": "Dropdown",
+        "description": "Menyaring tampilan stok berdasarkan lokasi gudang (Gudang Utama, Toko Cabang 1, Gudang Retur, dll)."
+      },
+      {
+        "name": "Tombol '+ Penyesuaian Stok (Stock Opname)'",
+        "type": "Tombol",
+        "description": "Membuka formulir rekonsiliasi selisih stok fisik vs catatan sistem."
+      },
+      {
+        "name": "Tombol '+ Transfer Antar Gudang'",
+        "type": "Tombol",
+        "description": "Membuat dokumen mutasi pengiriman barang dari satu gudang ke gudang lain."
+      },
+      {
+        "name": "Ikon 'Kartu Stok (Stock Movement)'",
+        "type": "Tombol",
+        "description": "Membuka riwayat buku mutasi kronologis masuk-keluar untuk satu item tertentu."
+      },
+      {
+        "name": "Kolom 'Nilai Valuasi Inventaris (IDR)'",
+        "type": "Tabel Data",
+        "description": "Total nilai rupiah aset persediaan barang (Qty x HPP)."
+      }
     ],
-    tipsAndTricks: [
-      "Pastikan nomor WhatsApp dan email karyawan aktif untuk pengiriman slip gaji digital."
+    "keyFeatures": [
+      {
+        "name": "Multi Gudang & Multi Cabang",
+        "description": "Manajemen stok terpisah untuk setiap toko fisik atau gudang logistik."
+      },
+      {
+        "name": "Audit Trail Kartu Stok",
+        "description": "Catatan mutasi transparan yang tidak dapat dimanipulasi tanpa jejak dokumen."
+      },
+      {
+        "name": "Laporan Penyesuaian Opname",
+        "description": "Mencatat selisih plus/minus opname langsung ke akun kerugian selisih persediaan di Akuntansi."
+      }
     ],
-    faq: [
-      { question: "Bagaimana jika ada karyawan yang resign?", answer: "Ubah status karyawan menjadi 'Non-Aktif'. Akun login akan otomatis dinonaktifkan tanpa menghapus riwayat transaksi lamanya." }
+    "tipsAndTricks": [
+      "Lakukan stock opname rutin berkala (mingguan/bulanan) untuk mencegah kehilangan barang yang tidak terdeteksi."
+    ],
+    "faq": [
+      {
+        "question": "Metode penilaian persediaan apa yang digunakan?",
+        "answer": "Sistem menggunakan metode Rata-Rata Tertimbang (Weighted Average Cost) untuk menghitung nilai HPP persediaan secara akurat."
+      },
+      {
+        "question": "Bagaimana cara memindahkan barang dari Gudang Pusat ke Toko Cabang?",
+        "answer": "Gunakan menu 'Transfer Antar Gudang', pilih gudang asal, gudang tujuan, dan masukkan kuantitas barang yang dikirim."
+      }
     ]
   },
-
-  // 18. ABSENSI (ATTENDANCE)
   {
-    id: "employee_attendance",
-    menuKey: "employee_attendance",
-    title: "Presensi & Absensi Karyawan",
-    category: "SDM & HR",
-    categoryId: "hr",
-    iconName: "ClipboardCheck",
-    badge: "Kehadiran",
-    targetRole: "Semua Karyawan / HRD / Admin",
-    path: "/employees/attendance",
-    summary: "Pencatatan presensi masuk dan pulang kerja karyawan secara mandiri (Clock-In / Clock-Out) serta rekap kehadiran bulanan.",
-    overview: "Modul Absensi memudahkan karyawan melakukan presensi langsung dari perangkat mereka dengan catatan jam masuk, jam pulang, dan status keterlambatan. Data absensi otomatis terintegrasi ke kalkulasi tunjangan hadir pada slip gaji.",
-    workflow: [
+    "id": "stock_out",
+    "menuKey": "inventory",
+    "title": "Pengeluaran Stok & Pemakaian (Stock Out)",
+    "category": "Pembelian & Gudang",
+    "categoryId": "purchase",
+    "iconName": "Package",
+    "badge": "Logistik",
+    "targetRole": "Gudang / Produksi / Admin",
+    "path": "/inventory/stock-out",
+    "summary": "Pencatatan barang keluar untuk kebutuhan internal, sampel promosi, barang rusak (damaged), atau bahan baku produksi.",
+    "overview": "Fitur Pengeluaran Stok (Stock Out) digunakan untuk mencatat pengurangan fisik barang di luar transaksi penjualan nota, seperti pemakaian operasional kantor, tester/sampel gratis, pemusnahan barang kedaluwarsa, atau pemakaian bahan olahan.",
+    "workflow": [
       {
-        step: 1,
-        title: "Clock-In (Presensi Masuk)",
-        description: "Saat tiba di tempat kerja, karyawan membuka menu Absensi dan menekan tombol hijau 'Presensi Masuk'.",
-        screenshotPlaceholder: {
-          caption: "Antarmuka Presensi Mandiri Karyawan",
-          description: "Screenshot tombol besar Presensi Masuk (Clock-In) dan Presensi Pulang (Clock-Out) dengan jam digital."
+        "step": 1,
+        "title": "Buat Form Pengeluaran Stok",
+        "description": "Klik '+ Catat Pengeluaran Stok', pilih kategori alasan (Pemakaian Internal, Sampel, Rusak/Expired, Produksi).",
+        "screenshotPlaceholder": {
+          "caption": "Form Pengeluaran Stok Non-Jual",
+          "description": "Screenshot pengisian daftar barang yang dikeluarkan dan alasan peruntukan."
         }
       },
       {
-        step: 2,
-        title: "Clock-Out (Presensi Pulang)",
-        description: "Saat jam kerja berakhir, tekan tombol 'Presensi Pulang' untuk mencatat total durasi jam kerja hari itu.",
-        tip: "Sistem akan menghitung otomatis apakah ada jam lembur atau keterlambatan."
+        "step": 2,
+        "title": "Pilih Item & Jumlah Kuantitas",
+        "description": "Pilih item barang yang dikeluarkan dan masukkan jumlah fisik yang diambil dari rak gudang.",
+        "tip": "Sistem otomatis membukukan HPP barang tersebut ke akun beban biaya yang relevan."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Catat Barang Keluar'",
+        "type": "Tombol",
+        "description": "Membuka formulir pengeluaran inventaris non-jual."
       },
       {
-        step: 3,
-        title: "Rekap Kehadiran untuk HRD",
-        description: "Admin/HRD dapat melihat log harian seluruh staf, rekap kehadiran bulanan, dan mengekspornya ke Excel/PDF.",
-        screenshotPlaceholder: {
-          caption: "Tabel Rekap Kehadiran Harian Seluruh Karyawan",
-          description: "Screenshot tabel rekap jam masuk, jam pulang, dan status hadir/terlambat/izin."
+        "name": "Dropdown 'Alasan Pengeluaran'",
+        "type": "Dropdown",
+        "description": "Kategori alasan: Pemakaian Kantor, Tester / Sampel Promosi, Barang Rusak (Damaged), Kedaluwarsa (Expired), atau Lainnya."
+      },
+      {
+        "name": "Kolom 'Catatan / Departemen Pemohon'",
+        "type": "Kolom Isian",
+        "description": "Keterangan siapa staf atau divisi yang meminta barang tersebut."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Alokasi Beban Otomatis",
+        "description": "Mencatat biaya barang terpakai ke dalam pos pengeluaran operasional perusahaan."
+      },
+      {
+        "name": "Dokumen Bukti Pengeluaran Barang",
+        "description": "Mencetak bukti tanda terima serah terima barang internal."
+      }
+    ],
+    "tipsAndTricks": [
+      "Wajibkan tanda tangan staf peminta barang pada bukti serah terima barang keluar internal."
+    ],
+    "faq": [
+      {
+        "question": "Apakah pengeluaran stok ini akan mengurangi omset penjualan?",
+        "answer": "Tidak. Transaksi ini tidak dicatat sebagai penjualan, melainkan sebagai biaya beban operasional sebesar nilai harga pokok (HPP) barang."
+      }
+    ]
+  },
+  {
+    "id": "purchase",
+    "menuKey": "purchase",
+    "title": "Pesanan Pembelian & Supplier (Purchase Orders)",
+    "category": "Pembelian & Gudang",
+    "categoryId": "purchase",
+    "iconName": "ShoppingCart",
+    "badge": "Pengadaan",
+    "targetRole": "Purchasing / Admin / Finance / Owner",
+    "path": "/purchase",
+    "summary": "Penerbitan PO ke supplier, pencatatan tagihan vendor, bukti penerimaan barang masuk (Goods Receipt), dan hutang usaha.",
+    "overview": "Modul Purchase mengelola seluruh siklus pengadaan barang/bahan baku dari vendor dan supplier. Mencakup pembuatan Surat Pesanan Pembelian (PO), verifikasi penerimaan fisik barang di gudang, pencatatan faktur tagihan supplier (Bill), dan jadwal pelunasan hutang.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Buat Purchase Order (PO) Baru",
+        "description": "Klik '+ Buat PO', pilih vendor/supplier, tanggal perkiraan tiba, dan masukkan daftar item barang yang dipesan beserta harga beli yang disepakati.",
+        "screenshotPlaceholder": {
+          "caption": "Form Pembuatan Purchase Order",
+          "description": "Screenshot form PO resmi ke supplier dengan nomor seri otomatis."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Kirim PO ke Supplier & Terima Barang",
+        "description": "Kirim dokumen PDF PO ke supplier. Saat barang fisik tiba di gudang, klik tombol 'Terima Barang (Goods Receipt)' untuk menambah stok otomatis.",
+        "tip": "Mendukung penerimaan barang bertahap jika supplier mengirimkan pesanan secara terpisah."
+      },
+      {
+        "step": 3,
+        "title": "Catat Faktur Tagihan Vendor & Pelunasan",
+        "description": "Catat tagihan invoice dari supplier, lalu klik 'Catat Pembayaran Hutang' saat perusahaan mentransfer pembayaran ke rekening supplier.",
+        "screenshotPlaceholder": {
+          "caption": "Status Penerimaan & Pelunasan Hutang Supplier",
+          "description": "Screenshot status PO yang telah diterima penuh dan lunas dibayar."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Pencatatan Waktu Akurat", description: "Waktu presensi terkunci mengikuti jam server untuk mencegah manipulasi jam." },
-      { name: "Integrasi Payroll", description: "Menghitung potongan telat atau insentif uang makan hadir secara otomatis." }
-    ],
-    tipsAndTricks: [
-      "Pasang tablet khusus di meja resepsionis/pintu masuk jika ingin menggunakan presensi bersama di kantor."
-    ],
-    faq: [
-      { question: "Bagaimana jika karyawan lupa absen pulang?", answer: "Admin HRD dapat melakukan koreksi manual jam pulang melalui menu Edit Riwayat Absensi." }
-    ]
-  },
-
-  // 19. CUTI & IZIN (LEAVE)
-  {
-    id: "employee_leave",
-    menuKey: "employee_leave",
-    title: "Pengajuan Cuti & Izin (Leave)",
-    category: "SDM & HR",
-    categoryId: "hr",
-    iconName: "Calendar",
-    badge: "Pengajuan HR",
-    targetRole: "Semua Karyawan / HRD / Admin",
-    path: "/employees/leave",
-    summary: "Portal pengajuan cuti tahunan, izin sakit, atau dinas luar oleh staf serta alur persetujuan (approval) oleh atasan.",
-    overview: "Modul Cuti mengotomatiskan pengelolaan kuota cuti tahunan staf. Karyawan dapat melihat sisa cuti mereka, mengajukan tanggal libur, melampirkan surat dokter, dan mendapatkan notifikasi jika pengajuan disetujui.",
-    workflow: [
+    "uiGuide": [
       {
-        step: 1,
-        title: "Karyawan Mengajukan Cuti",
-        description: "Klik '+ Ajukan Cuti', pilih tipe cuti (Cuti Tahunan, Sakit, Izin Khusus), pilih rentang tanggal, dan ketik alasan.",
-        screenshotPlaceholder: {
-          caption: "Form Pengajuan Cuti Staf",
-          description: "Screenshot form pengajuan tanggal cuti dan upload lampiran surat dokter."
-        }
+        "name": "Tombol '+ Buat Purchase Order'",
+        "type": "Tombol",
+        "description": "Membuka formulir pemesanan barang ke supplier baru."
       },
       {
-        step: 2,
-        title: "Persetujuan oleh HRD / Manager",
-        description: "Atasan menerima notifikasi di lonceng atas. Buka tab 'Persetujuan Admin' lalu klik 'Setujui' atau 'Tolak'.",
-        screenshotPlaceholder: {
-          caption: "Panel Persetujuan Cuti oleh Admin/HRD",
-          description: "Screenshot daftar pengajuan cuti yang menunggu approval beserta tombol aksi Setujui / Tolak."
-        },
-        tip: "Jika disetujui, sisa kuota cuti tahunan karyawan akan berkurang secara otomatis."
+        "name": "Dropdown 'Pilih Supplier / Vendor'",
+        "type": "Dropdown",
+        "description": "Memilih data supplier penyedia barang."
+      },
+      {
+        "name": "Kolom 'Nomor PO'",
+        "type": "Kolom Isian",
+        "description": "Nomor seri pesanan pembelian (misal: PO/2026/08/001)."
+      },
+      {
+        "name": "Kolom 'Estimasi Tanggal Tiba'",
+        "type": "Kolom Isian",
+        "description": "Target tanggal barang dijanjikan sampai di gudang oleh supplier."
+      },
+      {
+        "name": "Tabel Item Pembelian",
+        "type": "Tabel Data",
+        "description": "Daftar barang, kuantitas order, harga beli satuan, diskon supplier, dan total nilai PO."
+      },
+      {
+        "name": "Tombol 'Terima Barang (Goods Receipt)'",
+        "type": "Tombol",
+        "description": "Memvalidasi kedatangan fisik barang dan menambah stok gudang secara otomatis."
+      },
+      {
+        "name": "Tombol 'Bayar Tagihan Vendor'",
+        "type": "Tombol",
+        "description": "Membukukan pengeluaran kas/bank untuk melunasi hutang pembelian ke supplier."
       }
     ],
-    keyFeatures: [
-      { name: "Pelacakan Kuota Cuti Otomatis", description: "Mencegah staf mengambil cuti melebihi batas hak kuota tahunan." },
-      { name: "Lampiran Surat Keterangan", description: "Dukungan upload foto/PDF surat izin dokter untuk pengajuan sakit." }
-    ],
-    tipsAndTricks: [
-      "Ajukan cuti minimal 3 hari sebelumnya agar atasan memiliki waktu mengatur pengganti tugas (handover)."
-    ],
-    faq: [
-      { question: "Apakah izin sakit memotong jatah cuti tahunan?", answer: "Tergantung kebijakan perusahaan. Di sistem Anda bisa memilih tipe 'Sakit' yang tidak memotong kuota cuti tahunan." }
-    ]
-  },
-
-  // 20. REIMBURSEMENT
-  {
-    id: "employee_reimbursement",
-    menuKey: "employee_reimbursement",
-    title: "Klaim Biaya Karyawan (Reimbursement)",
-    category: "SDM & HR",
-    categoryId: "hr",
-    iconName: "FileText",
-    badge: "Klaim Dana",
-    targetRole: "Semua Karyawan / Finance / Admin",
-    path: "/employees/reimbursement",
-    summary: "Pengajuan klaim penggantian dana operasional yang ditalangi staf, upload nota struk bukti belanja, dan approval finance.",
-    overview: "Modul Reimbursement memudahkan staf mengklaim kembali uang pribadi yang dipakai untuk keperluan dinas (bensin, makan lembur, belanja ATK darurat). Finance dapat memverifikasi struk sebelum mencairkan dana.",
-    workflow: [
+    "keyFeatures": [
       {
-        step: 1,
-        title: "Karyawan Mengajukan Klaim",
-        description: "Klik '+ Klaim Baru', masukkan judul klaim, nominal rupiah, kategori biaya, dan upload foto struk nota fisik.",
-        screenshotPlaceholder: {
-          caption: "Form Pengajuan Klaim Reimburse",
-          description: "Screenshot form pengajuan klaim beserta upload foto nota struk belanja."
-        }
+        "name": "Three-Way Matching",
+        "description": "Pencocokan akurat antara dokumen PO, Surat Jalan Penerimaan Barang, dan Faktur Tagihan Vendor."
       },
       {
-        step: 2,
-        title: "Verifikasi & Pencairan Dana oleh Finance",
-        description: "Finance memeriksa kecocokan nominal dengan foto struk, lalu klik 'Setujui & Cairkan Dana' dari rekening kas operasional.",
-        screenshotPlaceholder: {
-          caption: "Verifikasi Struk Reimburse oleh Finance",
-          description: "Screenshot pratinjau foto struk dan tombol persetujuan pencairan kas."
-        },
-        tip: "Pencairan dana otomatis tercatat ke buku kas pengeluaran (Expenses) perusahaan."
+        "name": "Pembaruan HPP Otomatis",
+        "description": "Menghitung ulang harga pokok rata-rata produk saat terjadi perubahan harga beli dari supplier."
+      },
+      {
+        "name": "Manajemen Hutang Usaha (AP)",
+        "description": "Jadwal jatuh tempo hutang dagang agar perusahaan terhindar dari denda keterlambatan."
       }
     ],
-    keyFeatures: [
-      { name: "Bukti Struk Wajib", description: "Mengharuskan lampiran foto nota fisik untuk meminimalkan klaim palsu." },
-      { name: "Integrasi Akuntansi Otomatis", description: "Klaim yang disetujui langsung menjurnal ke akun beban dan mengurangi kas." }
+    "tipsAndTricks": [
+      "Selalu lampirkan nomor PO saat mentransfer pembayaran ke supplier untuk mempermudah pengecekan kedua belah pihak."
     ],
-    tipsAndTricks: [
-      "Ambil foto struk struk thermal segera sebelum tintanya pudar untuk memudahkan verifikasi finance."
-    ],
-    faq: [
-      { question: "Bisakah reimbursement digabungkan ke pembayaran gaji bulanan?", answer: "Bisa, klaim yang disetujui dapat dicairkan langsung atau dimasukkan ke komponen tambahan slip gaji bulanan." }
+    "faq": [
+      {
+        "question": "Apakah membuat PO langsung menambah stok barang di sistem?",
+        "answer": "Tidak. Stok barang baru akan bertambah setelah Anda mengklik tombol 'Terima Barang' ketika fisik produk telah diperiksa dan tiba di gudang."
+      },
+      {
+        "question": "Bagaimana jika barang yang dikirim supplier ada yang rusak/cacat?",
+        "answer": "Anda cukup menginput kuantitas barang bagus yang diterima pada form penerimaan, dan mengembalikan barang cacat dengan status retur beli."
+      }
     ]
   },
-
-  // 21. PAYROLL & SLIP GAJI
   {
-    id: "payroll",
-    menuKey: "payroll",
-    title: "Penggajian & Slip Gaji (Payroll)",
-    category: "SDM & HR",
-    categoryId: "hr",
-    iconName: "Wallet",
-    badge: "Penggajian",
-    targetRole: "Finance / HRD / Owner / Karyawan",
-    path: "/payroll",
-    summary: "Pemrosesan gaji bulanan staf, perhitungan otomatis lembur & potongan, generate slip gaji PDF, dan portal 'Slip Gaji Saya'.",
-    overview: "Modul Payroll mengotomatiskan proses penggajian seluruh staf setiap akhir bulan. Menggabungkan gaji pokok, tunjangan kehadiran dari modul Absensi, klaim reimburse, bonus, dan potongan pinjaman/kasbon menjadi slip gaji PDF resmi.",
-    workflow: [
+    "id": "vendor",
+    "menuKey": "vendor",
+    "title": "Database Vendor & Supplier",
+    "category": "Pembelian & Gudang",
+    "categoryId": "purchase",
+    "iconName": "Building2",
+    "badge": "Master Data",
+    "targetRole": "Purchasing / Admin / Finance",
+    "path": "/vendor",
+    "summary": "Master data pemasok, kontak sales supplier, nomor rekening pembayaran, dan riwayat pesanan pembelian.",
+    "overview": "Modul Vendor mengelola direktori supplier rekanan bisnis Anda. Memudahkan pencarian kontak sales person, nomor rekening bank pembayaran supplier, syarat termin hutang (Top), serta riwayat barang-barang yang biasa dipasok.",
+    "workflow": [
       {
-        step: 1,
-        title: "Buat Periode Penggajian Baru",
-        description: "Pilih bulan & tahun penggajian (misal: Agustus 2026). Klik 'Tarik Data Gaji Otomatis'.",
-        screenshotPlaceholder: {
-          caption: "Pemrosesan Penggajian Bulanan",
-          description: "Screenshot tabel rekapitulasi gaji seluruh staf dengan rincian tunjangan dan potongan."
+        "step": 1,
+        "title": "Daftarkan Vendor Baru",
+        "description": "Klik '+ Tambah Vendor', isi nama perusahaan supplier, nomor telepon, alamat kantor/gudang, dan nama sales representatif.",
+        "screenshotPlaceholder": {
+          "caption": "Form Master Vendor",
+          "description": "Screenshot pengisian kontak supplier dan rekening bank transfer."
         }
       },
       {
-        step: 2,
-        title: "Sesuaikan Bonus & Potongan Tambahan",
-        description: "Tambahkan bonus lembur, insentif performa penjualan, atau potongan kasbon jika ada.",
-        tip: "Sistem akan menghitung Total Gaji Bersih (Take Home Pay) secara instan."
-      },
-      {
-        step: 3,
-        title: "Finalisasi & Terbitkan Slip Gaji",
-        description: "Klik 'Kunci & Terbitkan'. Karyawan dapat langsung melihat dan mengunduh slip gaji mereka di menu 'Slip Gaji Saya' (/employees/payslips).",
-        screenshotPlaceholder: {
-          caption: "Format Cetak Dokumen Slip Gaji Karyawan",
-          description: "Screenshot dokumen PDF Slip Gaji resmi dengan rincian pendapatan, potongan, dan logo perusahaan."
-        }
+        "step": 2,
+        "title": "Catat Rekening Bank Supplier",
+        "description": "Lengkapi nomor rekening bank vendor untuk mencegah kesalahan transfer saat bagian keuangan membayar tagihan PO.",
+        "tip": "Anda juga dapat mencatat nomor NPWP vendor untuk keperluan bukti potong pajak PPh 23 jika ada."
       }
     ],
-    keyFeatures: [
-      { name: "Generate Slip Gaji PDF Otomatis", description: "Setiap karyawan mendapatkan dokumen slip gaji rahasia berkop resmi." },
-      { name: "Portal Karyawan Mandiri", description: "Karyawan dapat mengunduh riwayat slip gaji bulan-bulan sebelumnya kapan saja." },
-      { name: "Otomasi Jurnal Beban Gaji", description: "Mencatat total beban gaji ke buku besar akuntansi dalam satu klik." }
-    ],
-    tipsAndTricks: [
-      "Kunci periode penggajian setelah pembayaran transfer bank selesai agar data tidak berubah."
-    ],
-    faq: [
-      { question: "Apakah staf biasa bisa melihat gaji staf lainnya?", answer: "Tidak. Staf biasa hanya memiliki akses ke menu 'Slip Gaji Saya' yang hanya menampilkan slip miliknya sendiri." }
-    ]
-  },
-
-  // 22. CHART OF ACCOUNTS (COA)
-  {
-    id: "accounts",
-    menuKey: "accounts",
-    title: "Bagan Akun Standar (Chart of Accounts)",
-    category: "Akuntansi & Keuangan",
-    categoryId: "finance",
-    iconName: "Grid",
-    badge: "Struktur Akuntansi",
-    targetRole: "Finance / Akuntan / Owner",
-    path: "/accounts",
-    summary: "Daftar struktur rekening akuntansi (Aktiva, Kewajiban, Ekuitas, Pendapatan, Beban) dan pengaturan saldo awal buku.",
-    overview: "Chart of Accounts (COA) adalah kerangka dasar seluruh pencatatan keuangan bisnis Anda. Setiap rupiah yang masuk atau keluar dari transaksi penjualan, kasir, belanja barang, atau beban operasional akan dialokasikan ke nomor akun COA yang sesuai.",
-    workflow: [
+    "uiGuide": [
       {
-        step: 1,
-        title: "Pahami 5 Klasifikasi Akun Utama",
-        description: "1. Aktiva (Kas, Bank, Piutang, Stok) | 2. Kewajiban (Hutang) | 3. Modal (Ekuitas) | 4. Pendapatan (Penjualan) | 5. Beban (Operasional).",
-        screenshotPlaceholder: {
-          caption: "Pohon Bagan Akun (Chart of Accounts)",
-          description: "Screenshot struktur hierarki kode akun akuntansi beserta saldo debit/kredit terkini."
-        }
+        "name": "Tombol '+ Tambah Vendor'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran supplier rekanan baru."
       },
       {
-        step: 2,
-        title: "Tambah Akun Bank / Kas Baru",
-        description: "Jika Anda membuka rekening bank baru (misal: Bank Mandiri Giro), klik '+ Tambah Akun', pilih tipe 'Kas & Bank', dan beri kode unik.",
-        tip: "Akun kas/bank ini akan otomatis muncul sebagai opsi pembayaran di Invoice dan POS Kasir."
+        "name": "Kolom 'Nama Vendor / Perusahaan'",
+        "type": "Kolom Isian",
+        "description": "Nama resmi supplier atau toko grosir penyedia barang."
+      },
+      {
+        "name": "Kolom 'Nomor Rekening & Nama Bank Vendor'",
+        "type": "Kolom Isian",
+        "description": "Informasi rekening bank tujuan pembayaran tagihan."
+      },
+      {
+        "name": "Kolom 'Termin Pembayaran Default'",
+        "type": "Dropdown",
+        "description": "Kesepakatan tempo pembayaran hutang (Tunai / Net 14 / Net 30 hari)."
       }
     ],
-    keyFeatures: [
-      { name: "Standar Akuntansi Indonesia", description: "Sudah dilengkapi template kode akun standar yang siap langsung digunakan." },
-      { name: "Sub-Akun Bertingkat", description: "Mendukung hierarki akun induk dan anak akun untuk rincian beban yang rapi." }
-    ],
-    tipsAndTricks: [
-      "Jangan mengubah kode akun yang sudah memiliki riwayat jurnal transaksi tanpa berkonsultasi dengan akuntan Anda."
-    ],
-    faq: [
-      { question: "Bagaimana cara memasukkan saldo awal saat pertama kali pakai sistem?", answer: "Gunakan fitur 'Jurnal Penyesuaian Saldo Awal' di menu Buku Besar untuk mengisi saldo awal kas, bank, dan modal." }
-    ]
-  },
-
-  // 23. EXPENSES (BIAYA OPERASIONAL)
-  {
-    id: "expenses",
-    menuKey: "expenses",
-    title: "Pengeluaran & Biaya Operasional (Expenses)",
-    category: "Akuntansi & Keuangan",
-    categoryId: "finance",
-    iconName: "Wallet",
-    badge: "Arus Kas Keluar",
-    targetRole: "Finance / Admin / Owner",
-    path: "/expenses",
-    summary: "Pencatatan biaya harian operasional (listrik, sewa, internet, gaji, ATK), upload bukti pembayaran, dan alokasi pos beban.",
-    overview: "Modul Biaya Operasional (Expenses) mencatat semua uang keluar non-pembelian barang dagang. Berguna untuk mengontrol pengeluaran kas kecil (petty cash) dan menyajikan laporan laba rugi yang mencerminkan beban riil perusahaan.",
-    workflow: [
+    "keyFeatures": [
       {
-        step: 1,
-        title: "Catat Pengeluaran Baru",
-        description: "Klik '+ Catat Biaya', pilih tanggal, masukkan nominal rupiah, dan pilih Kategori Beban (misal: Biaya Listrik & Air).",
-        screenshotPlaceholder: {
-          caption: "Form Input Pengeluaran Biaya",
-          description: "Screenshot formulir pencatatan beban operasional dengan pemilihan akun kas sumber dana."
-        }
+        "name": "Direktori Supplier Terpusat",
+        "description": "Seluruh tim pengadaan dapat mengakses kontak supplier resmi tanpa tercecer."
       },
       {
-        step: 2,
-        title: "Pilih Akun Kas / Bank Sumber Dana",
-        description: "Pilih rekening yang digunakan untuk membayar (Kas Tunai, Rekening BCA, dll) dan lampirkan foto kuitansi/struk.",
-        tip: "Saldo rekening sumber akan langsung terpotong secara otomatis di buku kas."
-      },
-      {
-        step: 3,
-        title: "Kaitkan ke Proyek / Departemen (Opsional)",
-        description: "Jika pengeluaran untuk proyek tertentu, pilih nama proyek terkait agar terhitung dalam biaya HPP proyek."
+        "name": "Rekapitulasi Saldo Hutang Vendor",
+        "description": "Menampilkan total nominal tagihan belum dibayar ke masing-masing vendor."
       }
     ],
-    keyFeatures: [
-      { name: "Kategori Biaya Fleksibel", description: "Pengelompokan beban operasional, beban pemasaran, beban administrasi, dll." },
-      { name: "Lampiran Struk Bukti Bayar", description: "Penyimpanan digital bukti kuitansi fisik agar tidak hilang." }
+    "tipsAndTricks": [
+      "Cantumkan nama sales kontak person dan nomor WA aktif di kolom kontak agar komunikasi order lebih cepat."
     ],
-    tipsAndTricks: [
-      "Catat pengeluaran kecil kasir secara harian agar saldo kas fisik tidak selisih saat tutup buku."
-    ],
-    faq: [
-      { question: "Apa bedanya Pengeluaran (Expense) dengan Pembelian (Purchase Order)?", answer: "Purchase Order untuk pembelian barang yang dijual kembali (masuk stok), sedangkan Expense untuk biaya habis pakai operasional." }
+    "faq": [
+      {
+        "question": "Bisakah satu vendor memasok berbagai macam kategori barang?",
+        "answer": "Bisa. Saat membuat PO, Anda bebas memilih produk apa saja yang disediakan oleh vendor tersebut."
+      }
     ]
   },
-
-  // 24. BUKU BESAR (LEDGER)
   {
-    id: "ledger",
-    menuKey: "ledger",
-    title: "Buku Besar & Jurnal Umum (General Ledger)",
-    category: "Akuntansi & Keuangan",
-    categoryId: "finance",
-    iconName: "BookOpen",
-    badge: "Jurnal Otomatis",
-    targetRole: "Finance / Akuntan / Owner",
-    path: "/ledger",
-    summary: "Catatan jurnal transaksi otomatis double-entry dari seluruh aktivitas sistem, mutasi debit/kredit, dan jurnal penyesuaian manual.",
-    overview: "General Ledger adalah rekaman lengkap seluruh ayat jurnal akuntansi yang terbentuk secara otomatis di balik layar ketika invoice diterbitkan, kas masuk diterima, atau beban dicatat. Dilengkapi kemampuan input Jurnal Manual (Manual Journal Entry).",
-    workflow: [
+    "id": "employees",
+    "menuKey": "employees",
+    "title": "Database Karyawan (Employees)",
+    "category": "SDM & HR",
+    "categoryId": "hr",
+    "iconName": "Users",
+    "badge": "SDM",
+    "targetRole": "HRD / Admin / Owner",
+    "path": "/employees",
+    "summary": "Master data staf, struktur divisi & jabatan, status kontrak kerja, dokumen identitas, dan rekening gaji.",
+    "overview": "Modul Karyawan mengelola seluruh basis data sumber daya manusia (SDM) perusahaan Anda. Mulai dari informasi pribadi, NIK/KTP, jabatan, tanggal mulai bekerja, status kepegawaian (Tetap, Kontrak, Magang), hingga akun bank penerima gaji bulanan.",
+    "workflow": [
       {
-        step: 1,
-        title: "Pilih Akun yang Ingin Diperiksa",
-        description: "Pilih akun tertentu (misal: Akun 1010 - Kas Utama) dan tentukan rentang bulan untuk melihat mutasi saldo.",
-        screenshotPlaceholder: {
-          caption: "Buku Besar Akun (General Ledger View)",
-          description: "Screenshot baris mutasi debit, kredit, saldo berjalan, dan nomor referensi dokumen sumber."
+        "step": 1,
+        "title": "Tambah Profil Karyawan",
+        "description": "Klik '+ Tambah Karyawan', isi nama lengkap, email, nomor HP, divisi kerja, jabatan, dan tanggal bergabung.",
+        "screenshotPlaceholder": {
+          "caption": "Form Master Karyawan",
+          "description": "Screenshot pengisian data staf, divisi jabatan, dan nomor rekening payroll."
         }
       },
       {
-        step: 2,
-        title: "Buat Jurnal Penyesuaian Manual (Jika Diperlukan)",
-        description: "Klik '+ Jurnal Manual', masukkan akun di sisi Debit dan Kredit dengan nominal yang seimbang (Balance).",
-        tip: "Digunakan untuk penyusutan aset, koreksi salah akun, atau alokasi dividen."
+        "step": 2,
+        "title": "Tautkan Akun Login (Opsional)",
+        "description": "Hubungkan profil karyawan dengan email akun login agar staf dapat mengakses portal mandiri (ESS) untuk absensi, cuti, dan melihat slip gaji.",
+        "tip": "Tentukan hak akses peran (Role) yang sesuai untuk membatasi menu yang boleh dibuka staf."
       }
     ],
-    keyFeatures: [
-      { name: "Double-Entry Accounting Otomatis", description: "Sistem otomatis menjurnal sisi debit dan kredit tanpa perlu input manual." },
-      { name: "Audit Trail Lengkap", description: "Setiap baris jurnal dapat diklik untuk membuka dokumen transaksi aslinya." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Karyawan'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran anggota tim kerja baru."
+      },
+      {
+        "name": "Kolom 'Nama Lengkap & NIK'",
+        "type": "Kolom Isian",
+        "description": "Nama karyawan sesuai KTP dan Nomor Induk Kependudukan / No Karyawan."
+      },
+      {
+        "name": "Dropdown 'Divisi & Jabatan'",
+        "type": "Dropdown",
+        "description": "Departemen kerja (Sales, Kasir, Gudang, Operasional, IT, HR, Finance) dan level posisi."
+      },
+      {
+        "name": "Dropdown 'Status Kepegawaian'",
+        "type": "Dropdown",
+        "description": "Status ikatan kerja: Karyawan Tetap (PKWTT), Kontrak (PKWT), Harian Lepas, atau Magang (Internship)."
+      },
+      {
+        "name": "Kolom 'Gaji Pokok & Tunjangan Standar'",
+        "type": "Kolom Isian",
+        "description": "Nominal acuan penghasilan bulanan untuk perhitungan penggajian payroll."
+      },
+      {
+        "name": "Kolom 'Nomor Rekening Gaji'",
+        "type": "Kolom Isian",
+        "description": "Nomor rekening bank untuk keperluan transfer slip gaji."
+      }
     ],
-    tipsAndTricks: [
-      "Pastikan total Debit dan Kredit pada Jurnal Manual selalu bernilai sama (imbang) sebelum disimpan."
+    "keyFeatures": [
+      {
+        "name": "Portal Mandiri Karyawan (ESS)",
+        "description": "Staf dapat login untuk absen online, klaim reimburse, ajukan cuti, dan download slip gaji."
+      },
+      {
+        "name": "Pengingat Habis Kontrak",
+        "description": "Notifikasi peringatan sebelum masa kontrak kerja staf berakhir."
+      },
+      {
+        "name": "Manajemen Struktur Divisi",
+        "description": "Pengelompokan tim kerja yang rapi untuk delegasi wewenang dan persetujuan."
+      }
     ],
-    faq: [
-      { question: "Apakah saya harus mengerti akuntansi untuk memakai aplikasi ini?", answer: "Tidak, sistem sudah membuat jurnal otomatis di latar belakang saat Anda membuat invoice atau mencatat pembayaran." }
+    "tipsAndTricks": [
+      "Gunakan email aktif karyawan saat mendaftarkan profil agar staf dapat melakukan verifikasi login mandiri."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana jika ada karyawan yang resign / berhenti bekerja?",
+        "answer": "Buka profil karyawan tersebut, ubah statusnya menjadi 'Non-Aktif / Resigned'. Riwayat absensi dan slip gaji masa lalu akan tetap tersimpan aman di arsip."
+      }
     ]
   },
-
-  // 25. ASET TETAP (ASSETS)
   {
-    id: "assets",
-    menuKey: "assets",
-    title: "Manajemen Aset Tetap (Assets)",
-    category: "Akuntansi & Keuangan",
-    categoryId: "finance",
-    iconName: "Layers",
-    badge: "Aktiva Tetap",
-    targetRole: "Finance / Admin / Owner",
-    path: "/assets",
-    summary: "Pencatatan aset tetap perusahaan (kendaraan, mesin, laptop, gedung), masa manfaat, dan perhitungan penyusutan otomatis.",
-    overview: "Modul Aset Tetap membantu mencatat inventaris barang berharga modal perusahaan, nilai perolehan awal, perkiraan umur ekonomis, dan menghitung penyusutan nilai buku (Depreciation) setiap akhir bulan.",
-    workflow: [
+    "id": "employee_attendance",
+    "menuKey": "employee_attendance",
+    "title": "Absensi GPS & Pengenalan Wajah",
+    "category": "SDM & HR",
+    "categoryId": "hr",
+    "iconName": "Clock",
+    "badge": "Absensi Online",
+    "targetRole": "Semua Karyawan / HRD / Admin / Owner",
+    "path": "/employees/attendance",
+    "summary": "Pencatatan jam masuk & pulang karyawan dengan validasi radius lokasi GPS (Geofencing), selfie foto, dan log kehadiran.",
+    "overview": "Modul Absensi menyediakan 4 tab lengkap: Portal Absen Saya (Clock-in/out dengan GPS & Kamera Selfie), Riwayat Absen Pribadi, Log Kehadiran Seluruh Karyawan (Admin), dan Pengaturan Geofence Lokasi Kantor (Radius Meter, Jam Masuk Standar). Mencegah kecurangan titip absen.",
+    "workflow": [
       {
-        step: 1,
-        title: "Daftarkan Aset Tetap Baru",
-        description: "Klik '+ Tambah Aset', beri nama (misal: Laptop MacBook Desain), tanggal beli, nilai perolehan (harga beli), dan masa manfaat (misal: 4 tahun).",
-        screenshotPlaceholder: {
-          caption: "Form Input Master Aset Tetap",
-          description: "Screenshot formulir pendaftaran aset dengan pilihan metode penyusutan garis lurus."
+        "step": 1,
+        "title": "Pengaturan Titik Lokasi Kantor (Admin)",
+        "description": "Buka tab 'Pengaturan Absensi', klik 'Ambil Lokasi Saya' untuk menyimpan koordinat GPS kantor dan tentukan radius toleransi (misal 100 meter).",
+        "screenshotPlaceholder": {
+          "caption": "Pengaturan Geofencing GPS Kantor",
+          "description": "Screenshot input Latitude, Longitude, Radius Meter, dan Jam Masuk default."
         }
       },
       {
-        step: 2,
-        title: "Hitung Penyusutan Bulanan",
-        description: "Sistem akan otomatis menghitung nilai depresiasi per bulan dan menyajikan sisa Nilai Buku (Book Value) terkini.",
-        screenshotPlaceholder: {
-          caption: "Daftar Aset & Jadwal Penyusutan",
-          description: "Screenshot tabel aset dengan nilai beli awal, akumulasi penyusutan, dan nilai buku saat ini."
+        "step": 2,
+        "title": "Clock In / Clock Out Mandiri (Karyawan)",
+        "description": "Karyawan membuka tab 'Portal Absen Saya' lewat HP/Laptop di kantor, izinkan akses GPS dan kamera, lalu klik tombol 'Catat Masuk' atau 'Catat Pulang'.",
+        "tip": "Sistem otomatis mendeteksi apakah posisi berada di dalam radius dan mencatat status Tepat Waktu atau Terlambat.",
+        "screenshotPlaceholder": {
+          "caption": "Portal Absensi Selfie & Lokasi GPS",
+          "description": "Screenshot tombol Clock In/Out dengan indikator jarak meter dari kantor."
+        }
+      },
+      {
+        "step": 3,
+        "title": "Pantau Log Kehadiran Karyawan (Admin)",
+        "description": "HRD dan Owner dapat memeriksa tab 'Log Kehadiran Karyawan' dengan filter tanggal, pencarian nama, status terlambat, dan link peta koordinat Google Maps.",
+        "screenshotPlaceholder": {
+          "caption": "Tabel Log Absensi Staf & Link Google Maps",
+          "description": "Screenshot tabel log kehadiran seluruh tim lengkap dengan foto selfie dan koordinat."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Penyusutan Garis Lurus (Straight Line)", description: "Metode depresiasi standar akuntansi otomatis setiap periode." },
-      { name: "Pelacakan Lokasi & Penanggung Jawab", description: "Mencatat siapa staf yang memegang aset dan lokasi penempatannya." }
+    "uiGuide": [
+      {
+        "name": "Tab 'Portal Absen Saya'",
+        "type": "Tab Navigasi",
+        "description": "Halaman untuk karyawan mencatat jam masuk, jam pulang, dan mengambil foto selfie kehadiran."
+      },
+      {
+        "name": "Tab 'Riwayat Absen Saya'",
+        "type": "Tab Navigasi",
+        "description": "Daftar riwayat jam kerja, jam lembur, dan status kehadiran pribadi karyawan."
+      },
+      {
+        "name": "Tab 'Log Kehadiran Karyawan (Admin)'",
+        "type": "Tab Navigasi",
+        "description": "Tabel rekapitulasi kehadiran seluruh staf perusahaan untuk evaluasi HRD."
+      },
+      {
+        "name": "Tab 'Pengaturan Absensi (Admin)'",
+        "type": "Tab Navigasi",
+        "description": "Pengaturan batas radius GPS, jam masuk standar, dan aktivasi fitur validasi wajah."
+      },
+      {
+        "name": "Tombol 'Ambil Lokasi Saya (GPS)'",
+        "type": "Tombol",
+        "description": "Mengambil koordinat Latitude & Longitude saat ini secara instan dari sensor GPS perangkat."
+      },
+      {
+        "name": "Kolom 'Batas Radius Geofence (Meter)'",
+        "type": "Kolom Isian",
+        "description": "Jarak maksimal dalam meter (misal: 100 meter) karyawan diizinkan melakukan absensi dari titik kantor."
+      },
+      {
+        "name": "Toggle 'Aktifkan Validasi Radius GPS'",
+        "type": "Toggle / Switch",
+        "description": "Mengunci absensi agar hanya bisa dilakukan jika karyawan berada di dalam radius kantor."
+      },
+      {
+        "name": "Tombol 'Catat Masuk (Clock In)' & 'Catat Pulang (Clock Out)'",
+        "type": "Tombol",
+        "description": "Tombol utama karyawan untuk merekam waktu kehadiran harian."
+      }
     ],
-    tipsAndTricks: [
-      "Beri label stiker nomor inventaris fisik pada setiap laptop atau mesin kantor sesuai kode aset di sistem."
+    "keyFeatures": [
+      {
+        "name": "Validasi Geofencing GPS Presisi",
+        "description": "Memastikan staf benar-benar berada di area kantor atau outlet kerja saat absen."
+      },
+      {
+        "name": "Kamera Selfie Real-Time",
+        "description": "Mengambil foto wajah langsung saat tombol ditekan untuk verifikasi fisik kehadiran."
+      },
+      {
+        "name": "Kalkulasi Keterlambatan Otomatis",
+        "description": "Otomatis menghitung menit keterlambatan untuk potongan denda disiplin saat payroll."
+      }
     ],
-    faq: [
-      { question: "Kapan suatu barang dicatat sebagai Aset dibanding Biaya?", answer: "Barang dengan masa pakai lebih dari 1 tahun dan bernilai signifikan dicatat sebagai Aset Tetap, sedangkan barang habis pakai dicatat sebagai Expense." }
+    "tipsAndTricks": [
+      "Pastikan karyawan mengaktifkan izin Lokasi (GPS) dan Kamera pada browser HP mereka saat pertama kali membuka portal."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana jika GPS karyawan akurasinya meleset karena berada di dalam gedung?",
+        "answer": "Admin dapat menaikkan toleransi 'Batas Radius Geofence' menjadi 150-200 meter di tab Pengaturan Absensi."
+      },
+      {
+        "question": "Apakah staf yang bekerja WFH (Remote) bisa absen?",
+        "answer": "Bisa. Admin dapat menonaktifkan sementara toggle Geofence untuk staf tertentu atau membuat cabang lokasi kerja virtual."
+      }
     ]
   },
-
-  // 26. PUSAT LAPORAN (REPORTS)
   {
-    id: "reports",
-    menuKey: "reports",
-    title: "Pusat Laporan & Analitik (Reports Hub)",
-    category: "Laporan Bisnis",
-    categoryId: "reports",
-    iconName: "TrendingUp",
-    badge: "Analitik",
-    targetRole: "Owner / Direktur / Finance / Manager",
-    path: "/reports",
-    summary: "Kumpulan seluruh laporan analitik bisnis: Laba Rugi, Neraca, Arus Kas, Penjualan, Valuasi Stok, Absensi, dan POS Shift.",
-    overview: "Pusat Laporan menyajikan seluruh ringkasan kinerja bisnis Anda dalam bentuk tabel dan grafik siap cetak atau ekspor ke Excel/PDF. Membantu pemilik usaha mengambil keputusan strategis berdasarkan data riil.",
-    workflow: [
+    "id": "employee_leave",
+    "menuKey": "employee_leave",
+    "title": "Pengajuan & Kuota Cuti Karyawan",
+    "category": "SDM & HR",
+    "categoryId": "hr",
+    "iconName": "Calendar",
+    "badge": "Cuti & Izin",
+    "targetRole": "Semua Karyawan / HRD / Admin / Owner",
+    "path": "/employees/leave",
+    "summary": "Pengajuan cuti tahunan, sakit, izin khusus, pemantauan saldo sisa cuti, dan persetujuan approval oleh manajer.",
+    "overview": "Modul Cuti mengelola jatah kuota cuti tahunan staf secara terstruktur. Terdiri dari Portal ESS (karyawan mengajukan cuti, melihat sisa kuota, riwayat persetujuan) dan Panel Manajemen Admin (manajer/owner menyetujui atau menolak pengajuan, atur kuota kupon cuti tahunan).",
+    "workflow": [
       {
-        step: 1,
-        title: "Pilih Jenis Laporan",
-        description: "Di menu Pusat Laporan, pilih kategori laporan yang diinginkan: Laporan Penjualan, Laba Rugi, Valuasi Stok, atau Absensi.",
-        screenshotPlaceholder: {
-          caption: "Pusat Direktori Laporan Bisnis",
-          description: "Screenshot katalog pusat laporan dengan kartu pilihan laporan keuangan, penjualan, dan stok."
+        "step": 1,
+        "title": "Pengajuan Cuti (Staf)",
+        "description": "Karyawan membuka tab Portal ESS, klik '+ Ajukan Cuti', pilih tipe cuti (Tahunan, Sakit dengan Surat Dokter, Melahirkan, Izin Khusus), pilih rentang tanggal dan alasan.",
+        "screenshotPlaceholder": {
+          "caption": "Form Pengajuan Cuti Mandiri",
+          "description": "Screenshot pengisian tanggal cuti dan keterangan izin kerja."
         }
       },
       {
-        step: 2,
-        title: "Atur Parameter Filter & Tanggal",
-        description: "Pilih rentang tanggal (Bulan Ini, Kuartal Ini, Tahunan), filter per cabang/outlet, atau filter per kategori produk.",
-        tip: "Gunakan filter per sales/kasir untuk mengevaluasi kinerja masing-masing staf."
-      },
-      {
-        step: 3,
-        title: "Ekspor ke Excel / PDF",
-        description: "Klik tombol 'Ekspor Excel (XLSX)' untuk olah data lebih lanjut, atau 'Cetak PDF' untuk laporan meeting manajemen.",
-        screenshotPlaceholder: {
-          caption: "Pratinjau Laporan Keuangan Siap Cetak",
-          description: "Screenshot format laporan laba rugi lengkap dengan persentase margin keuntungan."
+        "step": 2,
+        "title": "Persetujuan / Approval (Admin/Owner)",
+        "description": "Manajer/Owner membuka tab 'Panel Manajemen (Admin)', meninjau daftar pengajuan yang masuk, lalu klik 'Setujui' atau 'Tolak' beserta catatan.",
+        "tip": "Saldo kuota cuti tahunan staf akan otomatis terpotong saat pengajuan disetujui.",
+        "screenshotPlaceholder": {
+          "caption": "Panel Persetujuan Cuti Karyawan",
+          "description": "Screenshot tabel approval cuti dengan tombol Setujui dan Tolak."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Laporan Laba Rugi (Profit & Loss)", description: "Pendapatan kotor dikurangi HPP dan beban operasional menghasilkan laba bersih." },
-      { name: "Laporan Valuasi Stok Gudang", description: "Menampilkan kuantitas sisa barang dan nilai total rupiah persediaan." },
-      { name: "Laporan Performa Kasir (POS Shifts)", description: "Rekap total penjualan kasir, selisih kas fisik, dan metode bayar terpopuler." },
-      { name: "Ekspor Multi-Format", description: "Mendukung unduh format Excel (.xlsx), CSV, dan cetak PDF profesional." }
+    "uiGuide": [
+      {
+        "name": "Tab 'Portal Mandiri Karyawan (ESS)'",
+        "type": "Tab Navigasi",
+        "description": "Halaman staf untuk melihat kuota tahunan, sisa saldo hari cuti, dan form pengajuan."
+      },
+      {
+        "name": "Tab 'Panel Manajemen (Admin)'",
+        "type": "Tab Navigasi",
+        "description": "Halaman khusus Owner & Admin untuk menyetujui/menolak pengajuan cuti seluruh tim."
+      },
+      {
+        "name": "Tombol '+ Ajukan Cuti Baru'",
+        "type": "Tombol",
+        "description": "Membuka modal formulir permohonan izin cuti kerja."
+      },
+      {
+        "name": "Dropdown 'Jenis Cuti'",
+        "type": "Dropdown",
+        "description": "Kategori: Cuti Tahunan (Potong Kuota), Izin Sakit, Cuti Menikah, Cuti Melahirkan, atau Izin Penting."
+      },
+      {
+        "name": "Kolom 'Tanggal Mulai & Tanggal Selesai'",
+        "type": "Kolom Isian",
+        "description": "Rentang hari kerja yang diajukan untuk izin libur."
+      },
+      {
+        "name": "Tombol 'Setujui (Approve)' & 'Tolak (Reject)'",
+        "type": "Tombol",
+        "description": "Tombol aksi manajer untuk memutuskan status pengajuan cuti."
+      },
+      {
+        "name": "Tombol '+ Alokasikan Kuota Cuti Tahunan'",
+        "type": "Tombol",
+        "description": "Menetapkan jatah hak cuti tahunan (misal 12 hari per tahun) untuk setiap karyawan."
+      }
     ],
-    tipsAndTricks: [
-      "Evaluasi Laporan Laba Rugi setiap akhir bulan untuk memangkas pos pengeluaran yang tidak efisien."
+    "keyFeatures": [
+      {
+        "name": "Kalkulator Saldo Cuti Real-Time",
+        "description": "Otomatis menghitung kuota terpakai dan sisa kuota tanpa rekap manual."
+      },
+      {
+        "name": "Notifikasi Pengajuan",
+        "description": "Pemberitahuan instan saat ada permohonan cuti baru yang membutuhkan persetujuan."
+      }
     ],
-    faq: [
-      { question: "Apakah laporan keuangan bisa difilter per cabang?", answer: "Bisa, jika Anda menggunakan fitur multi-outlet, laporan dapat difilter per cabang atau konsolidasi seluruh outlet." }
+    "tipsAndTricks": [
+      "Staf dapat melampirkan foto surat dokter pada kolom catatan jika mengajukan izin sakit lebih dari 1 hari."
+    ],
+    "faq": [
+      {
+        "question": "Apakah cuti sakit memotong jatah kuota cuti tahunan?",
+        "answer": "Secara default tidak. Hanya tipe 'Cuti Tahunan' yang akan memotong saldo kuota tahunan karyawan."
+      },
+      {
+        "question": "Bagaimana jika karyawan membatalkan cuti yang sudah disetujui?",
+        "answer": "Admin dapat membatalkan persetujuan di Panel Admin, dan sistem akan mengembalikan saldo cuti staf secara otomatis."
+      }
     ]
   },
-
-  // 27. PENGATURAN & KEAMANAN (SETTINGS)
   {
-    id: "settings",
-    menuKey: "settings",
-    title: "Pengaturan Profil & Keamanan (Settings)",
-    category: "Sistem & Pengaturan",
-    categoryId: "system",
-    iconName: "Settings",
-    badge: "Konfigurasi",
-    targetRole: "Owner / Admin",
-    path: "/settings",
-    summary: "Konfigurasi profil usaha, upload logo kop surat, nomor rekening bank, format penomoran nota, dan manajemen sesi login.",
-    overview: "Modul Pengaturan adalah pusat konfigurasi identitas bisnis Anda. Informasi yang diisi di sini (seperti Logo, Alamat, No Telepon, Rekening Bank) akan otomatis tercetak pada kop faktur, surat jalan, dan penawaran harga.",
-    workflow: [
+    "id": "employee_reimbursement",
+    "menuKey": "employee_reimbursement",
+    "title": "Klaim Reimbursement & Biaya Karyawan",
+    "category": "SDM & HR",
+    "categoryId": "hr",
+    "iconName": "Wallet",
+    "badge": "Klaim Biaya",
+    "targetRole": "Semua Karyawan / Finance / Admin / Owner",
+    "path": "/employees/reimbursement",
+    "summary": "Pengajuan klaim penggantian dana operasional staf, upload foto struk nota, verifikasi admin, dan pembayaran pencairan dana.",
+    "overview": "Modul Reimbursement menangani penggantian uang pribadi staf yang terpakai untuk keperluan operasional kantor (Bensin/Transport, Makan Klien, Pembelian ATK mendesak, Biaya Parkir, Penginapan Dinas). Terdiri dari Portal ESS dan Panel Persetujuan Keuangan.",
+    "workflow": [
       {
-        step: 1,
-        title: "Lengkapi Profil Usaha & Logo",
-        description: "Upload logo beresolusi tinggi (format PNG transparan disarankan), isi nama resmi perusahaan, NPWP, dan nomor WhatsApp admin.",
-        screenshotPlaceholder: {
-          caption: "Pengaturan Identitas Perusahaan",
-          description: "Screenshot halaman input profil bisnis, logo, dan alamat toko."
+        "step": 1,
+        "title": "Ajukan Klaim & Foto Struk (Staf)",
+        "description": "Karyawan mengunggah foto struk belanja asli, mengisi nominal rupiah, tanggal transaksi, kategori pengeluaran, dan nomor rekening penerima.",
+        "screenshotPlaceholder": {
+          "caption": "Form Pengajuan Reimbursement & Upload Struk",
+          "description": "Screenshot upload foto struk bukti bayar dan input nominal klaim."
         }
       },
       {
-        step: 2,
-        title: "Atur Format Nomor Faktur & Struk",
-        description: "Tentukan awalan kode nota (Prefix) misal: INV/2026/, DO/2026/, serta teks catatan kaki (Footer) default.",
-        tip: "Nomor urut nota akan bertambah otomatis secara berurutan sesuai pola yang Anda buat."
+        "step": 2,
+        "title": "Review & Persetujuan (Finance/Owner)",
+        "description": "Bagian Keuangan meninjau foto struk nota. Jika valid, klik 'Setujui Klaim'.",
+        "screenshotPlaceholder": {
+          "caption": "Panel Verifikasi Struk & Persetujuan Klaim",
+          "description": "Screenshot preview foto struk belanja dan tombol persetujuan admin."
+        }
       },
       {
-        step: 3,
-        title: "Pantau Keamanan Sesi Login (/settings/security)",
-        description: "Periksa daftar perangkat yang sedang login ke akun Anda. Anda dapat melakukan 'Logout dari Semua Perangkat Lain' jika ada aktivitas mencurigakan.",
-        screenshotPlaceholder: {
-          caption: "Panel Keamanan Akun & Manajemen Sesi",
-          description: "Screenshot daftar riwayat login perangkat (browser, lokasi IP, waktu aktif)."
+        "step": 3,
+        "title": "Pencairan Dana (Disbursement)",
+        "description": "Klik tombol 'Tandai Telah Dibayar (Disbursed)' setelah dana ditransfer ke rekening karyawan, otomatis tercatat di pengeluaran kas perusahaan.",
+        "tip": "Karyawan dapat melihat status klaim berubah menjadi 'Telah Dicairkan'."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tab 'Portal Mandiri Karyawan (ESS)'",
+        "type": "Tab Navigasi",
+        "description": "Tempat staf membuat klaim reimbursement baru dan melihat status pencairan dana."
+      },
+      {
+        "name": "Tab 'Persetujuan & Pembayaran (Admin)'",
+        "type": "Tab Navigasi",
+        "description": "Tempat Finance & Owner memverifikasi keaslian nota struk dan mencairkan uang klaim."
+      },
+      {
+        "name": "Tombol '+ Ajukan Reimbursement'",
+        "type": "Tombol",
+        "description": "Membuka formulir pengajuan klaim baru."
+      },
+      {
+        "name": "Kolom 'Unggah Foto Struk / Nota Fisik'",
+        "type": "Kolom Isian",
+        "description": "Upload foto kwitansi/struk belanja dari kamera HP atau file gambar."
+      },
+      {
+        "name": "Dropdown 'Kategori Biaya'",
+        "type": "Dropdown",
+        "description": "Kategori: Transportasi & Bensin, Jamuan Klien / Entertainment, ATK Kantor, Penginapan Dinas, Medis / Kesehatan."
+      },
+      {
+        "name": "Kolom 'Nominal Klaim (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Jumlah total uang yang harus diganti sesuai angka yang tertera di struk."
+      },
+      {
+        "name": "Tombol 'Setujui Klaim' & 'Tolak Klaim'",
+        "type": "Tombol",
+        "description": "Memvalidasi atau menolak permohonan klaim dengan alasan."
+      },
+      {
+        "name": "Tombol 'Bayar / Cairkan Dana (Disburse)'",
+        "type": "Tombol",
+        "description": "Mencatat pencairan transfer uang ke rekening staf dan membukukan ke kas pengeluaran."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Lampiran Foto Struk Terintegrasi",
+        "description": "Memudahkan audit visual nota struk tanpa perlu mengumpulkan berkas kertas fisik."
+      },
+      {
+        "name": "Pencatatan Otomatis ke Kas Beban",
+        "description": "Reimburse yang dicairkan otomatis masuk ke laporan pengeluaran keuangan."
+      }
+    ],
+    "tipsAndTricks": [
+      "Pastikan foto struk belanja terlihat jelas pada bagian tanggal, nominal, dan nama merchant toko."
+    ],
+    "faq": [
+      {
+        "question": "Berapa lama batas maksimal pengajuan reimbursement setelah transaksi?",
+        "answer": "Kebijakan standar umumnya maksimal 14-30 hari kalender setelah tanggal yang tertera di struk belanja."
+      },
+      {
+        "question": "Bisakah klaim digabungkan pembayarannya bersamaan dengan gaji bulanan?",
+        "answer": "Bisa. Anda dapat menyetujui klaim terlebih dahulu dan memilih pencairan digabung saat penggajian Payroll."
+      }
+    ]
+  },
+  {
+    "id": "payroll",
+    "menuKey": "payroll",
+    "title": "Penggajian & Slip Gaji (Payroll)",
+    "category": "SDM & HR",
+    "categoryId": "hr",
+    "iconName": "CreditCard",
+    "badge": "Payroll",
+    "targetRole": "HRD / Finance / Owner",
+    "path": "/payroll",
+    "summary": "Kalkulasi gaji bulanan, tunjangan, uang lembur, potongan absensi/pajak PPh 21 TER, cetak slip gaji PDF, dan transfer payroll.",
+    "overview": "Modul Payroll mengotomatiskan perhitungan gaji seluruh tim kerja Anda. Memadukan data kehadiran absensi, jam lembur yang disetujui, tunjangan jabatan/makan, potongan denda terlambat, iuran BPJS, dan kalkulasi tarif efektif pajak PPh 21 TER terbaru.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Pilih Periode Penggajian",
+        "description": "Tentukan bulan dan tahun penggajian (misal: Agustus 2026), sistem akan menarik data rekap kehadiran dan tunjangan staf.",
+        "screenshotPlaceholder": {
+          "caption": "Kalkulasi Slip Gaji Bulanan",
+          "description": "Screenshot tabel rincian gaji pokok, lembur, tunjangan, potongan pajak, dan take home pay."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Verifikasi & Tambah Komponen Bonus / Potongan",
+        "description": "Periksa rincian gaji per karyawan. Anda dapat menambahkan bonus insentif sales atau potongan kasbon/pinjaman jika ada.",
+        "tip": "Sistem otomatis menghitung nilai Take Home Pay (Gaji Bersih)."
+      },
+      {
+        "step": 3,
+        "title": "Terbitkan Slip Gaji & Cetak PDF",
+        "description": "Klik 'Kunci & Terbitkan Slip Gaji'. Cetak slip gaji berformat rahasia (Confidential) atau kirim link slip ke akun portal mandiri karyawan.",
+        "screenshotPlaceholder": {
+          "caption": "Dokumen Slip Gaji PDF Resmi",
+          "description": "Screenshot layout slip gaji elegan dengan rincian pendapatan dan potongan."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Kustomisasi Kop Dokumen", description: "Menampilkan logo dan identitas bisnis profesional pada seluruh cetakan PDF." },
-      { name: "Pemberian Hak Akses Karyawan", description: "Mengatur menu apa saja yang boleh dibuka oleh masing-masing staf." },
-      { name: "Session Security Monitor", description: "Melindungi akun usaha dari pembajakan dengan pelacakan sesi login real-time." }
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Buat Periode Payroll Baru'",
+        "type": "Tombol",
+        "description": "Memulai proses perhitungan penggajian untuk bulan berjalan."
+      },
+      {
+        "name": "Dropdown 'Pilih Periode Bulan & Tahun'",
+        "type": "Dropdown",
+        "description": "Menentukan bulan buku penggajian."
+      },
+      {
+        "name": "Tabel Komponen Gaji Karyawan",
+        "type": "Tabel Data",
+        "description": "Kolom Gaji Pokok, Tunjangan Jabatan, Uang Makan/Transport, Upah Lembur, Potongan Absensi, Potongan PPh 21, dan Take Home Pay."
+      },
+      {
+        "name": "Tombol 'Hitung Otomatis dari Absensi'",
+        "type": "Tombol",
+        "description": "Menarik data jumlah hari masuk dan jam lembur dari modul Absensi secara instan."
+      },
+      {
+        "name": "Tombol 'Cetak Semua Slip Gaji (Batch PDF)'",
+        "type": "Tombol",
+        "description": "Mencetak seluruh slip gaji staf dalam 1 dokumen PDF siap cetak."
+      },
+      {
+        "name": "Tombol 'Kunci & Bayar Payroll'",
+        "type": "Tombol",
+        "description": "Mengunci data penggajian dan mencatat total biaya gaji ke buku besar Akuntansi."
+      }
     ],
-    tipsAndTricks: [
-      "Gunakan kombinasi password yang kuat dan lakukan pergantian berkala setiap 3-6 bulan."
+    "keyFeatures": [
+      {
+        "name": "Kalkulasi Pajak PPh 21 Tarif Efektif Rata-rata (TER)",
+        "description": "Perhitungan otomatis pajak penghasilan karyawan sesuai aturan perpajakan terbaru."
+      },
+      {
+        "name": "Slip Gaji Digital Terproteksi",
+        "description": "Karyawan dapat melihat dan mengunduh slip gaji mereka langsung melalui menu ESS."
+      },
+      {
+        "name": "Otomatisasi Jurnal Gaji",
+        "description": "Membukukan biaya beban gaji dan hutang PPh 21 langsung ke neraca keuangan."
+      }
     ],
-    faq: [
-      { question: "Bagaimana jika ingin mengganti nama bisnis atau alamat?", answer: "Cukup ubah data di menu Pengaturan Profil Bisnis, maka semua invoice yang diterbitkan berikutnya akan memakai data baru." }
+    "tipsAndTricks": [
+      "Pastikan seluruh klaim lembur dan penyesuaian absensi sudah disetujui sebelum mengunci periode payroll."
+    ],
+    "faq": [
+      {
+        "question": "Apakah format slip gaji menampilkan informasi potongan secara transparan?",
+        "answer": "Ya, slip gaji merinci seluruh komponen pendapatan kotor, tunjangan, serta setiap pos potongan (pajak, BPJS, kasbon) secara rinci."
+      },
+      {
+        "question": "Bisakah mengekspor file daftar transfer gaji ke format bank?",
+        "answer": "Ya, Anda dapat mengekspor daftar nomor rekening dan nominal take home pay ke format Excel untuk upload massal di Internet Banking bisnis Anda."
+      }
     ]
   },
-
-  // 28. ADMIN DASHBOARD & USERS (SUPERADMIN)
   {
-    id: "admin",
-    menuKey: "admin_dashboard",
-    title: "Manajemen Sistem (Superadmin)",
-    category: "Manajemen Superadmin",
-    categoryId: "admin",
-    iconName: "Shield",
-    badge: "Khusus Superadmin",
-    targetRole: "Superadmin Global Only",
-    path: "/admin/dashboard",
-    summary: "Panel kontrol pusat untuk mengelola seluruh akun pengguna, bisnis terdaftar, audit sistem, dan performa database.",
-    overview: "Khusus untuk pemilik sistem (Superadmin). Menu ini memberikan wewenang tingkat tertinggi untuk memantau seluruh entitas bisnis, reset akses pengguna, dan memastikan kelancaran operasional platform.",
-    workflow: [
+    "id": "accounts",
+    "menuKey": "accounts",
+    "title": "Bagan Akun (Chart of Accounts / COA)",
+    "category": "Akuntansi & Keuangan",
+    "categoryId": "finance",
+    "iconName": "Wallet",
+    "badge": "Akuntansi",
+    "targetRole": "Akuntan / Finance / Owner",
+    "path": "/accounts",
+    "summary": "Master klasifikasi akun akuntansi (Aset, Kewajiban, Ekuitas, Pendapatan, dan Beban), saldo awal, dan nomor kode akun.",
+    "overview": "Chart of Accounts (COA) adalah fondasi sistem pembukuan double-entry bisnis Anda. Mengelompokkan seluruh pos rekening keuangan berdasarkan standar akuntansi Indonesia dengan struktur hierarki kode akun yang fleksibel.",
+    "workflow": [
       {
-        step: 1,
-        title: "Pantau Ringkasan Sistem Global",
-        description: "Buka menu Ringkasan Sistem untuk memantau total pengguna aktif, jumlah transaksi keseluruhan, dan kesehatan server.",
-        screenshotPlaceholder: {
-          caption: "Dashboard Superadmin Master",
-          description: "Screenshot ringkasan sistem global dengan grafik utilisasi dan log sistem."
+        "step": 1,
+        "title": "Lihat Struktur Akun Standar",
+        "description": "Sistem telah menyediakan susunan COA standar bisnis (Kas, Bank, Piutang Usaha, Persediaan, Hutang, Modal, Pendapatan, Beban).",
+        "screenshotPlaceholder": {
+          "caption": "Tabel Bagan Akun (Chart of Accounts)",
+          "description": "Screenshot hierarki nomor kode akun dan saldo berjalan saat ini."
         }
       },
       {
-        step: 2,
-        title: "Kelola Akses Pengguna (/admin/users)",
-        description: "Admin pusat dapat mengaktifkan/menonaktifkan akun, mengatur ulang password darurat, dan menetapkan peran Superadmin.",
-        screenshotPlaceholder: {
-          caption: "Tabel Manajemen Pengguna Global",
-          description: "Screenshot daftar seluruh pengguna terdaftar dengan kontrol status aktif/banned."
+        "step": 2,
+        "title": "Tambah atau Kustomisasi Akun",
+        "description": "Klik '+ Tambah Akun', pilih klasifikasi tipe akun, masukkan nomor kode (misal: 1-1002 Bank Mandiri) dan nama akun.",
+        "tip": "Akun dapat dijadikan sub-akun di bawah akun induk untuk pengelompokan yang lebih rapi."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Akun Baru'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran kode akun COA baru."
+      },
+      {
+        "name": "Dropdown 'Klasifikasi Kategori Akun'",
+        "type": "Dropdown",
+        "description": "Kategori standar: Aset Lancar, Aset Tetap, Kewajiban Jangka Pendek/Panjang, Ekuitas Modal, Pendapatan Usaha, HPP, atau Beban Operasional."
+      },
+      {
+        "name": "Kolom 'Kode Akun'",
+        "type": "Kolom Isian",
+        "description": "Nomor numerik unik kode akun (misal: 1101 untuk Kas Kecil, 1102 untuk Bank BCA)."
+      },
+      {
+        "name": "Kolom 'Nama Akun'",
+        "type": "Kolom Isian",
+        "description": "Deskripsi nama rekening akun keuangan."
+      },
+      {
+        "name": "Kolom 'Saldo Awal (Opening Balance)'",
+        "type": "Kolom Isian",
+        "description": "Saldo rupiah saat pertama kali sistem mulai digunakan."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Standar Akuntansi Berpasangan (Double Entry)",
+        "description": "Menjaga keseimbangan neraca Debit dan Kredit secara otomatis."
+      },
+      {
+        "name": "Struktur Hierarki Tanpa Batas",
+        "description": "Mendukung pembuatan sub-akun bertingkat sesuai kebutuhan manajemen."
+      }
+    ],
+    "tipsAndTricks": [
+      "Jangan mengubah kode akun sistem default (seperti Piutang Usaha & Hutang Usaha) yang telah ditautkan otomatis oleh modul transaksi."
+    ],
+    "faq": [
+      {
+        "question": "Apakah akun yang sudah memiliki riwayat transaksi bisa dihapus?",
+        "answer": "Tidak, akun yang sudah memiliki jurnal transaksi tidak boleh dihapus demi menjaga integritas laporan historis. Anda hanya dapat menonaktifkannya."
+      }
+    ]
+  },
+  {
+    "id": "expenses",
+    "menuKey": "expenses",
+    "title": "Pencatatan Beban & Biaya (Expenses)",
+    "category": "Akuntansi & Keuangan",
+    "categoryId": "finance",
+    "iconName": "CreditCard",
+    "badge": "Pengeluaran",
+    "targetRole": "Kasir / Finance / Admin / Owner",
+    "path": "/expenses",
+    "summary": "Pencatatan pengeluaran kas rutin, biaya listrik/air/internet, sewa tempat, gaji, dan belanja operasional kantor.",
+    "overview": "Modul Biaya mencatat seluruh transaksi kas keluar untuk keperluan operasional harian. Mendukung kategorisasi akun beban, pemilihan sumber kas/bank pembayaran, serta lampiran foto kuitansi/nota pembayaran.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Catat Pengeluaran Baru",
+        "description": "Klik '+ Catat Biaya', pilih kategori akun beban (misal: Biaya Listrik & Internet), masukkan nominal rupiah, dan pilih akun kas/bank pembayar.",
+        "screenshotPlaceholder": {
+          "caption": "Form Pencatatan Biaya Operasional",
+          "description": "Screenshot pengisian formulir pengeluaran dan upload foto kuitansi."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Lampirkan Bukti Pembayaran",
+        "description": "Unggah foto nota atau bukti transfer. Klik Simpan, saldo kas/bank akan otomatis terpotong.",
+        "tip": "Data biaya akan otomatis tercatat ke Laporan Laba Rugi periode bersangkutan."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Catat Pengeluaran'",
+        "type": "Tombol",
+        "description": "Membuka formulir pencatatan kas keluar baru."
+      },
+      {
+        "name": "Dropdown 'Akun Beban / Kategori'",
+        "type": "Dropdown",
+        "description": "Memilih pos biaya: Beban Listrik, Beban Sewa, Beban Pemasaran, Beban Perlengkapan, dll."
+      },
+      {
+        "name": "Dropdown 'Dibayar Dari (Kas / Bank)'",
+        "type": "Dropdown",
+        "description": "Memilih sumber uang yang terpotong (Kasir Toko, Bank BCA, dll)."
+      },
+      {
+        "name": "Kolom 'Nominal Biaya (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Jumlah uang yang dikeluarkan."
+      },
+      {
+        "name": "Kolom 'Unggah Foto Bukti Kuitansi'",
+        "type": "Kolom Isian",
+        "description": "Mengunggah foto bukti fisik pembayaran."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Pelacakan Biaya Berulang",
+        "description": "Memantau tren kenaikan pos-pos pengeluaran bulanan usaha Anda."
+      },
+      {
+        "name": "Otomatisasi Jurnal Buku Besar",
+        "description": "Mendebit akun beban dan mengkredit akun kas secara instan."
+      }
+    ],
+    "tipsAndTricks": [
+      "Kelompokkan biaya secara spesifik agar Laporan Laba Rugi memberikan gambaran pos mana yang paling boros."
+    ],
+    "faq": [
+      {
+        "question": "Apa bedanya mencatat biaya di modul ini dengan modul Pembelian (Purchase)?",
+        "answer": "Modul Pembelian digunakan untuk pengadaan barang dagangan/bahan baku yang masuk ke stok gudang. Modul Biaya digunakan untuk beban operasional murni (seperti listrik, sewa, konsumsi)."
+      }
+    ]
+  },
+  {
+    "id": "ledger",
+    "menuKey": "ledger",
+    "title": "Buku Besar & Jurnal Umum (General Ledger)",
+    "category": "Akuntansi & Keuangan",
+    "categoryId": "finance",
+    "iconName": "BookOpen",
+    "badge": "Jurnal",
+    "targetRole": "Akuntan / Finance / Owner",
+    "path": "/ledger",
+    "summary": "Riwayat buku jurnal berpasangan (Debit/Kredit), buku besar per akun, input jurnal penyesuaian manual, dan audit trail.",
+    "overview": "Modul Buku Besar mencatat seluruh mutasi akuntansi yang dihasilkan otomatis dari modul penjualan, pembelian, kasir, penggajian, maupun entri jurnal memorial/penyesuaian manual.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Telusuri Mutasi Buku Besar",
+        "description": "Pilih akun tertentu (misal: 1102 Bank BCA) dan rentang tanggal untuk melihat kronologis mutasi saldo debit/kredit.",
+        "screenshotPlaceholder": {
+          "caption": "Tampilan Buku Besar Akun",
+          "description": "Screenshot buku besar dengan kolom tanggal, referensi transaksi, debit, kredit, dan saldo akhir."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Buat Jurnal Penyesuaian Manual",
+        "description": "Klik '+ Buat Jurnal Manual', masukkan tanggal, keterangan, pilih baris akun debit dan kredit, pastikan total keduanya seimbang (Balance).",
+        "tip": "Digunakan untuk mencatat amortisasi, penyusutan manual, atau koreksi saldo."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Buat Jurnal Manual'",
+        "type": "Tombol",
+        "description": "Membuka lembar entri jurnal akuntansi debit-kredit manual."
+      },
+      {
+        "name": "Dropdown 'Filter Akun Buku Besar'",
+        "type": "Dropdown",
+        "description": "Menyaring transaksi khusus untuk satu akun COA tertentu."
+      },
+      {
+        "name": "Tabel Entri Jurnal",
+        "type": "Tabel Data",
+        "description": "Daftar baris akun, posisi Debit, posisi Kredit, dan indikator status balance."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Validasi Balance Otomatis",
+        "description": "Sistem menolak penyimpanan jurnal jika total Debit tidak sama dengan total Kredit."
+      },
+      {
+        "name": "Audit Trail Terintegrasi",
+        "description": "Setiap jurnal transaksi terhubung langsung ke dokumen asalnya (Invoice, PO, Payroll)."
+      }
+    ],
+    "tipsAndTricks": [
+      "Gunakan keterangan memo yang jelas pada setiap baris jurnal manual untuk mempermudah audit tahunan."
+    ],
+    "faq": [
+      {
+        "question": "Apakah transaksi dari modul Invoice dan POS otomatis membuat jurnal?",
+        "answer": "Ya, 100% otomatis. Anda tidak perlu membuat jurnal manual untuk penjualan atau pembelian reguler."
+      }
+    ]
+  },
+  {
+    "id": "tax",
+    "menuKey": "tax",
+    "title": "Pengaturan & Laporan Pajak (Tax)",
+    "category": "Akuntansi & Keuangan",
+    "categoryId": "finance",
+    "iconName": "Percent",
+    "badge": "Pajak",
+    "targetRole": "Tax Officer / Finance / Owner",
+    "path": "/tax",
+    "summary": "Pengaturan tarif PPN, rekapitulasi PPN Masukan vs PPN Keluaran, dan pelaporan SPT Masa PPh.",
+    "overview": "Modul Pajak merekapitulasi seluruh kewajiban perpajakan bisnis Anda, terutama PPN Keluaran (dari penjualan invoice) dan PPN Masukan (dari pembelian supplier), menghitung selisih Kurang/Lebih Bayar pajak.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Atur Tarif Pajak Default",
+        "description": "Tentukan persentase tarif PPN standar (11% atau sesuai peraturan) di menu Pengaturan Pajak.",
+        "screenshotPlaceholder": {
+          "caption": "Rekapitulasi Pajak PPN Masukan & Keluaran",
+          "description": "Screenshot perbandingan PPN Keluaran Penjualan vs PPN Masukan Pembelian."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Ekspor Rekapitulasi Pajak",
+        "description": "Unduh rekapitulasi faktur pajak bulanan untuk mempermudah pelaporan e-Faktur DJP.",
+        "tip": "Data mencakup nomor NPWP pelanggan, DPP (Dasar Pengenaan Pajak), dan nominal PPN."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Toggle 'Aktifkan PPN pada Invoice Penjualan'",
+        "type": "Toggle / Switch",
+        "description": "Mengaktifkan opsi perhitungan pajak otomatis pada pembuatan nota penjualan."
+      },
+      {
+        "name": "Kolom 'Tarif Standar PPN (%)'",
+        "type": "Kolom Isian",
+        "description": "Persentase tarif pajak yang berlaku (default: 11.00%)."
+      },
+      {
+        "name": "Tabel Rekap PPN Masukan vs Keluaran",
+        "type": "Tabel Data",
+        "description": "Menampilkan perbandingan total pajak yang dipungut vs pajak yang dibayar ke supplier."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Kalkulasi Kurang / Lebih Bayar PPN",
+        "description": "Otomatis menghitung selisih neto pajak yang harus disetor ke kas negara."
+      },
+      {
+        "name": "Format Siap e-Faktur",
+        "description": "Ekspor data transaksi penjualan dengan format yang mudah diimpor ke aplikasi DJP."
+      }
+    ],
+    "tipsAndTricks": [
+      "Pastikan selalu mengisi nomor NPWP customer pada master data pelanggan agar laporan faktur pajak valid."
+    ],
+    "faq": [
+      {
+        "question": "Bisakah membuat invoice tanpa mengenakan pajak untuk klien non-PKP?",
+        "answer": "Bisa. Anda cukup menonaktifkan centang toggle 'Kenakan PPN' saat membuat invoice bersangkutan."
+      }
+    ]
+  },
+  {
+    "id": "assets",
+    "menuKey": "assets",
+    "title": "Aset Tetap & Depresiasi (Fixed Assets)",
+    "category": "Akuntansi & Keuangan",
+    "categoryId": "finance",
+    "iconName": "Building2",
+    "badge": "Aset",
+    "targetRole": "Finance / Asset Manager / Owner",
+    "path": "/assets",
+    "summary": "Pencatatan inventaris aset tetap perusahaan (Kendaraan, Mesin, Gedung, Komputer), nilai buku, dan penyusutan otomatis.",
+    "overview": "Modul Aset Tetap mengelola pencatatan aktiva tetap perusahaan. Sistem secara otomatis menghitung akumulasi penyusutan bulanan (Depresiasi Garis Lurus), nilai sisa buku (Book Value), dan membukukannya ke laporan neraca keuangan.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Daftarkan Aset Baru",
+        "description": "Klik '+ Tambah Aset', isi nama barang (misal: Mobil Box Operasional), tanggal perolehan, harga beli awal, dan estimasi masa manfaat (tahun).",
+        "screenshotPlaceholder": {
+          "caption": "Form Master Aset Tetap",
+          "description": "Screenshot pengisian data perolehan aset dan tabel simulasi jadwal penyusutan bulanan."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Jadwalkan Depresiasi Otomatis",
+        "description": "Sistem akan membuat tabel jadwal penyusutan otomatis dari bulan ke bulan hingga masa manfaat aset habis.",
+        "tip": "Setiap akhir bulan, nilai penyusutan otomatis masuk ke Laporan Laba Rugi sebagai Beban Depresiasi."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Tombol '+ Tambah Aset Baru'",
+        "type": "Tombol",
+        "description": "Membuka formulir pendaftaran barang inventaris aset tetap baru."
+      },
+      {
+        "name": "Kolom 'Nama Aset & Nomor Seri'",
+        "type": "Kolom Isian",
+        "description": "Nama peralatan/kendaraan dan nomor seri fisik."
+      },
+      {
+        "name": "Kolom 'Harga Perolehan Awal (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Total biaya pembelian awal saat aset didapatkan."
+      },
+      {
+        "name": "Kolom 'Estimasi Masa Manfaat (Bulan / Tahun)'",
+        "type": "Kolom Isian",
+        "description": "Perkiraan usia pakai aset sebelum nilainya habis disusutkan."
+      },
+      {
+        "name": "Kolom 'Nilai Residu / Sisa (IDR)'",
+        "type": "Kolom Isian",
+        "description": "Perkiraan nilai jual rongsok/sisa aset setelah masa manfaat berakhir."
+      },
+      {
+        "name": "Tombol 'Proses Jurnal Penyusutan Bulanan'",
+        "type": "Tombol",
+        "description": "Mengeksekusi pembukuan beban akumulasi penyusutan bulan berjalan ke neraca."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Depresiasi Garis Lurus Otomatis",
+        "description": "Perhitungan penyusutan matematis akurat sesuai standar akuntansi."
+      },
+      {
+        "name": "Monitoring Nilai Buku Riil",
+        "description": "Mengetahui sisa nilai kekayaan aset riil perusahaan kapan saja."
+      }
+    ],
+    "tipsAndTricks": [
+      "Tempelkan label stiker kode aset pada fisik mesin/laptop untuk mempermudah audit inventaris tahunan."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana jika aset dijual atau rusak total sebelum masa manfaatnya habis?",
+        "answer": "Gunakan fitur 'Pelepasan / Penjualan Aset (Asset Disposal)'. Sistem akan menghitung laba/rugi atas pelepasan aset tersebut secara otomatis."
+      }
+    ]
+  },
+  {
+    "id": "reports",
+    "menuKey": "reports",
+    "title": "Pusat Laporan & Analitik Bisnis (Reports)",
+    "category": "Laporan Bisnis",
+    "categoryId": "reports",
+    "iconName": "TrendingUp",
+    "badge": "Laporan Lengkap",
+    "targetRole": "Semua Manager / Finance / Owner",
+    "path": "/reports",
+    "summary": "Hub laporan terintegrasi: Laba Rugi, Neraca, Arus Kas, Rekapitulasi Penjualan, Laporan Stok, Pengeluaran Stok, dan Laporan Kasir.",
+    "overview": "Modul Laporan adalah pusat inteligensi data usaha Anda. Menyajikan laporan keuangan berstandar akuntansi dan laporan operasional harian yang dapat difilter berdasarkan tanggal, cabang, kategori, serta diekspor ke PDF dan Excel.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Pilih Kategori Laporan",
+        "description": "Pilih jenis laporan yang dibutuhkan: Laporan Penjualan Invoice, Laporan Pengeluaran Stok (/reports/stock-out), Laba Rugi, Neraca Keuangan, atau Rekap Kasir POS.",
+        "screenshotPlaceholder": {
+          "caption": "Hub Navigasi Laporan Bisnis",
+          "description": "Screenshot kartu menu pilihan berbagai laporan operasional dan keuangan."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Tentukan Filter Periode & Cabang",
+        "description": "Gunakan filter tanggal untuk memilih bulan atau rentang kustom, serta pilih cabang/gudang spesifik jika diperlukan.",
+        "tip": "Tampilan tabel analitik interaktif akan langsung menyajikan ringkasan total angka."
+      },
+      {
+        "step": 3,
+        "title": "Cetak & Ekspor Data",
+        "description": "Klik tombol 'Export Excel' untuk pengolahan data lanjutan atau 'Cetak PDF' untuk laporan resmi kepada investor/pimpinan.",
+        "screenshotPlaceholder": {
+          "caption": "Pratinjau Laporan & Tombol Ekspor",
+          "description": "Screenshot tampilan laporan siap cetak dengan tombol Export Excel dan PDF."
         }
       }
     ],
-    keyFeatures: [
-      { name: "Master Control Pengguna", description: "Kontrol penuh atas seluruh akun yang terdaftar dalam ekosistem aplikasi." },
-      { name: "Audit Trail Global", description: "Pencatatan aktivitas sistem untuk keamanan dan kepatuhan data." }
+    "uiGuide": [
+      {
+        "name": "Kartu 'Laporan Penjualan (Sales Report)'",
+        "type": "Tombol",
+        "description": "Membuka analitik omset faktur, produk terlaris, dan performa per sales."
+      },
+      {
+        "name": "Kartu 'Laporan Pengeluaran Stok (Stock Out Report)'",
+        "type": "Tombol",
+        "description": "Membuka rekapitulasi mutasi pengeluaran barang non-jual dan pemakaian internal."
+      },
+      {
+        "name": "Kartu 'Laporan Laba Rugi (Profit & Loss)'",
+        "type": "Tombol",
+        "description": "Melihat pendapatan bersih, HPP, beban operasional, dan laba bersih usaha."
+      },
+      {
+        "name": "Kartu 'Neraca Keuangan (Balance Sheet)'",
+        "type": "Tombol",
+        "description": "Melihat posisi keseimbangan total Aset, Kewajiban Hutang, dan Ekuitas Modal."
+      },
+      {
+        "name": "Kartu 'Laporan Arus Kas (Cash Flow)'",
+        "type": "Tombol",
+        "description": "Melihat aliran kas masuk dan kas keluar dari aktivitas operasi, investasi, dan pendanaan."
+      },
+      {
+        "name": "Tombol 'Export Excel (.xlsx)'",
+        "type": "Tombol",
+        "description": "Mengunduh seluruh baris data laporan ke format lembar kerja spreadsheet Excel."
+      },
+      {
+        "name": "Tombol 'Cetak PDF / Print'",
+        "type": "Tombol",
+        "description": "Mencetak laporan rapi berlogo perusahaan siap tanda tangan pimpinan."
+      }
     ],
-    tipsAndTricks: [
-      "Hanya berikan hak akses Superadmin kepada staf IT terpercaya tingkat eksekutif."
+    "keyFeatures": [
+      {
+        "name": "Filter Fleksibel Multi-Dimensi",
+        "description": "Penyaringan berdasarkan periode hari, bulan, kuartal, tahun, gudang, dan divisi."
+      },
+      {
+        "name": "Visualisasi Grafik Interaktif",
+        "description": "Dilengkapi bagan perbandingan untuk membaca tren perkembangan bisnis secara visual."
+      }
     ],
-    faq: [
-      { question: "Apakah menu ini muncul untuk staf biasa?", answer: "Tidak. Menu Manajemen Sistem hanya muncul untuk akun dengan status role 'superadmin'." }
+    "tipsAndTricks": [
+      "Gunakan Laporan Arus Kas secara berkala untuk memastikan bisnis memiliki likuiditas dana yang aman untuk operasional 3 bulan ke depan."
+    ],
+    "faq": [
+      {
+        "question": "Apakah data laporan dihitung secara realtime?",
+        "answer": "Ya, seluruh laporan langsung mencerminkan transaksi terbaru yang dimasukkan oleh staf tanpa perlu menunggu proses tutup buku harian."
+      },
+      {
+        "question": "Apakah staf kasir bisa melihat laporan Laba Rugi perusahaan?",
+        "answer": "Tidak. Hak akses menu laporan dibatasi secara ketat berdasarkan role pengguna. Laporan keuangan hanya bisa diakses oleh Owner, Admin, dan Finance."
+      }
+    ]
+  },
+  {
+    "id": "settings",
+    "menuKey": "settings",
+    "title": "Pengaturan Bisnis & Profil Usaha (Settings)",
+    "category": "Sistem & Pengaturan",
+    "categoryId": "system",
+    "iconName": "Settings",
+    "badge": "Konfigurasi",
+    "targetRole": "Admin / Owner / Superadmin",
+    "path": "/settings",
+    "summary": "Kustomisasi profil usaha, logo nota, rekening bank penampung, format nomor seri faktur, printer, bahasa, dan hak akses tim.",
+    "overview": "Modul Pengaturan adalah pusat konfigurasi menyeluruh aplikasi untuk bisnis Anda. Anda dapat mengunggah logo perusahaan, mengatur nomor rekening yang tampil pada faktur, mengundang anggota tim divisi, mengelola shift kerja, mengatur kustomisasi menu sidebar, dan melihat log audit aktivitas.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Lengkapi Profil & Logo Usaha",
+        "description": "Isi nama usaha, email resmi, nomor telepon, alamat lengkap, dan unggah logo perusahaan beresolusi tinggi.",
+        "screenshotPlaceholder": {
+          "caption": "Pengaturan Profil Usaha & Logo",
+          "description": "Screenshot pengisian profil bisnis, upload logo nota, dan informasi kontak."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Atur Rekening Bank Penampung",
+        "description": "Daftarkan rekening bank (BCA, Mandiri, BRI, BNI) yang akan muncul sebagai instruksi pembayaran transfer pada invoice.",
+        "tip": "Anda juga dapat mengunggah gambar QRIS statis toko untuk pembayaran digital."
+      },
+      {
+        "step": 3,
+        "title": "Kelola Tim & Hak Akses Divisi",
+        "description": "Buka menu 'Tim & Hak Akses' untuk mengundang staf baru dan memberikan peran (Sales, Purchasing, Gudang, Finance, Kasir) atau hak akses kustom.",
+        "screenshotPlaceholder": {
+          "caption": "Manajemen Tim & Hak Akses Pengguna",
+          "description": "Screenshot tabel pengguna tim dan pengaturan checklist izin akses menu."
+        }
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Kolom 'Nama Usaha / Perusahaan'",
+        "type": "Kolom Isian",
+        "description": "Nama entitas bisnis yang akan tercetak pada kop surat faktur dan kuitansi."
+      },
+      {
+        "name": "Kolom 'Unggah Logo Perusahaan'",
+        "type": "Kolom Isian",
+        "description": "Upload file gambar logo (PNG/JPG) untuk kop faktur, struk, dan laporan."
+      },
+      {
+        "name": "Daftar 'Rekening Bank Penerima Pembayaran'",
+        "type": "Tabel Data",
+        "description": "Kelola nama bank, nomor rekening, dan nama pemilik rekening untuk instruksi bayar invoice."
+      },
+      {
+        "name": "Kartu 'Tim & Hak Akses Divisi (/settings/users)'",
+        "type": "Tombol",
+        "description": "Mengelola undangan staf, penetapan role wewenang, dan checklist izin menu."
+      },
+      {
+        "name": "Kartu 'Master Shift Karyawan (/settings/shifts)'",
+        "type": "Tombol",
+        "description": "Mengatur jadwal jam kerja shift pagi, siang, dan malam untuk absensi staf."
+      },
+      {
+        "name": "Kartu 'Kustomisasi Sidebar Menu (/settings/sidebar)'",
+        "type": "Tombol",
+        "description": "Menyembunyikan atau menampilkan menu sidebar sesuai preferensi alur kerja operasional."
+      },
+      {
+        "name": "Kartu 'Log Audit Aktivitas (/settings/audit-logs)'",
+        "type": "Tombol",
+        "description": "Memantau rekam jejak aktivitas staf (siapa yang membuat, mengubah, atau menghapus data)."
+      },
+      {
+        "name": "Dropdown 'Pilihan Bahasa (Bahasa Indonesia / English)'",
+        "type": "Dropdown",
+        "description": "Mengganti bahasa tampilan antarmuka aplikasi secara instan."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Kustomisasi Whitelabel Lengkap",
+        "description": "Tampilan dokumen PDF dan struk kasir 100% menggunakan identitas dan merek usaha Anda."
+      },
+      {
+        "name": "Manajemen Akses Berbasis Peran (RBAC)",
+        "description": "Melindungi data sensitif keuangan agar hanya dapat dibuka oleh staf yang berwenang."
+      },
+      {
+        "name": "Audit Trail Keamanan",
+        "description": "Mencegah kecurangan internal dengan mencatat setiap aksi penting pengguna."
+      }
+    ],
+    "tipsAndTricks": [
+      "Gunakan logo berformat PNG transparan agar tampilan kop surat faktur terlihat jernih dan profesional."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana cara mengganti mata uang utama bisnis?",
+        "answer": "Anda dapat memilih mata uang utama (IDR, USD, SGD, MYR) pada bagian Pengaturan Mata Uang."
+      },
+      {
+        "question": "Apakah saya bisa memiliki lebih dari 1 bisnis/perusahaan dalam satu akun?",
+        "answer": "Bisa. Klik tombol dropdown nama bisnis di sidebar kiri atas, lalu klik '+ Tambah Bisnis Baru'."
+      }
+    ]
+  },
+  {
+    "id": "settings_security",
+    "menuKey": "settings_security",
+    "title": "Keamanan Akun & Manajemen Sesi",
+    "category": "Sistem & Pengaturan",
+    "categoryId": "system",
+    "iconName": "Shield",
+    "badge": "Keamanan",
+    "targetRole": "Semua Pengguna",
+    "path": "/settings/security",
+    "summary": "Ubah kata sandi, verifikasi sesi login aktif per perangkat, dan perlindungan keamanan akun pengguna.",
+    "overview": "Halaman Keamanan Akun melindungi privasi dan data bisnis Anda dari akses tidak sah. Pengguna dapat memperbarui password secara berkala serta memantau perangkat atau browser mana saja yang sedang aktif login.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Ubah Kata Sandi (Password)",
+        "description": "Masukkan password lama, buat password baru yang kuat (minimal 8 karakter kombinasi huruf, angka, dan simbol), lalu klik Simpan.",
+        "screenshotPlaceholder": {
+          "caption": "Form Ubah Password Akun",
+          "description": "Screenshot pengisian kata sandi baru dan konfirmasi sandi."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Periksa Sesi Login Aktif",
+        "description": "Lihat daftar perangkat (Laptop, HP, Tablet) yang sedang mengakses akun Anda beserta lokasi dan waktu login terakhir.",
+        "tip": "Jika ada perangkat asing yang mencurigakan, klik 'Keluar dari Sesi Ini'."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Kolom 'Kata Sandi Saat Ini'",
+        "type": "Kolom Isian",
+        "description": "Verifikasi password lama untuk memastikan keamanan pemilik akun."
+      },
+      {
+        "name": "Kolom 'Kata Sandi Baru & Konfirmasi'",
+        "type": "Kolom Isian",
+        "description": "Membuat kata sandi baru yang memenuhi standar keamanan."
+      },
+      {
+        "name": "Daftar Sesi Login Aktif",
+        "type": "Tabel Data",
+        "description": "Menampilkan jenis browser, sistem operasi, alamat IP, dan waktu aktif terakhir."
+      },
+      {
+        "name": "Tombol 'Keluar dari Semua Perangkat Lain'",
+        "type": "Tombol",
+        "description": "Memaksa logout seluruh sesi di HP/komputer lain secara serentak."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Enkripsi Password Tingkat Tinggi",
+        "description": "Kata sandi dienkripsi dengan standar hash industri modern yang aman."
+      },
+      {
+        "name": "Force Logout Perangkat Tak Dikenal",
+        "description": "Menutup akses login liar secara instan dari satu tombol."
+      }
+    ],
+    "tipsAndTricks": [
+      "Jangan pernah membagikan email dan password login Anda kepada staf. Selalu buatkan akun tersendiri untuk setiap karyawan."
+    ],
+    "faq": [
+      {
+        "question": "Bagaimana jika saya lupa kata sandi saat ingin login?",
+        "answer": "Gunakan tautan 'Lupa Password' di halaman login untuk menerima tautan reset kata sandi melalui email terdaftar Anda."
+      }
+    ]
+  },
+  {
+    "id": "admin",
+    "menuKey": "admin",
+    "title": "Panel Manajemen Superadmin SaaS (Master Panel)",
+    "category": "Manajemen Superadmin",
+    "categoryId": "admin",
+    "iconName": "Shield",
+    "badge": "Superadmin",
+    "targetRole": "Superadmin Platform",
+    "path": "/admin",
+    "summary": "Panel kontrol master sistem SaaS, monitoring seluruh bisnis terdaftar, manajemen paket lisensi, dan pemeliharaan server.",
+    "overview": "Halaman Superadmin adalah panel kendali tertinggi yang hanya dapat diakses oleh pemilik platform SaaS. Memberikan wewenang master untuk memantau seluruh entitas bisnis, status langganan, manajemen pengguna global, konfigurasi sistem whitelabel pusat, dan diagnostik server.",
+    "workflow": [
+      {
+        "step": 1,
+        "title": "Buka Dashboard Superadmin",
+        "description": "Akses menu '/admin' di bagian bawah sidebar. Lihat metrik total pengguna terdaftar, total bisnis aktif, dan status lisensi.",
+        "screenshotPlaceholder": {
+          "caption": "Dashboard Master Superadmin",
+          "description": "Screenshot kartu metrik master pengguna, daftar tenant bisnis, dan lisensi SaaS."
+        }
+      },
+      {
+        "step": 2,
+        "title": "Kelola Bisnis & Lisensi Pengguna",
+        "description": "Superadmin dapat mengaktifkan paket langganan bisnis, mengedit profil master, atau menonaktifkan akun yang melanggar ketentuan.",
+        "tip": "Superadmin secara otomatis memiliki hak akses penuh (Owner + Admin) di seluruh modul bisnis."
+      }
+    ],
+    "uiGuide": [
+      {
+        "name": "Kartu 'Total Pengguna Global'",
+        "type": "Tabel Data",
+        "description": "Akumulasi seluruh akun pengguna yang terdaftar di database platform."
+      },
+      {
+        "name": "Kartu 'Total Bisnis & Tenant Aktif'",
+        "type": "Tabel Data",
+        "description": "Jumlah perusahaan/toko yang terdaftar dan beroperasi di sistem."
+      },
+      {
+        "name": "Tabel Manajemen Pengguna Global (/admin/users)",
+        "type": "Tabel Data",
+        "description": "Daftar seluruh akun user lengkap dengan tombol reset password dan assign role superadmin."
+      },
+      {
+        "name": "Tombol 'Kustomisasi Master Whitelabel'",
+        "type": "Tombol",
+        "description": "Mengatur nama branding aplikasi, logo portal login, dan domain utama."
+      }
+    ],
+    "keyFeatures": [
+      {
+        "name": "Master SaaS Multi-Tenant Control",
+        "description": "Pengelolaan terpusat seluruh penyewa aplikasi dalam 1 antarmuka master."
+      },
+      {
+        "name": "Bypass Hak Akses Bisnis",
+        "description": "Superadmin dapat masuk dan mengaudit pengaturan bisnis manapun secara fleksibel."
+      }
+    ],
+    "tipsAndTricks": [
+      "Jaga kerahasiaan akun Superadmin dan selalu gunakan password yang sangat kuat dengan kombinasi karakter unik."
+    ],
+    "faq": [
+      {
+        "question": "Siapa yang dapat mengakses halaman /admin ini?",
+        "answer": "Hanya akun yang memiliki 'systemRole: superadmin' di database yang diizinkan membuka menu ini. Pengguna biasa atau Owner bisnis normal tidak akan melihat menu ini."
+      }
     ]
   }
 ];
