@@ -1,74 +1,60 @@
 import { NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import fs from "fs/promises";
+import path from "path";
 
-const BUCKET_NAME = "invoicecoid";
-
-function getS3Client() {
-  return new S3Client({
-    region: "auto",
-    endpoint: "https://975b389dad8338cdb5331ade0328da79.r2.cloudflarestorage.com",
-    credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-    },
-  });
-}
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const folder = formData.get("folder") as string || "general";
+    const folder = (formData.get("folder") as string) || "general";
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return NextResponse.json({ error: "File tidak ditemukan." }, { status: 400 });
     }
 
-    // Security check: Only allow safe image formats, PDFs, and video formats, and restrict size
+    // Filter format file yang diperbolehkan
     const allowedMimeTypes = [
       "image/jpeg", 
       "image/png", 
       "image/webp", 
       "image/gif", 
-      "application/pdf",
-      "video/mp4",
-      "video/webm",
-      "video/ogg",
-      "video/quicktime"
+      "image/svg+xml",
+      "application/pdf"
     ];
     if (!allowedMimeTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Format file tidak didukung. Hanya Gambar (JPEG/PNG/WebP/GIF), PDF, dan Video (MP4/WebM/QuickTime) yang diperbolehkan." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Format file tidak didukung. Harap unggah gambar (PNG, JPG, WebP, GIF) atau PDF." },
+        { status: 400 }
+      );
     }
 
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+    const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB limit
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "Ukuran file terlalu besar. Maksimal 10MB." }, { status: 400 });
+      return NextResponse.json({ error: "Ukuran file terlalu besar. Maksimal 15MB." }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // Generate clean unique filename
-    const fileExtension = file.name.split(".").pop() || "jpg";
+    // Generate nama file unik
+    const fileExtension = file.name.split(".").pop() || "png";
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-    const filename = `${folder}/${uniqueId}.${fileExtension}`;
+    const filename = `${uniqueId}.${fileExtension}`;
 
-    // Upload to Cloudflare R2
-    const s3 = getS3Client();
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: filename,
-        Body: buffer,
-        ContentType: file.type,
-      })
-    );
+    // Simpan ke direktori lokal VPS: public/uploads/{folder}/
+    const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+    await fs.mkdir(uploadDir, { recursive: true });
 
-    // Return the clean local API URL to fetch the file
-    const fileUrl = `/api/files/${encodeURIComponent(filename)}`;
+    const filePath = path.join(uploadDir, filename);
+    await fs.writeFile(filePath, buffer);
+
+    // URL publik yang dapat diakses langsung oleh browser
+    const fileUrl = `/uploads/${folder}/${filename}`;
 
     return NextResponse.json({ url: fileUrl, filename });
   } catch (error: any) {
-    console.error("Error uploading file to R2:", error);
-    return NextResponse.json({ error: error.message || "Failed to upload file" }, { status: 500 });
+    console.error("Local file upload error:", error);
+    return NextResponse.json({ error: error.message || "Gagal mengunggah file ke server lokal." }, { status: 500 });
   }
 }

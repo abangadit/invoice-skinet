@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import fs from "fs/promises";
+import path from "path";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-const BUCKET_NAME = "invoicecoid";
+export const dynamic = "force-dynamic";
 
 function getS3Client() {
   return new S3Client({
@@ -23,33 +25,56 @@ export async function GET(
       return new Response("Missing file key", { status: 400 });
     }
 
-    // Join all parts of catch-all parameter to get the full R2 Key
-    const key = params.key.map(k => decodeURIComponent(k)).join("/");
+    const relativeKey = params.key.map(k => decodeURIComponent(k)).join("/");
 
-    const s3 = getS3Client();
-    const s3Response = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-      })
-    );
+    // 1. Cek penyimpanan lokal VPS terlebih dahulu (public/uploads/...)
+    const localPath = path.join(process.cwd(), "public", "uploads", relativeKey);
+    try {
+      const fileBuffer = await fs.readFile(localPath);
+      const ext = path.extname(localPath).toLowerCase();
+      let contentType = "application/octet-stream";
+      if (ext === ".png") contentType = "image/png";
+      else if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
+      else if (ext === ".webp") contentType = "image/webp";
+      else if (ext === ".gif") contentType = "image/gif";
+      else if (ext === ".svg") contentType = "image/svg+xml";
+      else if (ext === ".pdf") contentType = "application/pdf";
 
-    const body = s3Response.Body;
-    if (!body) {
-      return new Response("File not found", { status: 404 });
+      return new Response(fileBuffer, {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    } catch {
+      // File lokal tidak ditemukan, lanjut fallback ke R2
     }
 
-    // Convert readable stream to Response stream
-    const stream = body.transformToWebStream();
+    // 2. Fallback ke Cloudflare R2 jika kredensial tersedia
+    if (process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY) {
+      const s3 = getS3Client();
+      const s3Response = await s3.send(
+        new GetObjectCommand({
+          Bucket: "invoicecoid",
+          Key: relativeKey,
+        })
+      );
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": s3Response.ContentType || "application/octet-stream",
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
-    });
+      const body = s3Response.Body;
+      if (body) {
+        const stream = body.transformToWebStream();
+        return new Response(stream, {
+          headers: {
+            "Content-Type": s3Response.ContentType || "application/octet-stream",
+            "Cache-Control": "public, max-age=31536000, immutable",
+          },
+        });
+      }
+    }
+
+    return new Response("File not found", { status: 404 });
   } catch (error) {
-    console.error("Error fetching file from R2:", error);
+    console.error("Error fetching file:", error);
     return new Response("File not found", { status: 404 });
   }
 }

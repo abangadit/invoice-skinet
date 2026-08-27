@@ -601,7 +601,7 @@ function HelpCenterContent() {
                               <div className="py-3 flex flex-col items-center justify-center gap-2">
                                 <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
                                 <span className="text-xs font-bold text-blue-700">
-                                  Mengunggah screenshot ke Cloud R2...
+                                  Mengunggah screenshot ke server lokal...
                                 </span>
                               </div>
                             ) : (
