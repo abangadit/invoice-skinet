@@ -19,7 +19,12 @@ import {
   X,
   Clock,
   Shield,
-  Sliders
+  Sliders,
+  Key,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  Lock
 } from "lucide-react";
 import { useBusiness } from "../../../lib/context/BusinessContext";
 import { createWebBrowserClient } from "../../../lib/supabase/client";
@@ -104,6 +109,12 @@ export default function EmployeesPage() {
   const [savingAccess, setSavingAccess] = useState(false);
   const [accessModalError, setAccessModalError] = useState("");
 
+  // Employee Login Account & Password States
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [accessPassword, setAccessPassword] = useState("");
+  const [resetPasswordToggle, setResetPasswordToggle] = useState(false);
+  const [showPasswordPlainText, setShowPasswordPlainText] = useState(false);
+
   const AVAILABLE_PERMISSIONS = [
     { key: "dashboard", label: "Dashboard" },
     { key: "invoice", label: "Faktur Penjualan (Invoices)" },
@@ -131,7 +142,7 @@ export default function EmployeesPage() {
 
   const handleAccessRights = async (emp: Employee) => {
     if (!emp.email) {
-      alert(`Karyawan "${emp.name}" belum memiliki email terdaftar. Silakan edit data karyawan dan isi alamat email terlebih dahulu agar dapat mengonfigurasi Hak Akses.`);
+      alert(`Karyawan "${emp.name}" belum memiliki email terdaftar. Silakan edit data karyawan dan isi alamat email terlebih dahulu agar dapat mengonfigurasi Hak Akses & Akun Login.`);
       return;
     }
     
@@ -141,6 +152,9 @@ export default function EmployeesPage() {
     setAccessModalError("");
     setAccessMemberId(null);
     setAccessUserId(null);
+    setAccessPassword("");
+    setResetPasswordToggle(false);
+    setShowPasswordPlainText(false);
 
     const initPerms: Record<string, boolean> = {};
     AVAILABLE_PERMISSIONS.forEach(p => {
@@ -157,6 +171,7 @@ export default function EmployeesPage() {
         .maybeSingle();
 
       if (userData) {
+        setIsExistingUser(true);
         setAccessUserId(userData.id);
         const { data: memberData } = await supabase
           .from("business_members")
@@ -178,6 +193,8 @@ export default function EmployeesPage() {
           setAccessPermissions(initPerms);
         }
       } else {
+        setIsExistingUser(false);
+        setResetPasswordToggle(true);
         setAccessRole("staff");
         setAccessPermissions(initPerms);
       }
@@ -192,53 +209,47 @@ export default function EmployeesPage() {
     e.preventDefault();
     if (!activeBusiness || !accessEmployee?.email) return;
 
+    // Validasi Password jika akun baru atau saat reset password aktif
+    if (!isExistingUser) {
+      if (!accessPassword || accessPassword.trim().length < 6) {
+        setAccessModalError("Password untuk akun login baru minimal 6 karakter.");
+        return;
+      }
+    } else if (resetPasswordToggle && accessPassword) {
+      if (accessPassword.trim().length < 6) {
+        setAccessModalError("Password baru minimal 6 karakter.");
+        return;
+      }
+    }
+
     try {
       setSavingAccess(true);
       setAccessModalError("");
-      const supabase = createWebBrowserClient();
 
-      let targetUid = accessUserId;
+      const payload = {
+        email: accessEmployee.email.trim(),
+        password: accessPassword.trim() || undefined,
+        reset_password: isExistingUser && resetPasswordToggle && accessPassword.trim() ? accessPassword.trim() : undefined,
+        full_name: accessEmployee.name,
+        business_id: activeBusiness.id,
+        role: accessRole,
+        permissions: accessRole === "custom" ? accessPermissions : {},
+        employee_id: accessEmployee.id
+      };
 
-      if (!targetUid) {
-        const { data: userData } = await supabase
-          .from("users")
-          .select("id, email")
-          .ilike("email", accessEmployee.email.trim())
-          .maybeSingle();
+      const res = await fetch("/api/admin/employees/auth-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        if (!userData) {
-          setAccessModalError(`Pengguna dengan email ${accessEmployee.email} belum mendaftar akun di invoice.co.id. Minta pengguna ini membuat akun terlebih dahulu.`);
-          setSavingAccess(false);
-          return;
-        }
-        targetUid = userData.id;
-      }
-
-      if (accessMemberId) {
-        const { error } = await supabase
-          .from("business_members")
-          .update({
-            role: accessRole,
-            permissions: accessRole === "custom" ? accessPermissions : {}
-          })
-          .eq("id", accessMemberId);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("business_members")
-          .insert({
-            business_id: activeBusiness.id,
-            user_id: targetUid,
-            role: accessRole,
-            permissions: accessRole === "custom" ? accessPermissions : {}
-          });
-
-        if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menyimpan akun login & hak akses.");
       }
 
       setShowAccessRightsModal(false);
-      alert(`Hak akses & peran untuk ${accessEmployee.name} berhasil disimpan!`);
+      alert(`Akun login & hak akses untuk "${accessEmployee.name}" berhasil disimpan! Karyawan sekarang dapat langsung login menggunakan email & password tersebut.`);
     } catch (err: any) {
       console.error("Error saving access rights:", err);
       setAccessModalError(err.message || "Gagal menyimpan hak akses.");
@@ -1270,14 +1281,14 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      {/* Access Rights Modal */}
+      {/* Access Rights & Employee Login Modal */}
       {showAccessRightsModal && accessEmployee && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white border border-slate-200 rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
             <div className="p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Shield className="w-4.5 h-4.5 text-emerald-600" />
-                Edit Hak Akses & Peran - {accessEmployee.name}
+                Akun Login & Hak Akses - {accessEmployee.name}
               </h3>
               <button 
                 onClick={() => setShowAccessRightsModal(false)}
@@ -1295,40 +1306,140 @@ export default function EmployeesPage() {
                 </div>
               )}
 
-              <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1">
-                <p className="text-slate-700">Email Karyawan: <strong className="text-slate-900 font-mono">{accessEmployee.email}</strong></p>
-                <p className="text-[10px] text-slate-500 font-normal">
-                  Hak akses menentukan fitur dan divisi mana yang dapat diakses oleh akun karyawan ini saat masuk ke invoice.co.id.
-                </p>
+              {/* Info Karyawan */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 text-[11px]">Email Karyawan</span>
+                  <span className="font-mono text-slate-900 font-bold">{accessEmployee.email}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                  <span className="text-slate-500 text-[11px]">Bisnis Terhubung</span>
+                  <span className="text-blue-700 font-bold">{activeBusiness?.name}</span>
+                </div>
               </div>
 
               {loadingAccess ? (
                 <div className="flex flex-col items-center justify-center py-8">
                   <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-[10px] text-slate-400 font-bold mt-2">Memuat status hak akses...</span>
+                  <span className="text-[10px] text-slate-400 font-bold mt-2">Memeriksa status akun login...</span>
                 </div>
               ) : (
                 <>
+                  {/* SEKSI STATUS & PASSWORD AKUN */}
+                  <div className={`p-4 rounded-2xl border ${
+                    isExistingUser 
+                      ? "bg-emerald-50/50 border-emerald-200" 
+                      : "bg-blue-50/60 border-blue-200"
+                  } space-y-3`}>
+                    <div className="flex items-start gap-2.5">
+                      {isExistingUser ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <Key className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-black text-slate-900">
+                          {isExistingUser ? "Akun Login Sudah Terdaftar" : "Buatkan Password Login Baru"}
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                          {isExistingUser 
+                            ? "Karyawan ini sudah memiliki akun di sistem. Anda dapat mengatur ulang (reset) password jika diperlukan." 
+                            : "Karyawan belum memiliki akun. Tentukan password di bawah agar karyawan dapat langsung login."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Jika belum ada akun, input password wajib tampil */}
+                    {!isExistingUser && (
+                      <div className="space-y-1.5 pt-1">
+                        <label className="block text-[11px] font-bold text-slate-800">
+                          Password Login Baru <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPasswordPlainText ? "text" : "password"}
+                            required
+                            value={accessPassword}
+                            onChange={(e) => setAccessPassword(e.target.value)}
+                            placeholder="Minimal 6 karakter (contoh: Staff#2026)"
+                            className="w-full pl-3 pr-10 py-2 bg-white border border-blue-300 rounded-xl text-slate-900 font-medium text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswordPlainText(!showPasswordPlainText)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showPasswordPlainText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-normal">
+                          Karyawan dapat masuk menggunakan email <strong>{accessEmployee.email}</strong> dan password ini.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Jika sudah ada akun, sediakan opsi toggle reset password */}
+                    {isExistingUser && (
+                      <div className="space-y-2 pt-1 border-t border-emerald-200/60">
+                        <label className="flex items-center gap-2 cursor-pointer text-emerald-950">
+                          <input
+                            type="checkbox"
+                            checked={resetPasswordToggle}
+                            onChange={(e) => {
+                              setResetPasswordToggle(e.target.checked);
+                              if (!e.target.checked) setAccessPassword("");
+                            }}
+                            className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                          />
+                          <span className="text-[11px] font-bold">Ubah / Reset Kata Sandi Karyawan Ini</span>
+                        </label>
+
+                        {resetPasswordToggle && (
+                          <div className="space-y-1 pl-5 pt-1">
+                            <div className="relative">
+                              <input
+                                type={showPasswordPlainText ? "text" : "password"}
+                                required={resetPasswordToggle}
+                                value={accessPassword}
+                                onChange={(e) => setAccessPassword(e.target.value)}
+                                placeholder="Masukkan password baru (minimal 6 karakter)"
+                                className="w-full pl-3 pr-10 py-2 bg-white border border-emerald-300 rounded-xl text-slate-900 font-medium text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPasswordPlainText(!showPasswordPlainText)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                              >
+                                {showPasswordPlainText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SEKSI PERAN / ROLE */}
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Peran / Role Karyawan</label>
+                    <label className="block font-bold text-slate-700 mb-1">Peran / Role di Bisnis Ini</label>
                     <select
                       value={accessRole}
                       onChange={(e) => setAccessRole(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
                     >
-                      <option value="admin">Admin Bisnis (Akses Penuh)</option>
+                      <option value="admin">Admin Bisnis (Akses Penuh Seluruh Menu)</option>
                       <option value="sales">Sales & Penjualan (Faktur, Penawaran, Pelanggan, Kasir POS)</option>
                       <option value="purchasing">Pembelian & Pemasok (PO, Vendor, Stok)</option>
                       <option value="warehouse">Gudang & Inventori (Stok, Surat Jalan, UOM)</option>
                       <option value="finance">Keuangan & Akuntansi (Pembayaran, Kas, Laporan)</option>
-                      <option value="staff">Staff Biasa / Operasional</option>
+                      <option value="staff">Staff Biasa / Operasional (Sesuai Izin Dasar)</option>
                       <option value="custom">Kustomisasi Hak Akses Spesifik</option>
                     </select>
                   </div>
 
                   {accessRole === "custom" && (
                     <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <label className="block font-bold text-slate-700">Pilih Fitur Yang Diizinkan:</label>
+                      <label className="block font-bold text-slate-700">Pilih Menu Yang Diizinkan:</label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl">
                         {AVAILABLE_PERMISSIONS.map((perm) => (
                           <label key={perm.key} className="flex items-center gap-2 p-1.5 hover:bg-white rounded-lg transition cursor-pointer text-slate-700">
@@ -1368,9 +1479,10 @@ export default function EmployeesPage() {
                       <button
                         type="submit"
                         disabled={savingAccess}
-                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-sm transition disabled:opacity-50"
+                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
                       >
-                        {savingAccess ? "Menyimpan..." : "Simpan Hak Akses"}
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>{savingAccess ? "Menyimpan..." : "Simpan Akun & Hak Akses"}</span>
                       </button>
                     </div>
                   </div>
