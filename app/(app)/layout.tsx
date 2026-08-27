@@ -138,6 +138,14 @@ function AppLayoutInner({
   const [pendingProofsCount, setPendingProofsCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lowStockCount, setLowStockCount] = useState(0);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("skinet_sidebar_hidden");
+      if (saved === "true") setIsSidebarHidden(true);
+    } catch (e) {}
+  }, []);
 
   // Notification states
   interface NotificationItem {
@@ -854,6 +862,20 @@ function AppLayoutInner({
               {activeBusiness?.name || "Skinet Invoice"}
             </div>
           </div>
+
+          {/* Desktop Toggle Sidebar Button */}
+          <button
+            onClick={() => {
+              const next = !isSidebarHidden;
+              setIsSidebarHidden(next);
+              try { localStorage.setItem("skinet_sidebar_hidden", String(next)); } catch (e) {}
+            }}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition shrink-0 ml-1 shadow-2xs"
+            title={isSidebarHidden ? "Tampilkan Menu Samping" : "Sembunyikan Menu Samping (Layar Penuh)"}
+          >
+            <Menu className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-semibold">{isSidebarHidden ? "Buka Menu" : "Tutup Menu"}</span>
+          </button>
         </div>
 
         {/* Brand Center (for desktop views, centered logo) */}
@@ -1009,9 +1031,11 @@ function AppLayoutInner({
       <div className="flex-1 flex flex-col md:flex-row max-w-none w-full mx-auto px-4 md:px-8 xl:px-12 md:py-6 gap-6">
         
         {/* SIDEBAR NAVIGATION: Desktop only */}
-        <aside className="no-print print:hidden hidden md:flex flex-col w-64 bg-white border border-slate-200 rounded-2xl p-4 gap-2 h-fit card-shadow">
-          {renderNavigationItems()}
-        </aside>
+        {!isSidebarHidden && (
+          <aside className="no-print print:hidden hidden md:flex flex-col w-64 bg-white border border-slate-200 rounded-2xl p-4 gap-2 h-fit card-shadow shrink-0 animate-in fade-in slide-in-from-left-2 duration-150">
+            {renderNavigationItems()}
+          </aside>
+        )}
  
         {/* CONTENT PANELS */}
         <main className="flex-1 px-4 py-6 md:p-0 pb-24 md:pb-6">
