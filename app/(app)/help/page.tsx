@@ -259,109 +259,79 @@ function HelpCenterContent() {
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
-      {/* 1. HERO & SEARCH HEADER (HIDDEN ON PRINT) */}
-      <div className="no-print print:hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-lg border border-indigo-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-1 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[10px] font-bold text-blue-300 uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-blue-300" />
-              Pusat Panduan & Dokumentasi
-            </div>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
-              Modul Tutorial & Buku Panduan Fitur
-            </h1>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Pelajari cara menggunakan seluruh fitur aplikasi mulai dari Kasir POS, Manajemen Stok, Penjualan & Invoice, hingga Akuntansi dan Laporan.
-            </p>
-          </div>
-
-          <div className="shrink-0">
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 text-xs"
-              title="Simpan atau cetak modul yang sedang dibuka ke dalam format PDF"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Simpan PDF Modul Ini</span>
-            </button>
-          </div>
-        </div>
-
-        {/* SEARCH BAR */}
-        <div className="mt-3.5 pt-3.5 border-t border-white/10 flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari fitur, menu, atau kata kunci (contoh: Kasir POS, Stok Minus, Buat Invoice, PPN)..."
-              className="w-full pl-9 pr-14 py-2 bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/15 focus:border-blue-400 rounded-xl text-white placeholder-slate-400 text-xs font-medium outline-none transition backdrop-blur-md"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 hover:text-white bg-white/10 px-2 py-0.5 rounded-md"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* CATEGORY FILTER PILLS */}
-        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-              selectedCategory === "all"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
-            }`}
-          >
-            Semua Modul ({HELP_TOPICS.length})
-          </button>
-          {HELP_CATEGORIES.map((cat) => {
-            const count = HELP_TOPICS.filter((t) => t.categoryId === cat.id).length;
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
-                  isSelected
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
-                }`}
-              >
-                {renderIcon(cat.iconName, "w-3 h-3")}
-                <span>{cat.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-slate-200 text-slate-900" : "bg-white/10 text-slate-300"}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. MAIN 2-COLUMN LAYOUT (SIDEBAR + CONTENT) */}
+      {/* 2-COLUMN LAYOUT (SIDEBAR + CONTENT) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT NAV LIST (HIDDEN ON PRINT) */}
-        <div className="no-print print:hidden lg:col-span-4 bg-white border border-slate-200/80 rounded-3xl p-4 shadow-sm flex flex-col gap-3 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-          <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-100">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
-              Daftar Modul ({filteredTopics.length})
-            </span>
+        <div className="no-print print:hidden lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col gap-3 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <div className="flex items-center justify-between px-1 pb-1">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 tracking-tight">
+                Pusat Panduan & Modul
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                {filteredTopics.length} modul tersedia
+              </p>
+            </div>
             {searchQuery && (
               <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md">
                 Filter Aktif
               </span>
             )}
+          </div>
+
+          {/* SEARCH BAR */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari modul atau kata kunci..."
+              className="w-full pl-9 pr-12 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-slate-900 placeholder-slate-400 text-xs font-medium outline-none transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 hover:text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded-md"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* CATEGORY FILTER PILLS */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-100 pb-2.5">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition ${
+                selectedCategory === "all"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Semua ({HELP_TOPICS.length})
+            </button>
+            {HELP_CATEGORIES.map((cat) => {
+              const count = HELP_TOPICS.filter((t) => t.categoryId === cat.id).length;
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition flex items-center gap-1 ${
+                    isSelected
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  <span>{cat.name}</span>
+                  <span className={`text-[9px] px-1 py-0.1 rounded-full ${isSelected ? "bg-slate-700 text-white" : "bg-slate-200 text-slate-600"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="space-y-1">
