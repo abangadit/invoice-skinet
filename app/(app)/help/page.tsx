@@ -258,53 +258,53 @@ function HelpCenterContent() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 max-w-7xl mx-auto">
       {/* 1. HERO & SEARCH HEADER (HIDDEN ON PRINT) */}
-      <div className="no-print print:hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-indigo-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="no-print print:hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-lg border border-indigo-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-black text-blue-300 uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-1 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[10px] font-bold text-blue-300 uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-blue-300" />
               Pusat Panduan & Dokumentasi
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
               Modul Tutorial & Buku Panduan Fitur
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               Pelajari cara menggunakan seluruh fitur aplikasi mulai dari Kasir POS, Manajemen Stok, Penjualan & Invoice, hingga Akuntansi dan Laporan.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="shrink-0">
             <button
               onClick={handlePrint}
-              className="px-5 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-2xl transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 text-sm"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 text-xs"
               title="Simpan atau cetak modul yang sedang dibuka ke dalam format PDF"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-3.5 h-3.5" />
               <span>Simpan PDF Modul Ini</span>
             </button>
           </div>
         </div>
 
         {/* SEARCH BAR */}
-        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-3">
+        <div className="mt-3.5 pt-3.5 border-t border-white/10 flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari fitur, menu, atau kata kunci (contoh: Kasir POS, Stok Minus, Buat Invoice, PPN)..."
-              className="w-full pl-11 pr-4 py-3 bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/15 focus:border-blue-400 rounded-2xl text-white placeholder-slate-400 text-sm font-medium outline-none transition backdrop-blur-md"
+              className="w-full pl-9 pr-14 py-2 bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/15 focus:border-blue-400 rounded-xl text-white placeholder-slate-400 text-xs font-medium outline-none transition backdrop-blur-md"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white bg-white/10 px-2 py-0.5 rounded-lg"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 hover:text-white bg-white/10 px-2 py-0.5 rounded-md"
               >
                 Clear
               </button>
@@ -313,10 +313,10 @@ function HelpCenterContent() {
         </div>
 
         {/* CATEGORY FILTER PILLS */}
-        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
               selectedCategory === "all"
                 ? "bg-white text-slate-900 shadow-sm"
                 : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
@@ -331,13 +331,13 @@ function HelpCenterContent() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
                   isSelected
                     ? "bg-white text-slate-900 shadow-sm"
                     : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
                 }`}
               >
-                {renderIcon(cat.iconName, "w-3.5 h-3.5")}
+                {renderIcon(cat.iconName, "w-3 h-3")}
                 <span>{cat.name}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-slate-200 text-slate-900" : "bg-white/10 text-slate-300"}`}>
                   {count}

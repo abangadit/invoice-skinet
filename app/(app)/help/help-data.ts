@@ -94,12 +94,6 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     name: "Sistem & Pengaturan",
     description: "Profil usaha, nomor seri dokumen, keamanan sesi login, dan hak akses",
     iconName: "Settings"
-  },
-  {
-    id: "admin",
-    name: "Manajemen Superadmin",
-    description: "Ringkasan sistem pusat, audit trail, dan manajemen pengguna global",
-    iconName: "Shield"
   }
 ];
 
@@ -2893,77 +2887,6 @@ export const HELP_TOPICS: HelpTopic[] = [
       {
         "question": "Bagaimana jika saya lupa kata sandi saat ingin login?",
         "answer": "Gunakan tautan 'Lupa Password' di halaman login untuk menerima tautan reset kata sandi melalui email terdaftar Anda."
-      }
-    ]
-  },
-  {
-    "id": "admin",
-    "menuKey": "admin",
-    "title": "Panel Manajemen Superadmin SaaS (Master Panel)",
-    "category": "Manajemen Superadmin",
-    "categoryId": "admin",
-    "iconName": "Shield",
-    "badge": "Superadmin",
-    "targetRole": "Superadmin Platform",
-    "path": "/admin",
-    "summary": "Panel kontrol master sistem SaaS, monitoring seluruh bisnis terdaftar, manajemen paket lisensi, dan pemeliharaan server.",
-    "overview": "Halaman Superadmin adalah panel kendali tertinggi yang hanya dapat diakses oleh pemilik platform SaaS. Memberikan wewenang master untuk memantau seluruh entitas bisnis, status langganan, manajemen pengguna global, konfigurasi sistem whitelabel pusat, dan diagnostik server.",
-    "workflow": [
-      {
-        "step": 1,
-        "title": "Buka Dashboard Superadmin",
-        "description": "Akses menu '/admin' di bagian bawah sidebar. Lihat metrik total pengguna terdaftar, total bisnis aktif, dan status lisensi.",
-        "screenshotPlaceholder": {
-          "caption": "Dashboard Master Superadmin",
-          "description": "Screenshot kartu metrik master pengguna, daftar tenant bisnis, dan lisensi SaaS."
-        }
-      },
-      {
-        "step": 2,
-        "title": "Kelola Bisnis & Lisensi Pengguna",
-        "description": "Superadmin dapat mengaktifkan paket langganan bisnis, mengedit profil master, atau menonaktifkan akun yang melanggar ketentuan.",
-        "tip": "Superadmin secara otomatis memiliki hak akses penuh (Owner + Admin) di seluruh modul bisnis."
-      }
-    ],
-    "uiGuide": [
-      {
-        "name": "Kartu 'Total Pengguna Global'",
-        "type": "Tabel Data",
-        "description": "Akumulasi seluruh akun pengguna yang terdaftar di database platform."
-      },
-      {
-        "name": "Kartu 'Total Bisnis & Tenant Aktif'",
-        "type": "Tabel Data",
-        "description": "Jumlah perusahaan/toko yang terdaftar dan beroperasi di sistem."
-      },
-      {
-        "name": "Tabel Manajemen Pengguna Global (/admin/users)",
-        "type": "Tabel Data",
-        "description": "Daftar seluruh akun user lengkap dengan tombol reset password dan assign role superadmin."
-      },
-      {
-        "name": "Tombol 'Kustomisasi Master Whitelabel'",
-        "type": "Tombol",
-        "description": "Mengatur nama branding aplikasi, logo portal login, dan domain utama."
-      }
-    ],
-    "keyFeatures": [
-      {
-        "name": "Master SaaS Multi-Tenant Control",
-        "description": "Pengelolaan terpusat seluruh penyewa aplikasi dalam 1 antarmuka master."
-      },
-      {
-        "name": "Bypass Hak Akses Bisnis",
-        "description": "Superadmin dapat masuk dan mengaudit pengaturan bisnis manapun secara fleksibel."
-      }
-    ],
-    "tipsAndTricks": [
-      "Jaga kerahasiaan akun Superadmin dan selalu gunakan password yang sangat kuat dengan kombinasi karakter unik."
-    ],
-    "faq": [
-      {
-        "question": "Siapa yang dapat mengakses halaman /admin ini?",
-        "answer": "Hanya akun yang memiliki 'systemRole: superadmin' di database yang diizinkan membuka menu ini. Pengguna biasa atau Owner bisnis normal tidak akan melihat menu ini."
       }
     ]
   }
