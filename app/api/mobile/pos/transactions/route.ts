@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { validateMobileToken, getSupabaseAdmin } from "../../../_helpers/auth";
-import { jsonResponse, handleOptions } from "../../../_helpers/cors";
+import { validateMobileToken, getSupabaseAdmin } from "../../_helpers/auth";
+import { jsonResponse, handleOptions } from "../../_helpers/cors";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
