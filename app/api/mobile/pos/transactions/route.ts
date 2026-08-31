@@ -42,6 +42,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Cari shift aktif jika shift_id tidak dikirim
+    let effectiveShiftId = shift_id;
+    if (!effectiveShiftId) {
+      let shiftQuery = supabaseAdmin
+        .from("pos_shifts")
+        .select("id")
+        .eq("business_id", authUser.businessId)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false });
+
+      if (authUser.employeeId) {
+        shiftQuery = shiftQuery.eq("employee_id", authUser.employeeId);
+      }
+
+      const { data: openShift } = await shiftQuery.limit(1).maybeSingle();
+      if (openShift) {
+        effectiveShiftId = openShift.id;
+      }
+    }
+
     // 1. Hitung total amount dari item
     let computedSubtotal = 0;
     const validatedItems: Array<{
@@ -110,7 +130,7 @@ export async function POST(request: NextRequest) {
         payment_methods: [payment_method],
         notes: notes || null,
         stamp_paid: true,
-        pos_shift_id: shift_id || null,
+        pos_shift_id: effectiveShiftId || null,
         public_token: publicToken,
       })
       .select("id, invoice_number, created_at")
@@ -158,46 +178,63 @@ export async function POST(request: NextRequest) {
       });
 
     if (paymentErr) {
-      console.error("Error creating payment record:", paymentErr);
+      console.error("Error recording payment:", paymentErr);
     }
 
-    // 5. Kurangi stok di tabel item_stocks jika item_id ada
-    for (const v of validatedItems) {
-      if (v.item_id) {
-        const { data: currentStock } = await supabaseAdmin
-          .from("item_stocks")
-          .select("id, stock_quantity")
-          .eq("item_id", v.item_id)
-          .limit(1)
-          .maybeSingle();
+    // 5. Update expected_closing_cash pada pos_shifts jika pembayaran tunai
+    if (effectiveShiftId && (payment_method === "cash" || payment_method === "tunai")) {
+      const { data: curShift } = await supabaseAdmin
+        .from("pos_shifts")
+        .select("expected_closing_cash")
+        .eq("id", effectiveShiftId)
+        .single();
 
-        if (currentStock) {
-          const newQty = Math.max(0, (Number(currentStock.stock_quantity) || 0) - v.quantity);
-          await supabaseAdmin
-            .from("item_stocks")
-            .update({ stock_quantity: newQty })
-            .eq("id", currentStock.id);
-        }
+      if (curShift) {
+        await supabaseAdmin
+          .from("pos_shifts")
+          .update({
+            expected_closing_cash: Number(curShift.expected_closing_cash || 0) + totalAmount,
+          })
+          .eq("id", effectiveShiftId);
       }
     }
 
-    return jsonResponse(
-      {
-        success: true,
-        message: "Transaksi berhasil diproses.",
-        data: {
-          invoice_id: invoice.id,
-          invoice_number: invoice.invoice_number,
-          total_amount: totalAmount,
-          paid_amount: receivedAmount,
-          change_amount: changeAmount,
-          payment_method,
-          created_at: invoice.created_at,
-        },
+    // 6. Kurangi Stok pada item_stocks
+    for (const item of validatedItems) {
+      if (!item.item_id) continue;
+
+      const { data: stockRow } = await supabaseAdmin
+        .from("item_stocks")
+        .select("id, quantity")
+        .eq("item_id", item.item_id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (stockRow) {
+        const newQty = Math.max(0, Number(stockRow.quantity || 0) - item.quantity);
+        await supabaseAdmin
+          .from("item_stocks")
+          .update({ quantity: newQty })
+          .eq("id", stockRow.id);
+      }
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        invoice_id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        total_amount: totalAmount,
+        paid_amount: receivedAmount,
+        change_amount: changeAmount,
+        payment_method: payment_method,
+        pos_shift_id: effectiveShiftId || null,
+        created_at: invoice.created_at,
       },
-      { status: 201 }
-    );
+    });
   } catch (err: any) {
+    console.error("POS Transaction Error:", err);
     const message = err.message || "";
     if (message.startsWith("UNAUTHORIZED")) {
       return jsonResponse({ success: false, error: message }, { status: 401 });
@@ -205,9 +242,8 @@ export async function POST(request: NextRequest) {
     if (message.startsWith("FORBIDDEN")) {
       return jsonResponse({ success: false, error: message }, { status: 403 });
     }
-    console.error("Mobile Transaction API Error:", err);
     return jsonResponse(
-      { success: false, error: err.message || "Gagal memproses transaksi." },
+      { success: false, error: err.message || "Gagal memproses transaksi penjualan." },
       { status: 500 }
     );
   }

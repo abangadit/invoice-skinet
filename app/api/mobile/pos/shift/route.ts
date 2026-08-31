@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from("pos_shifts")
-      .select("id, business_id, employee_id, opened_at, opening_cash, status, notes")
+      .select("id, business_id, employee_id, opened_at, opening_cash, expected_closing_cash, status, notes")
       .eq("business_id", authUser.businessId)
       .eq("status", "open")
       .order("opened_at", { ascending: false });
@@ -77,21 +77,41 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Pastikan ada employee_id (jika owner yang buka dan belum punya employee row, ambil employee id atau cari/fallback)
+      // Pastikan ada employee_id
       let targetEmployeeId = authUser.employeeId;
       if (!targetEmployeeId) {
-        const { data: firstEmp } = await supabaseAdmin
+        const { data: existingEmp } = await supabaseAdmin
           .from("employees")
           .select("id")
+          .or(`user_id.eq.${authUser.userId},email.ilike.${authUser.email}`)
           .eq("business_id", authUser.businessId)
           .limit(1)
           .maybeSingle();
-        targetEmployeeId = firstEmp?.id;
+
+        if (existingEmp) {
+          targetEmployeeId = existingEmp.id;
+        } else {
+          // Buat record employee otomatis
+          const { data: newEmp } = await supabaseAdmin
+            .from("employees")
+            .insert({
+              business_id: authUser.businessId,
+              user_id: authUser.userId,
+              name: authUser.name || "Kasir",
+              email: authUser.email,
+              role: "kasir",
+              is_pos_access: true,
+              is_active: true,
+            })
+            .select("id")
+            .single();
+          targetEmployeeId = newEmp?.id;
+        }
       }
 
       if (!targetEmployeeId) {
         return jsonResponse(
-          { success: false, error: "Data karyawan tidak ditemukan untuk membuka shift." },
+          { success: false, error: "Data karyawan kasir tidak dapat diinisialisasi." },
           { status: 400 }
         );
       }
@@ -102,11 +122,12 @@ export async function POST(request: NextRequest) {
           business_id: authUser.businessId,
           employee_id: targetEmployeeId,
           opening_cash: startCash,
+          expected_closing_cash: startCash,
           status: "open",
           opened_at: new Date().toISOString(),
           notes: notes || null,
         })
-        .select("id, opened_at, opening_cash, status")
+        .select("id, opened_at, opening_cash, expected_closing_cash, status")
         .single();
 
       if (createErr || !newShift) {
@@ -118,53 +139,74 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Shift kasir berhasil dibuka.",
         shift: newShift,
-      }, { status: 201 });
+      });
     }
 
     // 2. Aksi Tutup Shift
     if (action === "close") {
-      if (!shift_id) {
-        return jsonResponse({ success: false, error: "ID Shift wajib disertakan untuk menutup shift." }, { status: 400 });
+      let targetShiftId = shift_id;
+
+      if (!targetShiftId) {
+        let findQuery = supabaseAdmin
+          .from("pos_shifts")
+          .select("id")
+          .eq("business_id", authUser.businessId)
+          .eq("status", "open");
+
+        if (authUser.employeeId) {
+          findQuery = findQuery.eq("employee_id", authUser.employeeId);
+        }
+
+        const { data: active } = await findQuery.limit(1).maybeSingle();
+        targetShiftId = active?.id;
       }
 
-      const actualCash = actual_closing_cash !== undefined ? Number(actual_closing_cash) : null;
+      if (!targetShiftId) {
+        return jsonResponse(
+          { success: false, error: "Tidak ditemukan shift kasir aktif untuk ditutup." },
+          { status: 400 }
+        );
+      }
 
-      // Hitung total transaksi kas selama shift ini berlangsung
-      const { data: shiftInvoices } = await supabaseAdmin
+      // Hitung total uang tunai yang masuk selama shift ini
+      const { data: invoices } = await supabaseAdmin
         .from("invoices")
-        .select("total_amount")
-        .eq("pos_shift_id", shift_id)
+        .select("total_amount, payment_methods")
+        .eq("pos_shift_id", targetShiftId)
         .eq("status", "paid");
 
-      let totalSales = 0;
-      if (shiftInvoices) {
-        for (const inv of shiftInvoices) {
-          totalSales += Number(inv.total_amount) || 0;
-        }
-      }
-
-      const { data: currentShift } = await supabaseAdmin
+      const { data: shiftCurrent } = await supabaseAdmin
         .from("pos_shifts")
         .select("opening_cash")
-        .eq("id", shift_id)
+        .eq("id", targetShiftId)
         .single();
 
-      const expectedClosing = (Number(currentShift?.opening_cash) || 0) + totalSales;
+      let cashSales = 0;
+      (invoices || []).forEach((inv) => {
+        const method = Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0
+          ? inv.payment_methods[0].toLowerCase()
+          : "cash";
+        if (method === "cash" || method === "tunai") {
+          cashSales += Number(inv.total_amount || 0);
+        }
+      });
 
-      const { data: closedShift, error: closeErr } = await supabaseAdmin
+      const openingCash = Number(shiftCurrent?.opening_cash || 0);
+      const expectedCash = openingCash + cashSales;
+      const actualCash = actual_closing_cash !== undefined ? Number(actual_closing_cash) : expectedCash;
+
+      const { error: closeErr } = await supabaseAdmin
         .from("pos_shifts")
         .update({
           status: "closed",
           closed_at: new Date().toISOString(),
-          expected_closing_cash: expectedClosing,
+          expected_closing_cash: expectedCash,
           actual_closing_cash: actualCash,
           notes: notes || null,
         })
-        .eq("id", shift_id)
-        .select("id, opened_at, closed_at, opening_cash, expected_closing_cash, actual_closing_cash, status")
-        .single();
+        .eq("id", targetShiftId);
 
-      if (closeErr || !closedShift) {
+      if (closeErr) {
         console.error("Error closing shift:", closeErr);
         return jsonResponse({ success: false, error: "Gagal menutup shift kasir." }, { status: 500 });
       }
@@ -172,11 +214,15 @@ export async function POST(request: NextRequest) {
       return jsonResponse({
         success: true,
         message: "Shift kasir berhasil ditutup.",
-        shift: closedShift,
+        expected_closing_cash: expectedCash,
+        actual_closing_cash: actualCash,
       });
     }
 
-    return jsonResponse({ success: false, error: "Aksi tidak valid (gunakan 'open' atau 'close')." }, { status: 400 });
+    return jsonResponse(
+      { success: false, error: "Aksi tidak dikenali. Gunakan action 'open' atau 'close'." },
+      { status: 400 }
+    );
   } catch (err: any) {
     const message = err.message || "";
     if (message.startsWith("UNAUTHORIZED")) return jsonResponse({ success: false, error: message }, { status: 401 });
