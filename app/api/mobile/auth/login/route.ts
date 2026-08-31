@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSupabaseAnon, getSupabaseAdmin } from "../../_helpers/auth";
+import { getSupabaseAnon, getSupabaseAdmin, checkHasPosPermission } from "../../_helpers/auth";
 import { jsonResponse, handleOptions } from "../../_helpers/cors";
 
 export const dynamic = "force-dynamic";
@@ -40,11 +40,67 @@ export async function POST(request: NextRequest) {
     const session = authData.session;
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 2. Cek apakah user adalah karyawan di tabel employees
+    // 2. Cek di tabel business_members (Sistem Tim & Hak Akses Web)
+    const { data: member } = await supabaseAdmin
+      .from("business_members")
+      .select("id, business_id, role, permissions, businesses ( id, name )")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (member) {
+      const hasAccess = checkHasPosPermission(member.role, member.permissions);
+      if (!hasAccess) {
+        return jsonResponse(
+          {
+            success: false,
+            error: "Akses POS tidak diizinkan. Silakan hubungi admin bisnis Anda untuk mengaktifkan centang izin 'Kasir Penjualan (POS)'.",
+          },
+          { status: 403 }
+        );
+      }
+
+      // Auto sync / cari data employee jika ada
+      const { data: linkedEmp } = await supabaseAdmin
+        .from("employees")
+        .select("id, name, user_id")
+        .or(`user_id.eq.${user.id},email.ilike.${cleanEmail}`)
+        .eq("business_id", member.business_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (linkedEmp && !linkedEmp.user_id) {
+        await supabaseAdmin.from("employees").update({ user_id: user.id }).eq("id", linkedEmp.id);
+      }
+
+      const bizObj = member.businesses as any;
+      const bizName = bizObj?.name || "Bisnis";
+
+      return jsonResponse({
+        success: true,
+        token: session.access_token,
+        refresh_token: session.refresh_token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: linkedEmp?.name || user.user_metadata?.full_name || cleanEmail.split("@")[0],
+          employee_id: linkedEmp?.id,
+          business_id: member.business_id,
+          business_name: bizName,
+          role: member.role || "staff",
+          is_owner: member.role === "owner",
+        },
+      });
+    }
+
+    // 3. Cek di tabel employees (Karyawan)
     const { data: employee } = await supabaseAdmin
       .from("employees")
-      .select("id, name, email, business_id, is_pos_access, is_active, role")
-      .eq("user_id", user.id)
+      .select("id, name, email, business_id, is_pos_access, is_active, role, user_id")
+      .or(`user_id.eq.${user.id},email.ilike.${cleanEmail}`)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (employee) {
@@ -55,8 +111,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validasi krusial: cek hak akses POS
-      if (!employee.is_pos_access) {
+      const hasAccess = checkHasPosPermission(employee.role, null, employee.is_pos_access);
+      if (!hasAccess) {
         return jsonResponse(
           {
             success: false,
@@ -64,6 +120,10 @@ export async function POST(request: NextRequest) {
           },
           { status: 403 }
         );
+      }
+
+      if (!employee.user_id) {
+        await supabaseAdmin.from("employees").update({ user_id: user.id }).eq("id", employee.id);
       }
 
       // Ambil info nama bisnis
@@ -90,7 +150,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Cek apakah user adalah pemilik bisnis (owner)
+    // 4. Cek apakah user adalah pemilik bisnis (owner)
     const { data: business } = await supabaseAdmin
       .from("businesses")
       .select("id, name")
@@ -105,7 +165,7 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Owner",
+          name: user.user_metadata?.full_name || cleanEmail.split("@")[0] || "Owner",
           business_id: business.id,
           business_name: business.name,
           role: "owner",
@@ -117,7 +177,7 @@ export async function POST(request: NextRequest) {
     return jsonResponse(
       {
         success: false,
-        error: "Akun ini belum terhubung dengan data bisnis atau karyawan manapun.",
+        error: "Akun ini belum terhubung dengan data tim atau bisnis manapun.",
       },
       { status: 403 }
     );

@@ -44,10 +44,31 @@ export interface AuthenticatedMobileUser {
   userId: string;
   email: string;
   businessId: string;
+  businessName?: string;
   employeeId?: string;
   name: string;
   role: string;
   isOwner: boolean;
+}
+
+export function checkHasPosPermission(role: string, permissions: any, isPosAccess?: boolean): boolean {
+  if (role === "admin" || role === "owner" || role === "kasir" || role === "cashier") {
+    return true;
+  }
+  if (isPosAccess === true) {
+    return true;
+  }
+  if (permissions) {
+    if (typeof permissions === "object") {
+      if (permissions.pos === true || permissions.POS === true || permissions["kasir"] === true) {
+        return true;
+      }
+      if (Array.isArray(permissions) && (permissions.includes("pos") || permissions.includes("kasir"))) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export async function validateMobileToken(request: Request): Promise<AuthenticatedMobileUser> {
@@ -69,11 +90,54 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
     throw new Error("UNAUTHORIZED: Token is invalid or has expired");
   }
 
-  // 1. Cek apakah user adalah karyawan dengan hak akses POS
+  const userEmail = (user.email || "").toLowerCase();
+
+  // 1. Cek di tabel business_members (Sistem Tim & Hak Akses Menu Web)
+  const { data: member } = await supabaseAdmin
+    .from("business_members")
+    .select("id, business_id, role, permissions, businesses ( id, name )")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (member) {
+    const hasAccess = checkHasPosPermission(member.role, member.permissions);
+    if (!hasAccess) {
+      throw new Error("FORBIDDEN: Akses POS tidak diizinkan untuk akun ini. Hubungi admin untuk mengaktifkan izin 'Kasir Penjualan (POS)'.");
+    }
+
+    // Cari linked employee jika ada
+    const { data: linkedEmp } = await supabaseAdmin
+      .from("employees")
+      .select("id, name")
+      .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+      .eq("business_id", member.business_id)
+      .limit(1)
+      .maybeSingle();
+
+    const bizObj = member.businesses as any;
+    const bizName = bizObj?.name || "Bisnis";
+
+    return {
+      userId: user.id,
+      email: user.email || "",
+      businessId: member.business_id,
+      businessName: bizName,
+      employeeId: linkedEmp?.id,
+      name: linkedEmp?.name || user.user_metadata?.full_name || userEmail.split("@")[0],
+      role: member.role || "staff",
+      isOwner: member.role === "owner",
+    };
+  }
+
+  // 2. Cek di tabel employees (Karyawan)
   const { data: employee } = await supabaseAdmin
     .from("employees")
     .select("id, name, email, business_id, is_pos_access, is_active, role")
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (employee) {
@@ -81,14 +145,23 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
       throw new Error("FORBIDDEN: Status karyawan tidak aktif");
     }
 
-    if (!employee.is_pos_access) {
-      throw new Error("FORBIDDEN: Hak akses POS tidak diizinkan untuk akun ini");
+    const hasAccess = checkHasPosPermission(employee.role, null, employee.is_pos_access);
+    if (!hasAccess) {
+      throw new Error("FORBIDDEN: Akses POS tidak diizinkan untuk akun ini.");
     }
+
+    // Ambil info bisnis
+    const { data: business } = await supabaseAdmin
+      .from("businesses")
+      .select("id, name")
+      .eq("id", employee.business_id)
+      .maybeSingle();
 
     return {
       userId: user.id,
       email: user.email || employee.email,
       businessId: employee.business_id,
+      businessName: business?.name || "Bisnis",
       employeeId: employee.id,
       name: employee.name,
       role: employee.role || "staff",
@@ -96,7 +169,7 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
     };
   }
 
-  // 2. Jika bukan karyawan, cek apakah user adalah pemilik bisnis (owner)
+  // 3. Cek apakah user adalah pemilik bisnis (owner)
   const { data: business } = await supabaseAdmin
     .from("businesses")
     .select("id, name, user_id")
@@ -108,11 +181,12 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
       userId: user.id,
       email: user.email || "",
       businessId: business.id,
-      name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Owner",
+      businessName: business.name,
+      name: user.user_metadata?.full_name || userEmail.split("@")[0] || "Owner",
       role: "owner",
       isOwner: true,
     };
   }
 
-  throw new Error("FORBIDDEN: Akun tidak terhubung dengan bisnis manapun");
+  throw new Error("FORBIDDEN: Akun ini belum terhubung dengan data bisnis manapun.");
 }
