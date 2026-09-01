@@ -27,11 +27,11 @@ export default function AdminDashboardPage() {
           .single();
         const maxUsers = config?.max_users || 25;
 
-        // 2. Fetch users
+        // 2. Fetch users (hanya tenant/PT yang dibuat superadmin)
         const { data: users } = await supabase
           .from("users")
           .select("*")
-          .eq("role", "user")
+          .eq("is_tenant", true)
           .order("created_at", { ascending: false });
 
         const userList = users || [];
