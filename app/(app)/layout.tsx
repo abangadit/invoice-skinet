@@ -527,7 +527,7 @@ function AppLayoutInner({
         items: [
           { id: "dashboard", menuKey: "dashboard", href: "/", icon: <Layers className="w-5 h-5" />, label: t("dashboard"), show: showLink("dashboard") },
           { id: "pos", menuKey: "pos", href: "/pos", icon: <ShoppingCart className="w-5 h-5" />, label: locale === "en" ? "POS (Cashier)" : "POS (Kasir)", show: showLink("pos") },
-          { id: "download_pos_apk", menuKey: "download_pos_apk", href: "http://157.20.95.8/skinet.apk", isExternal: true, icon: <Download className="w-5 h-5 text-emerald-600" />, label: locale === "en" ? "Download POS APK" : "Download APK Kasir", show: showLink("pos"), badge: <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">APK</span> }
+          { id: "download_pos_apk", menuKey: "download_pos_apk", href: "/api/download/apk", isExternal: true, icon: <Download className="w-5 h-5 text-emerald-600" />, label: locale === "en" ? "Download POS APK" : "Download APK Kasir", show: showLink("pos"), badge: <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">APK</span> }
         ]
       },
       {
