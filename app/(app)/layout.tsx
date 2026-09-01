@@ -424,7 +424,20 @@ function AppLayoutInner({
     }`;
   };
 
-  const renderSidebarLink = (href: string, menuKey: string, icon: React.ReactNode, label: string, badge?: React.ReactNode) => {
+  const renderSidebarLink = (href: string, menuKey: string, icon: React.ReactNode, label: string, badge?: React.ReactNode, isExternal?: boolean) => {
+    if (isExternal) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass(href)}>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              {icon}
+              <span>{label}</span>
+            </div>
+            {badge && <div className="shrink-0">{badge}</div>}
+          </div>
+        </a>
+      );
+    }
     return (
       <Link href={href} className={linkClass(href)}>
         <div className="flex items-center justify-between w-full">
@@ -504,6 +517,7 @@ function AppLayoutInner({
         label: string;
         show: boolean;
         badge?: React.ReactNode;
+        isExternal?: boolean;
       }[];
     }[] = [
       {
@@ -512,7 +526,8 @@ function AppLayoutInner({
         show: showMainSection,
         items: [
           { id: "dashboard", menuKey: "dashboard", href: "/", icon: <Layers className="w-5 h-5" />, label: t("dashboard"), show: showLink("dashboard") },
-          { id: "pos", menuKey: "pos", href: "/pos", icon: <ShoppingCart className="w-5 h-5" />, label: locale === "en" ? "POS (Cashier)" : "POS (Kasir)", show: showLink("pos") }
+          { id: "pos", menuKey: "pos", href: "/pos", icon: <ShoppingCart className="w-5 h-5" />, label: locale === "en" ? "POS (Cashier)" : "POS (Kasir)", show: showLink("pos") },
+          { id: "download_pos_apk", menuKey: "download_pos_apk", href: "http://157.20.95.8/skinet.apk", isExternal: true, icon: <Download className="w-5 h-5 text-emerald-600" />, label: locale === "en" ? "Download POS APK" : "Download APK Kasir", show: showLink("pos"), badge: <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">APK</span> }
         ]
       },
       {
@@ -755,7 +770,7 @@ function AppLayoutInner({
                     if (!item.show) return null;
                     return (
                       <React.Fragment key={item.id}>
-                        {renderSidebarLink(item.href, item.menuKey, item.icon, item.label, item.badge)}
+                        {renderSidebarLink(item.href, item.menuKey, item.icon, item.label, item.badge, item.isExternal)}
                       </React.Fragment>
                     );
                   })}

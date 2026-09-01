@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { data: users, error } = await supabaseAdmin
       .from("users")
       .select("*, businesses(id, name, is_protected)")
-      .eq("role", "user")
+      .eq("is_tenant", true)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nama, email, dan kata sandi wajib diisi." }, { status: 400 });
     }
 
-    // 1. Cek limit 25 user
+    // 1. Cek limit 25 user (Hanya tenant/PT yang didaftarkan superadmin yang memakan kuota)
     const { data: config } = await supabaseAdmin
       .from("whitelabel_config")
       .select("max_users, subscription_months")
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const { count } = await supabaseAdmin
       .from("users")
       .select("*", { count: "exact", head: true })
-      .eq("role", "user")
+      .eq("is_tenant", true)
       .eq("is_active", true);
 
     if (count !== null && count >= maxUsers) {
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       email,
       full_name,
       role: "user",
+      is_tenant: true,
       is_active: true,
       activated_at: now.toISOString(),
       expires_at: finalExpiresAt.toISOString(),

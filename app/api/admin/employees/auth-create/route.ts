@@ -83,13 +83,14 @@ export async function POST(request: NextRequest) {
 
       targetUserId = authData.user.id;
 
-      // 3. Daftarkan di public.users
+      // 3. Daftarkan di public.users (sebagai non-tenant/anggota tim)
       const now = new Date().toISOString();
       const { error: upsertErr } = await supabaseAdmin.from("users").upsert({
         id: targetUserId,
         email: cleanEmail,
         full_name: full_name || cleanEmail.split("@")[0],
         role: "user",
+        is_tenant: false,
         is_active: true,
         activated_at: now,
         expires_at: null, // Diwariskan dari bisnis aktif
