@@ -23,6 +23,7 @@ import {
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [maxUsers, setMaxUsers] = useState(30);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   
@@ -71,6 +72,9 @@ export default function AdminUsersPage() {
       const json = await res.json();
       if (json.data) {
         setUsers(json.data);
+      }
+      if (json.max_users) {
+        setMaxUsers(json.max_users);
       }
     } catch (e) {
       console.error("Failed fetching users:", e);
@@ -267,7 +271,7 @@ export default function AdminUsersPage() {
   };
 
   const activeCount = users.filter((u) => u.is_active !== false).length;
-  const isQuotaFull = activeCount >= 25;
+  const isQuotaFull = activeCount >= maxUsers;
 
   const filteredUsers = users.filter(
     (u) =>
@@ -286,7 +290,7 @@ export default function AdminUsersPage() {
             Manajemen Pengguna & Lisensi
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Kelola akun perusahaan klien ({activeCount} / 25 slot aktif) dan tentukan masa aktif langganan bebas kapan pun.
+            Kelola akun perusahaan klien ({activeCount} / {maxUsers} slot aktif) dan tentukan masa aktif langganan bebas kapan pun.
           </p>
         </div>
         <button
@@ -306,7 +310,7 @@ export default function AdminUsersPage() {
       {isQuotaFull && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl text-xs font-semibold flex items-center gap-3">
           <ShieldAlert className="w-5 h-5 shrink-0 text-rose-600" />
-          <span>Batas kuota 25 user aktif telah penuh. Nonaktifkan atau hapus user lama untuk menambah user baru.</span>
+          <span>Batas kuota {maxUsers} user aktif telah penuh. Nonaktifkan atau hapus user lama untuk menambah user baru.</span>
         </div>
       )}
 

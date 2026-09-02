@@ -15,14 +15,27 @@ export async function GET(request: NextRequest) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    const { data: users, error } = await supabaseAdmin
-      .from("users")
-      .select("*, businesses(id, name, is_protected)")
-      .eq("is_tenant", true)
-      .order("created_at", { ascending: false });
+    const [usersRes, configRes] = await Promise.all([
+      supabaseAdmin
+        .from("users")
+        .select("*, businesses(id, name, is_protected)")
+        .eq("is_tenant", true)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("whitelabel_config")
+        .select("max_users, subscription_months")
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    if (error) throw error;
-    return NextResponse.json({ data: users });
+    if (usersRes.error) throw usersRes.error;
+    const maxUsers = configRes.data?.max_users || 30;
+
+    return NextResponse.json({ 
+      data: usersRes.data,
+      max_users: maxUsers,
+      config: configRes.data || { max_users: maxUsers }
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
@@ -142,7 +155,22 @@ export async function PATCH(request: NextRequest) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
     const body = await request.json();
-    const { id, is_active, extend_months, expires_at, full_name, email, business_name, reset_password } = body;
+    const { id, is_active, extend_months, expires_at, full_name, email, business_name, reset_password, update_max_users } = body;
+
+    // Aksi Update Kuota Maksimal Whitelabel
+    if (update_max_users !== undefined) {
+      const newMax = parseInt(update_max_users, 10);
+      if (isNaN(newMax) || newMax < 1) {
+        return NextResponse.json({ error: "Jumlah kuota user tidak valid" }, { status: 400 });
+      }
+      const { error: configErr } = await supabaseAdmin
+        .from("whitelabel_config")
+        .update({ max_users: newMax })
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // update all config rows
+      
+      if (configErr) throw configErr;
+      return NextResponse.json({ success: true, message: "Kuota berhasil diperbarui", max_users: newMax });
+    }
 
     if (!id) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
