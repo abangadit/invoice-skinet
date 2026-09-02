@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     const shiftIds = (shifts || []).map((s) => s.id);
 
-    // 2. Ambil seluruh faktur yang terkait dengan shift-shift ini atau rentang tanggal
+    // 2. Ambil faktur yang terkait dengan shift ATAU rentang tanggal hari ini
     let invoicesQuery = supabaseAdmin
       .from("invoices")
       .select(`
@@ -97,17 +97,21 @@ export async function GET(request: NextRequest) {
       .eq("business_id", authUser.businessId)
       .eq("status", "paid");
 
-    if (shiftIds.length > 0) {
+    if (shiftId) {
+      invoicesQuery = invoicesQuery.eq("pos_shift_id", shiftId);
+    } else if (isOngoing && shiftIds.length > 0) {
       invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
     } else if (startDate && endDate) {
-      const dStart = new Date(startDate);
-      dStart.setHours(dStart.getHours() - 12);
-      const dEnd = new Date(endDate);
-      dEnd.setDate(dEnd.getDate() + 1);
-      dEnd.setHours(dEnd.getHours() + 12);
-      invoicesQuery = invoicesQuery
-        .gte("created_at", dStart.toISOString())
-        .lte("created_at", dEnd.toISOString());
+      if (startDate === endDate) {
+        // Filter fleksibel: jika tanggal sama (contoh hari ini), cocokkan issue_date OR created_at
+        invoicesQuery = invoicesQuery.or(`issue_date.eq.${startDate},created_at.gte.${startDate}T00:00:00,created_at.lte.${endDate}T23:59:59`);
+      } else {
+        invoicesQuery = invoicesQuery
+          .gte("issue_date", startDate)
+          .lte("issue_date", endDate);
+      }
+    } else if (shiftIds.length > 0) {
+      invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
     }
 
     const { data: invoices, error: invErr } = await invoicesQuery;
