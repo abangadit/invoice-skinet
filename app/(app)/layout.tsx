@@ -396,8 +396,7 @@ function AppLayoutInner({
   const handleLogout = async () => {
     const supabase = createWebBrowserClient();
     await supabase.auth.signOut();
-    router.refresh();
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const isActive = (path: string) => {
