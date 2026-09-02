@@ -48,10 +48,16 @@ export async function GET(request: NextRequest) {
       shiftQuery = shiftQuery.eq("status", "open");
     } else {
       if (startDate) {
-        shiftQuery = shiftQuery.gte("opened_at", `${startDate}T00:00:00.000Z`);
+        // Beri buffer timezone lokal (mulai dari H-1 12:00:00 UTC sampai H+1 12:00:00 UTC)
+        const dStart = new Date(startDate);
+        dStart.setHours(dStart.getHours() - 12);
+        shiftQuery = shiftQuery.gte("opened_at", dStart.toISOString());
       }
       if (endDate) {
-        shiftQuery = shiftQuery.lte("opened_at", `${endDate}T23:59:59.999Z`);
+        const dEnd = new Date(endDate);
+        dEnd.setDate(dEnd.getDate() + 1);
+        dEnd.setHours(dEnd.getHours() + 12);
+        shiftQuery = shiftQuery.lte("opened_at", dEnd.toISOString());
       }
     }
 
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     const shiftIds = (shifts || []).map((s) => s.id);
 
-    // 2. Ambil seluruh faktur yang terkait dengan shift-shift ini
+    // 2. Ambil seluruh faktur yang terkait dengan shift-shift ini atau rentang tanggal
     let invoicesQuery = supabaseAdmin
       .from("invoices")
       .select(`
@@ -94,9 +100,14 @@ export async function GET(request: NextRequest) {
     if (shiftIds.length > 0) {
       invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
     } else if (startDate && endDate) {
+      const dStart = new Date(startDate);
+      dStart.setHours(dStart.getHours() - 12);
+      const dEnd = new Date(endDate);
+      dEnd.setDate(dEnd.getDate() + 1);
+      dEnd.setHours(dEnd.getHours() + 12);
       invoicesQuery = invoicesQuery
-        .gte("created_at", `${startDate}T00:00:00.000Z`)
-        .lte("created_at", `${endDate}T23:59:59.999Z`);
+        .gte("created_at", dStart.toISOString())
+        .lte("created_at", dEnd.toISOString());
     }
 
     const { data: invoices, error: invErr } = await invoicesQuery;
@@ -105,8 +116,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Rekapitulasi Metrik Shift
+    const assignedInvoiceIds = new Set<string>();
     const shiftReports = (shifts || []).map((shift) => {
-      const shiftInvoices = (invoices || []).filter((inv) => inv.pos_shift_id === shift.id);
+      const shiftInvoices = (invoices || []).filter((inv) => {
+        if (inv.pos_shift_id === shift.id) {
+          assignedInvoiceIds.add(inv.id);
+          return true;
+        }
+        return false;
+      });
       
       let totalRevenue = 0;
       let totalCost = 0;
@@ -192,6 +210,78 @@ export async function GET(request: NextRequest) {
         })),
       };
     });
+
+    // 4. Kumpulkan faktur sisa yang belum terasosiasi ke shift spesifik
+    const unassignedInvoices = (invoices || []).filter((inv) => !assignedInvoiceIds.has(inv.id));
+    if (unassignedInvoices.length > 0) {
+      let unRevenue = 0;
+      let unCost = 0;
+      let unCashRev = 0;
+      let unNonCashRev = 0;
+      let unItemsSold = 0;
+      const unHourlyMap: { [h: string]: { hour: string; count: number; revenue: number } } = {};
+
+      unassignedInvoices.forEach((inv) => {
+        const invTotal = Number(inv.total_amount) || 0;
+        unRevenue += invTotal;
+
+        const method = Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0
+          ? String(inv.payment_methods[0]).toLowerCase()
+          : "cash";
+
+        if (method === "cash" || method === "tunai") {
+          unCashRev += invTotal;
+        } else {
+          unNonCashRev += invTotal;
+        }
+
+        (inv.invoice_items || []).forEach((item: any) => {
+          const qty = Number(item.quantity) || 1;
+          unItemsSold += qty;
+          const buyPrice = Number(item.items?.purchase_price) || 0;
+          unCost += buyPrice * qty;
+        });
+
+        const d = new Date(inv.created_at || inv.issue_date);
+        const hourKey = `${String(d.getHours()).padStart(2, "0")}:00`;
+        if (!unHourlyMap[hourKey]) {
+          unHourlyMap[hourKey] = { hour: hourKey, count: 0, revenue: 0 };
+        }
+        unHourlyMap[hourKey].count += 1;
+        unHourlyMap[hourKey].revenue += invTotal;
+      });
+
+      shiftReports.unshift({
+        id: "direct-sales",
+        cashier_name: "Penjualan POS Langsung",
+        cashier_role: "kasir",
+        status: "closed",
+        opened_at: unassignedInvoices[0]?.created_at || new Date().toISOString(),
+        closed_at: unassignedInvoices[unassignedInvoices.length - 1]?.created_at || new Date().toISOString(),
+        opening_cash: 0,
+        expected_closing_cash: unCashRev,
+        actual_closing_cash: unCashRev,
+        cash_difference: 0,
+        is_minus: false,
+        total_revenue: unRevenue,
+        total_cost: unCost,
+        gross_profit: unRevenue - unCost,
+        cash_revenue: unCashRev,
+        non_cash_revenue: unNonCashRev,
+        total_transactions: unassignedInvoices.length,
+        total_items_sold: unItemsSold,
+        notes: "Penjualan tercatat langsung di sistem",
+        hourly_breakdown: Object.values(unHourlyMap).sort((a, b) => a.hour.localeCompare(b.hour)),
+        transactions: unassignedInvoices.map((inv) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          time: inv.created_at || inv.issue_date,
+          total_amount: Number(inv.total_amount) || 0,
+          payment_method: Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0 ? inv.payment_methods[0] : "cash",
+          items_count: Array.isArray(inv.invoice_items) ? inv.invoice_items.length : 0,
+        })),
+      });
+    }
 
     // Ringkasan Global dari Seluruh Shift yang Terfilter
     const grandSummary = shiftReports.reduce(
