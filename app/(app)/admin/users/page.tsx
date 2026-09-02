@@ -10,7 +10,8 @@ import {
   KeyRound, 
   CalendarPlus, 
   Calendar, 
-  CalendarClock,
+  CalendarClock, 
+  Edit,
   X, 
   Check, 
   Search,
@@ -41,6 +42,14 @@ export default function AdminUsersPage() {
   const [customExpiresAt, setCustomExpiresAt] = useState(defaultNextYear());
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Modal Edit Profil User & PT Klien
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editBusinessName, setEditBusinessName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editErrorMsg, setEditErrorMsg] = useState<string | null>(null);
 
   // Modal Reset Password
   const [selectedUserForPw, setSelectedUserForPw] = useState<any>(null);
@@ -175,6 +184,45 @@ export default function AdminUsersPage() {
     const base = new Date();
     base.setMonth(base.getMonth() + monthsToAdd);
     setCustomExpiresAt(base.toISOString().split("T")[0]);
+  };
+
+  const openEditModal = (user: any) => {
+    setSelectedUserForEdit(user);
+    setEditFullName(user.full_name || "");
+    setEditEmail(user.email || "");
+    setEditBusinessName(user.businesses?.[0]?.name || "");
+    setEditErrorMsg(null);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForEdit) return;
+    setSavingEdit(true);
+    setEditErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedUserForEdit.id,
+          full_name: editFullName,
+          email: editEmail,
+          business_name: editBusinessName,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setEditErrorMsg(json.error || "Gagal memperbarui data pengguna.");
+      } else {
+        setSelectedUserForEdit(null);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      setEditErrorMsg(err.message || "Terjadi kesalahan.");
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   const handleDeleteUser = async (user: any) => {
@@ -358,6 +406,13 @@ export default function AdminUsersPage() {
                           }`}
                         >
                           {u.is_active === false ? "Aktifkan" : "Nonaktifkan"}
+                        </button>
+                        <button
+                          onClick={() => openEditModal(u)}
+                          title="Edit Data User & Bisnis"
+                          className="p-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => openExpiryModal(u)}
@@ -621,6 +676,92 @@ export default function AdminUsersPage() {
                     <>
                       <Check className="w-4 h-4" />
                       Simpan Masa Aktif
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Profil User & PT Klien */}
+      {selectedUserForEdit && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Edit className="w-5 h-5 text-blue-600" />
+                <h3 className="font-extrabold text-slate-900 text-base">Edit Data Pengguna & PT</h3>
+              </div>
+              <button
+                onClick={() => setSelectedUserForEdit(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editErrorMsg && (
+              <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl text-rose-600 text-xs font-semibold">
+                {editErrorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateUser} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nama Lengkap PIC</label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  placeholder="Nama PIC"
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-600 font-medium"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Nama Bisnis / PT Klien</label>
+                <input
+                  type="text"
+                  required
+                  value={editBusinessName}
+                  onChange={(e) => setEditBusinessName(e.target.value)}
+                  placeholder="Nama Bisnis/PT"
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-600 font-medium"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Alamat Email</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="email@perusahaan.com"
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-600 font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedUserForEdit(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-1.5"
+                >
+                  {savingEdit ? "Menyimpan..." : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Simpan Perubahan
                     </>
                   )}
                 </button>

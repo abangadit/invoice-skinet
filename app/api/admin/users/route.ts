@@ -142,7 +142,7 @@ export async function PATCH(request: NextRequest) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
     const body = await request.json();
-    const { id, is_active, extend_months, expires_at, full_name, reset_password } = body;
+    const { id, is_active, extend_months, expires_at, full_name, email, business_name, reset_password } = body;
 
     if (!id) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -157,13 +157,40 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Password berhasil diperbarui" });
     }
 
-    // Aksi Update Status / Perpanjangan / Kustom Tanggal Kadaluarsa
+    // Aksi Update Profil & Auth Email jika berubah
+    if (email) {
+      const cleanEmail = email.trim().toLowerCase();
+      const { error: authEmailErr } = await supabaseAdmin.auth.admin.updateUserById(id, {
+        email: cleanEmail,
+        email_confirm: true,
+        user_metadata: full_name ? { full_name } : undefined,
+      });
+      if (authEmailErr) {
+        return NextResponse.json({ error: `Gagal memperbarui email di Auth: ${authEmailErr.message}` }, { status: 400 });
+      }
+    }
+
+    // Aksi Update Nama Bisnis Klien jika diisi
+    if (business_name) {
+      const { error: bizErr } = await supabaseAdmin
+        .from("businesses")
+        .update({ name: business_name })
+        .eq("user_id", id);
+      if (bizErr) {
+        console.error("Gagal update bisnis:", bizErr);
+      }
+    }
+
+    // Aksi Update Status / Perpanjangan / Kustom Tanggal Kadaluarsa / Profil users
     const updates: any = {};
     if (typeof is_active === "boolean") {
       updates.is_active = is_active;
     }
     if (full_name) {
       updates.full_name = full_name;
+    }
+    if (email) {
+      updates.email = email.trim().toLowerCase();
     }
     if (expires_at) {
       updates.expires_at = new Date(expires_at).toISOString();
