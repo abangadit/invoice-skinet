@@ -32,12 +32,7 @@ export async function GET(request: NextRequest) {
         expected_closing_cash,
         actual_closing_cash,
         status,
-        notes,
-        employees (
-          id,
-          name,
-          role
-        )
+        notes
       `)
       .eq("business_id", authUser.businessId)
       .order("opened_at", { ascending: false });
@@ -46,30 +41,28 @@ export async function GET(request: NextRequest) {
       shiftQuery = shiftQuery.eq("id", shiftId);
     } else if (isOngoing) {
       shiftQuery = shiftQuery.eq("status", "open");
-    } else {
-      if (startDate) {
-        // Beri buffer timezone lokal (mulai dari H-1 12:00:00 UTC sampai H+1 12:00:00 UTC)
-        const dStart = new Date(startDate);
-        dStart.setHours(dStart.getHours() - 12);
-        shiftQuery = shiftQuery.gte("opened_at", dStart.toISOString());
-      }
-      if (endDate) {
-        const dEnd = new Date(endDate);
-        dEnd.setDate(dEnd.getDate() + 1);
-        dEnd.setHours(dEnd.getHours() + 12);
-        shiftQuery = shiftQuery.lte("opened_at", dEnd.toISOString());
-      }
     }
 
-    const { data: shifts, error: shiftErr } = await shiftQuery.limit(50);
+    const { data: rawShifts, error: shiftErr } = await shiftQuery.limit(50);
     if (shiftErr) {
       console.error("Error fetching shifts:", shiftErr);
-      return jsonResponse({ success: false, error: "Gagal mengambil data shift." }, { status: 500 });
     }
 
-    const shiftIds = (shifts || []).map((s) => s.id);
+    const shifts = rawShifts || [];
+    const shiftIds = shifts.map((s) => s.id);
 
-    // 2. Ambil faktur yang terkait dengan shift ATAU rentang tanggal hari ini
+    // Ambil info nama karyawan kasir jika ada
+    const employeeIds = Array.from(new Set(shifts.map((s) => s.employee_id).filter(Boolean)));
+    const employeeMap = new Map<string, any>();
+    if (employeeIds.length > 0) {
+      const { data: emps } = await supabaseAdmin
+        .from("employees")
+        .select("id, name, role")
+        .in("id", employeeIds);
+      (emps || []).forEach((e) => employeeMap.set(e.id, e));
+    }
+
+    // 2. Ambil seluruh faktur yang lunas (persis seperti pola riwayat penjualan)
     let invoicesQuery = supabaseAdmin
       .from("invoices")
       .select(`
@@ -86,35 +79,20 @@ export async function GET(request: NextRequest) {
           name,
           quantity,
           unit_price,
-          subtotal,
-          item_id,
-          items (
-            id,
-            purchase_price
-          )
+          subtotal
         )
       `)
       .eq("business_id", authUser.businessId)
-      .eq("status", "paid");
+      .eq("status", "paid")
+      .order("created_at", { ascending: false });
 
     if (shiftId) {
       invoicesQuery = invoicesQuery.eq("pos_shift_id", shiftId);
     } else if (isOngoing && shiftIds.length > 0) {
       invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
-    } else if (startDate && endDate) {
-      if (startDate === endDate) {
-        // Filter fleksibel: jika tanggal sama (contoh hari ini), cocokkan issue_date OR created_at
-        invoicesQuery = invoicesQuery.or(`issue_date.eq.${startDate},created_at.gte.${startDate}T00:00:00,created_at.lte.${endDate}T23:59:59`);
-      } else {
-        invoicesQuery = invoicesQuery
-          .gte("issue_date", startDate)
-          .lte("issue_date", endDate);
-      }
-    } else if (shiftIds.length > 0) {
-      invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
     }
 
-    const { data: invoices, error: invErr } = await invoicesQuery;
+    const { data: invoices, error: invErr } = await invoicesQuery.limit(200);
     if (invErr) {
       console.error("Error fetching invoices for report:", invErr);
     }
@@ -153,7 +131,7 @@ export async function GET(request: NextRequest) {
         (inv.invoice_items || []).forEach((item: any) => {
           const qty = Number(item.quantity) || 1;
           totalItemsSold += qty;
-          const buyPrice = Number(item.items?.purchase_price) || 0;
+          const buyPrice = Number(item.purchase_price || item.unit_price * 0.7) || 0;
           totalCost += buyPrice * qty;
         });
       });
@@ -167,7 +145,7 @@ export async function GET(request: NextRequest) {
       const cashDifference = actualCash - expectedCash; // Minus jika < 0
       const grossProfit = totalRevenue - totalCost;
 
-      const employeeObj = shift.employees as any;
+      const employeeObj = employeeMap.get(shift.employee_id);
 
       // Breakdown per jam (Hourly Analysis)
       const hourlyMap: { [hour: string]: { hour: string; count: number; revenue: number } } = {};
@@ -242,7 +220,7 @@ export async function GET(request: NextRequest) {
         (inv.invoice_items || []).forEach((item: any) => {
           const qty = Number(item.quantity) || 1;
           unItemsSold += qty;
-          const buyPrice = Number(item.items?.purchase_price) || 0;
+          const buyPrice = Number(item.purchase_price || item.unit_price * 0.7) || 0;
           unCost += buyPrice * qty;
         });
 
