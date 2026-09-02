@@ -147,6 +147,20 @@ export async function GET(request: NextRequest) {
 
       const employeeObj = shift.employees as any;
 
+      // Breakdown per jam (Hourly Analysis)
+      const hourlyMap: { [hour: string]: { hour: string; count: number; revenue: number } } = {};
+      shiftInvoices.forEach((inv) => {
+        const d = new Date(inv.created_at || inv.issue_date);
+        const hourKey = `${String(d.getHours()).padStart(2, "0")}:00`;
+        if (!hourlyMap[hourKey]) {
+          hourlyMap[hourKey] = { hour: hourKey, count: 0, revenue: 0 };
+        }
+        hourlyMap[hourKey].count += 1;
+        hourlyMap[hourKey].revenue += Number(inv.total_amount) || 0;
+      });
+
+      const hourlyBreakdown = Object.values(hourlyMap).sort((a, b) => a.hour.localeCompare(b.hour));
+
       return {
         id: shift.id,
         cashier_name: employeeObj?.name || "Kasir",
@@ -167,6 +181,15 @@ export async function GET(request: NextRequest) {
         total_transactions: shiftInvoices.length,
         total_items_sold: totalItemsSold,
         notes: shift.notes,
+        hourly_breakdown: hourlyBreakdown,
+        transactions: shiftInvoices.map((inv) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          time: inv.created_at || inv.issue_date,
+          total_amount: Number(inv.total_amount) || 0,
+          payment_method: Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0 ? inv.payment_methods[0] : "cash",
+          items_count: Array.isArray(inv.invoice_items) ? inv.invoice_items.length : 0,
+        })),
       };
     });
 
