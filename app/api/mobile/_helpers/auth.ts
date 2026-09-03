@@ -52,7 +52,8 @@ export interface AuthenticatedMobileUser {
 }
 
 export function checkHasPosPermission(role: string, permissions: any, isPosAccess?: boolean): boolean {
-  if (role === "admin" || role === "owner" || role === "kasir" || role === "cashier") {
+  const allowedRoles = ["admin", "owner", "kasir", "cashier", "sales", "finance"];
+  if (allowedRoles.includes(role?.toLowerCase())) {
     return true;
   }
   if (isPosAccess === true) {
