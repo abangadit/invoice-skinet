@@ -481,7 +481,7 @@ export default function PODetailPage() {
           )}
 
           {/* Settle PO Payment Button */}
-          {po.status === "received" && po.payment_status !== "paid" && (
+          {po.status !== "cancelled" && po.payment_status !== "paid" && (
             <button
               onClick={() => setShowPayModal(true)}
               disabled={updating}
@@ -491,7 +491,7 @@ export default function PODetailPage() {
             </button>
           )}
 
-          {po.status === "received" && po.payment_status === "paid" && (
+          {po.payment_status === "paid" && (
             <button
               onClick={handleCancelPayment}
               disabled={updating}
@@ -511,7 +511,7 @@ export default function PODetailPage() {
       </div>
 
       {/* PO Settlement Status Alert Box */}
-      {po.status === "received" && (
+      {po.status !== "cancelled" && (
         <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
           po.payment_status === "paid"
             ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
@@ -527,12 +527,12 @@ export default function PODetailPage() {
             </div>
             <div>
               <h4 className="font-bold text-sm flex items-center gap-2">
-                Status Beban Utang: {po.payment_status === "paid" ? "Lunas" : isOverdue ? "Jatuh Tempo (Overdue)" : "Belum Lunas (Utang Usaha Aktif)"}
+                Status Pembayaran: {po.payment_status === "paid" ? "Lunas" : isOverdue ? "Jatuh Tempo (Overdue)" : "Belum Lunas"}
               </h4>
               <p className="text-xs opacity-80 mt-0.5">
                 {po.payment_status === "paid" 
                   ? `Dibayar pada ${po.paid_at?.slice(0, 10) || "-"} melalui ${paymentAccountName || "Kas/Bank"}`
-                  : `Tenggat waktu pembayaran: ${po.due_date || "Tidak ditentukan"}. Jurnal Utang Dagang (2101) tercatat aktif di Neraca.`}
+                  : `Tenggat waktu pembayaran: ${po.due_date || "Tidak ditentukan"}. Jurnal Utang Dagang (2101) tercatat otomatis saat barang diterima.`}
               </p>
             </div>
           </div>
