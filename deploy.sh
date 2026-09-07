@@ -17,8 +17,13 @@ git reset --hard origin/main
 echo "🔄 [2/4] Menyinkronkan struktur aplikasi..."
 if [ -d "$HOME/skinet/apps/web" ]; then
   rsync -av --delete --exclude 'node_modules' --exclude '.next' ~/skinet/app/ ~/skinet/apps/web/app/
+  rsync -av --delete --exclude 'node_modules' --exclude '.next' ~/skinet/components/ ~/skinet/apps/web/components/
+  rsync -av --delete --exclude 'node_modules' --exclude '.next' ~/skinet/lib/ ~/skinet/apps/web/lib/
+  rsync -av --exclude 'node_modules' --exclude '.next' ~/skinet/public/ ~/skinet/apps/web/public/
   cp ~/skinet/next.config.js ~/skinet/apps/web/next.config.js 2>/dev/null || true
   cp ~/skinet/middleware.ts ~/skinet/apps/web/middleware.ts 2>/dev/null || true
+  cp ~/skinet/package.json ~/skinet/apps/web/package.json 2>/dev/null || true
+  cp ~/skinet/tsconfig.json ~/skinet/apps/web/tsconfig.json 2>/dev/null || true
   mkdir -p ~/skinet/apps/web/public/uploads
   mkdir -p ~/skinet/public/uploads
   
