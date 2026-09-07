@@ -13,7 +13,11 @@ import {
   Check, 
   X, 
   Settings,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Lock,
+  Key
 } from "lucide-react";
 import { useBusiness } from "../../../../lib/context/BusinessContext";
 import { useLanguage } from "../../../../lib/context/LanguageContext";
@@ -43,6 +47,9 @@ export default function TeamSettingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalWarning, setModalWarning] = useState("");
   const [emailInput, setEmailInput] = useState("");
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPasswordPlainText, setShowPasswordPlainText] = useState(false);
   const [roleInput, setRoleInput] = useState("staff");
   const [customPermissions, setCustomPermissions] = useState<Record<string, boolean>>({});
   
@@ -67,9 +74,13 @@ export default function TeamSettingsPage() {
   useEffect(() => {
     const isNewEmployee = searchParams.get("new_employee") === "true";
     const emailParam = searchParams.get("new_employee_email");
+    const nameParam = searchParams.get("new_employee_name");
     if (isNewEmployee) {
       if (emailParam) {
         setEmailInput(emailParam);
+      }
+      if (nameParam) {
+        setFullNameInput(nameParam);
       }
       setModalWarning(locale === "en" ? "It is recommended to immediately set the access rights of the newly added employee so you don't get confused." : "Disarankan untuk langsung menentukan hak akses karyawan baru agar tidak bingung.");
       setShowAddModal(true);
@@ -197,53 +208,32 @@ export default function TeamSettingsPage() {
     try {
       setSubmitting(true);
       setModalError("");
-      const supabase = createWebBrowserClient();
 
-      // Look up user by email in the public.users table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, email")
-        .ilike("email", emailInput.trim())
-        .maybeSingle();
+      const payload = {
+        email: emailInput.trim(),
+        password: passwordInput.trim() || undefined,
+        full_name: fullNameInput.trim() || undefined,
+        business_id: activeBusiness.id,
+        role: roleInput,
+        permissions: roleInput === "custom" ? customPermissions : {}
+      };
 
-      if (userError) throw userError;
+      const res = await fetch("/api/admin/employees/auth-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      if (!userData) {
-        setModalError(
-          locale === "en" 
-            ? "User with this email is not registered yet. Ask them to sign up to invoice.co.id first." 
-            : "Alamat email ini belum terdaftar di invoice.co.id. Silakan minta pengguna tersebut untuk membuat akun terlebih dahulu."
-        );
-        setSubmitting(false);
-        return;
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || (locale === "en" ? "Failed to add team member." : "Gagal menambahkan anggota tim."));
       }
-
-      // Check unique constraint manually to show beautiful alert
-      const isAlreadyMember = members.some(m => m.user_id === userData.id);
-      if (isAlreadyMember) {
-        setModalError(
-          locale === "en"
-            ? "This user is already a member of this business."
-            : "Pengguna ini sudah menjadi bagian dari tim bisnis Anda."
-        );
-        setSubmitting(false);
-        return;
-      }
-
-      // Insert new member
-      const { error: insertError } = await supabase
-        .from("business_members")
-        .insert({
-          business_id: activeBusiness.id,
-          user_id: userData.id,
-          role: roleInput,
-          permissions: roleInput === "custom" ? customPermissions : {}
-        });
-
-      if (insertError) throw insertError;
 
       // Reset Form & Refetch
       setEmailInput("");
+      setFullNameInput("");
+      setPasswordInput("");
+      setShowPasswordPlainText(false);
       setRoleInput("staff");
       // Reset permissions checklist
       const resetPerms: Record<string, boolean> = {};
@@ -254,9 +244,9 @@ export default function TeamSettingsPage() {
       
       setShowAddModal(false);
       await fetchMembers();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error adding team member:", err);
-      setModalError(locale === "en" ? "Failed to add team member." : "Gagal menambahkan anggota tim.");
+      setModalError(err.message || (locale === "en" ? "Failed to add team member." : "Gagal menambahkan anggota tim."));
     } finally {
       setSubmitting(false);
     }
@@ -514,6 +504,19 @@ export default function TeamSettingsPage() {
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Nama Lengkap Anggota / Karyawan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Budi Santoso"
+                  value={fullNameInput}
+                  onChange={(e) => setFullNameInput(e.target.value)}
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                   Alamat Email Pengguna *
                 </label>
                 <input
@@ -524,8 +527,30 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Kata Sandi Login Pengguna
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPasswordPlainText ? "text" : "password"}
+                    placeholder="Minimal 6 karakter (wajib untuk akun baru)"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full border border-slate-200 pl-3.5 pr-10 py-2.5 rounded-xl text-xs focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordPlainText(!showPasswordPlainText)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPasswordPlainText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 <span className="text-[10px] text-slate-400 block mt-1 font-medium">
-                  Catatan: Akun email ini harus sudah terdaftar di platform.
+                  Jika email belum memiliki akun login, sistem akan otomatis membuatkan akun dengan kata sandi ini.
                 </span>
               </div>
 

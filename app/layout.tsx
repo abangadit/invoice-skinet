@@ -7,8 +7,8 @@ import PWARegister from "@/components/PWARegister";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "invoice.co.id - Premium Billing & Invoicing Platform",
-  description: "Create professional invoices instantly with invoice.co.id. Easy, secure, and real-time.",
+  title: "MyBiz - Platform Billing & ERP",
+  description: "Platform Manajemen Bisnis, Faktur, Stok Gudang, dan Kasir POS.",
 };
 
 export default function RootLayout({

@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
     // Attempt to send email
     const data = await resend.emails.send({
-      from: "Invoice.co.id <onboarding@resend.dev>",
+      from: `${businessName || "Billing Platform"} <onboarding@resend.dev>`,
       to: [to],
       subject: subject,
       html: emailHtml,

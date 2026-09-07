@@ -443,6 +443,7 @@ export default function EmployeesPage() {
         shift_id: shiftId || null
       };
 
+      let createdEmp: any = null;
       if (editingEmployee) {
         const { error } = await supabase
           .from("employees")
@@ -450,16 +451,19 @@ export default function EmployeesPage() {
           .eq("id", editingEmployee.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from("employees")
-          .insert(payload);
+          .insert(payload)
+          .select("*, working_shifts:shift_id (name, start_time, end_time)")
+          .single();
         if (error) throw error;
+        createdEmp = insertedData;
       }
 
       setShowModal(false);
-      fetchEmployees();
-      if (!editingEmployee) {
-        router.push(`/settings/users?new_employee=true&new_employee_email=${encodeURIComponent(email)}&new_employee_name=${encodeURIComponent(name)}`);
+      await fetchEmployees();
+      if (!editingEmployee && createdEmp && createdEmp.email) {
+        handleAccessRights(createdEmp);
       }
     } catch (err: any) {
       console.error("Error saving employee:", err);
@@ -1461,7 +1465,7 @@ export default function EmployeesPage() {
                       type="button"
                       onClick={() => {
                         setShowAccessRightsModal(false);
-                        router.push(`/settings/users?new_employee=true&new_employee_email=${encodeURIComponent(accessEmployee.email || "")}`);
+                        router.push("/settings/users");
                       }}
                       className="text-[10px] font-bold text-blue-600 hover:underline"
                     >

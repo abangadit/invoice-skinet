@@ -1,7 +1,7 @@
 {
-  "name": "invoice.co.id",
-  "short_name": "Invoice.co.id",
-  "description": "Premium Billing & Invoicing Platform",
+  "name": "MyBiz Platform",
+  "short_name": "MyBiz",
+  "description": "Platform Manajemen Bisnis, Faktur, Stok Gudang, dan Kasir POS",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

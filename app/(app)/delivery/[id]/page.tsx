@@ -298,7 +298,7 @@ export default function DeliveryOrderDetailPage() {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 pb-6 border-b border-slate-100">
               <div>
                 <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  {activeBusiness?.name || "invoice.co.id"}
+                  {activeBusiness?.name || "Perusahaan"}
                 </h1>
                 {activeBusiness?.address && (
                   <p className="text-slate-500 font-medium max-w-xs mt-1 text-[11px] leading-relaxed">
@@ -430,7 +430,7 @@ export default function DeliveryOrderDetailPage() {
                 <p>Hormat Kami / Gudang</p>
                 <div className="h-16"></div>
                 <p className="border-t border-slate-300 pt-1.5 mx-4 font-semibold text-slate-700">
-                  {activeBusiness?.name || "invoice.co.id"}
+                  {activeBusiness?.name || "Perusahaan"}
                 </p>
               </div>
             </div>

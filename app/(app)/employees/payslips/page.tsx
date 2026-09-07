@@ -290,7 +290,7 @@ export default function EmployeePayslipsPage() {
               
               {/* Slip Header */}
               <div className="text-center pb-4 border-b border-dashed border-slate-300">
-                <h2 className="text-base font-extrabold text-slate-950 uppercase">{activeBusiness?.name || "invoice.co.id"}</h2>
+                <h2 className="text-base font-extrabold text-slate-950 uppercase">{activeBusiness?.name || "Perusahaan"}</h2>
                 {activeBusiness?.address && <p className="text-slate-500 text-[10px] font-medium max-w-xs mx-auto mt-1 leading-normal">{activeBusiness.address}</p>}
                 <h3 className="text-sm font-extrabold text-blue-650 mt-3 tracking-wide uppercase">SLIP GAJI KARYAWAN</h3>
                 <p className="text-slate-400 text-[10px] font-bold mt-0.5">Periode: {getMonthLabel(activePayslip.period_month)} {activePayslip.period_year}</p>

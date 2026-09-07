@@ -570,7 +570,7 @@ export default function InvoiceDetailPage() {
     const custName = invoice.customer_snapshot?.name || (isEn ? "Customer" : "Pelanggan");
     const amountStr = formatCurrency(invoice.total_amount);
     const publicUrl = `${window.location.origin}/inv/${invoice.public_token}`;
-    const businessName = activeBusiness?.name || "invoice.co.id";
+    const businessName = activeBusiness?.name || "Bisnis Kami";
     
     const subject = `${docTypeName} ${invoice.invoice_number} - ${businessName}`;
     const text = isEn 

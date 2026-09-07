@@ -343,15 +343,7 @@ export default function PublicProjectPage() {
       {/* Footer */}
       <footer className="mt-12 pt-6 border-t border-slate-200/80 text-center">
         <p className="text-xs font-semibold text-slate-400">
-          by{" "}
-          <a 
-            href="https://invoice.co.id" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="font-bold text-blue-600 hover:underline transition"
-          >
-            invoice.co.id
-          </a>
+          &copy; {new Date().getFullYear()} <span className="font-bold text-slate-700">{business.name}</span>. All rights reserved.
         </p>
       </footer>
     </div>

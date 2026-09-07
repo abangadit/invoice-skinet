@@ -124,7 +124,7 @@ export const translations = {
 
     // PWA & Confirmation Notifications
     pwaInstallTitle: "Instal Aplikasi",
-    pwaInstallDesc: "Instal invoice.co.id di perangkat Anda untuk akses cepat dan offline.",
+    pwaInstallDesc: "Instal aplikasi di perangkat Anda untuk akses cepat dan offline.",
     pwaInstallButton: "Instal Sekarang",
     incomingProofsTab: "Konfirmasi Bukti Transfer",
     auditPaymentsTab: "Audit Payments (Pemasukan)",
@@ -314,7 +314,7 @@ export const translations = {
 
     // PWA & Confirmation Notifications
     pwaInstallTitle: "Install App",
-    pwaInstallDesc: "Install invoice.co.id on your device for fast access and offline usage.",
+    pwaInstallDesc: "Install application on your device for fast access and offline usage.",
     pwaInstallButton: "Install Now",
     incomingProofsTab: "Transfer Proof Confirmations",
     auditPaymentsTab: "Payments Audit (Inflow)",

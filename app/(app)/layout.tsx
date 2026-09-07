@@ -1198,8 +1198,8 @@ function AppLayoutInner({
               </h3>
               <p className="text-xs text-slate-500">
                 {locale === "en" 
-                  ? "Install invoice.co.id on your device for fast access and offline usage." 
-                  : "Instal invoice.co.id di perangkat Anda untuk akses cepat dan offline."}
+                  ? `Install ${activeBusiness?.name || "the app"} on your device for fast access and offline usage.` 
+                  : `Instal ${activeBusiness?.name || "aplikasi"} di perangkat Anda untuk akses cepat dan offline.`}
               </p>
             </div>
 
