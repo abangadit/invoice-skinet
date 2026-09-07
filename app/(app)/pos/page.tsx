@@ -299,11 +299,113 @@ export default function POSPage() {
     }
   }, [activeBusiness]);
 
+  // Audio Feedback for POS Scanner
+  const playScannerBeep = (type: "success" | "error" = "success") => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === "success") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1760, ctx.currentTime); // A6 beep (crisp & clean)
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+      } else {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(320, ctx.currentTime); // Low buzz
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.18);
+      }
+    } catch {
+      // Audio context might be restricted before user gesture
+    }
+  };
+
+  const [scanToast, setScanToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showScanNotification = (message: string, type: "success" | "error" = "success") => {
+    setScanToast({ message, type });
+    setTimeout(() => {
+      setScanToast(prev => (prev?.message === message ? null : prev));
+    }, 2500);
+  };
+
+  const handleScanOrSubmitQuery = (rawCode: string) => {
+    const code = rawCode.trim();
+    if (!code) return;
+
+    // 1. Exact match by SKU / Barcode
+    const exactSkuMatch = catalog.find(item => item.sku && item.sku.toLowerCase() === code.toLowerCase());
+    if (exactSkuMatch) {
+      addToCart(exactSkuMatch);
+      playScannerBeep("success");
+      showScanNotification(`+1 "${exactSkuMatch.name}" ditambahkan`, "success");
+      setSearchQuery("");
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    // 2. Exact match by Name
+    const exactNameMatch = catalog.find(item => item.name.toLowerCase() === code.toLowerCase());
+    if (exactNameMatch) {
+      addToCart(exactNameMatch);
+      playScannerBeep("success");
+      showScanNotification(`+1 "${exactNameMatch.name}" ditambahkan`, "success");
+      setSearchQuery("");
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    // 3. If filtered list only has 1 matching item
+    const matches = catalog.filter(item => {
+      const q = code.toLowerCase();
+      return item.name.toLowerCase().includes(q) || (item.sku && item.sku.toLowerCase().includes(q));
+    });
+
+    if (matches.length === 1) {
+      addToCart(matches[0]);
+      playScannerBeep("success");
+      showScanNotification(`+1 "${matches[0].name}" ditambahkan`, "success");
+      setSearchQuery("");
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    if (matches.length === 0) {
+      playScannerBeep("error");
+      showScanNotification(`Produk "${code}" tidak ditemukan!`, "error");
+    }
+  };
+
   useEffect(() => {
     let barcodeBuffer = "";
     let lastKeyTime = 0;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Hotkey F2 -> Focus scanner / search box
+      if (e.key === "F2") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      // Hotkey Escape -> Clear search
+      if (e.key === "Escape") {
+        setSearchQuery("");
+        searchInputRef.current?.focus();
+        return;
+      }
+
       // Ignore key events if focused on input or textarea
       const target = e.target as HTMLElement;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
@@ -311,20 +413,15 @@ export default function POSPage() {
       }
 
       const currentTime = Date.now();
-      if (currentTime - lastKeyTime > 100) {
+      // Hardware barcode scanners typically emit keystrokes < 40ms apart
+      if (currentTime - lastKeyTime > 80) {
         barcodeBuffer = "";
       }
       lastKeyTime = currentTime;
 
       if (e.key === "Enter") {
         if (barcodeBuffer.length >= 2) {
-          const scannedCode = barcodeBuffer.trim();
-          const matchedItem = catalog.find(item => item.sku && item.sku.toLowerCase() === scannedCode.toLowerCase());
-          if (matchedItem) {
-            addToCart(matchedItem);
-          } else {
-            console.log("No product matched for barcode:", scannedCode);
-          }
+          handleScanOrSubmitQuery(barcodeBuffer);
           barcodeBuffer = "";
         }
       } else if (e.key.length === 1) {
@@ -959,6 +1056,23 @@ export default function POSPage() {
           </div>
         </div>
 
+        {/* Scan / Action Toast Notification */}
+        {scanToast && (
+          <div className={`p-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-between shadow-sm animate-fade-in ${
+            scanToast.type === "success" 
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+              : "bg-rose-50 text-rose-700 border border-rose-200"
+          }`}>
+            <span className="flex items-center gap-2">
+              {scanToast.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
+              {scanToast.message}
+            </span>
+            <button type="button" onClick={() => setScanToast(null)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Catalog Search Bar */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -970,27 +1084,30 @@ export default function POSPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && searchQuery.trim().length > 0) {
-                if (filteredCatalog.length > 0) {
-                  addToCart(filteredCatalog[0]);
-                  setSearchQuery("");
-                }
+                e.preventDefault();
+                handleScanOrSubmitQuery(searchQuery);
               }
             }}
-            placeholder="Cari produk (Nama atau SKU / Barcode)..."
-            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-9 py-2.5 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition font-semibold"
+            placeholder="Cari produk / Scan barcode (Tekan F2 untuk fokus)..."
+            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-20 py-2.5 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition font-semibold"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                searchInputRef.current?.focus();
-              }}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+          <div className="absolute right-2.5 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+            <span className="hidden sm:inline-block text-[10px] font-mono font-bold bg-slate-200/70 text-slate-600 px-1.5 py-0.5 rounded border border-slate-300/50">
+              F2
+            </span>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-full transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Catalog Items Grid */}

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { 
   Users, 
   Plus, 
@@ -12,14 +13,13 @@ import {
   Check, 
   X, 
   Settings,
-  AlertCircle,
-  Key,
-  Eye,
-  EyeOff
+  AlertCircle
 } from "lucide-react";
 import { useBusiness } from "../../../../lib/context/BusinessContext";
 import { useLanguage } from "../../../../lib/context/LanguageContext";
 import { createWebBrowserClient } from "../../../../lib/supabase/client";
+import GroupedPermissionSelector from "../../../../components/permissions/GroupedPermissionSelector";
+import { ALL_AVAILABLE_PERMISSIONS, getAllPermissionKeys } from "../../../../lib/utils/permissions";
 
 interface TeamMember {
   id: string;
@@ -32,31 +32,6 @@ interface TeamMember {
   } | null;
 }
 
-const AVAILABLE_PERMISSIONS = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "invoice", label: "Faktur Penjualan (Invoices)" },
-  { key: "quotation", label: "Penawaran (Quotations)" },
-  { key: "customer", label: "Pelanggan (Customers)" },
-  { key: "payment", label: "Konfirmasi Pembayaran (Payments)" },
-  { key: "catalog", label: "Katalog Item (Catalog)" },
-  { key: "vendor", label: "Pemasok (Vendors)" },
-  { key: "sales", label: "Sales Orders (SO)" },
-  { key: "delivery", label: "Surat Jalan (DO)" },
-  { key: "purchase", label: "Purchase Orders (PO)" },
-  { key: "inventory", label: "Stok Gudang (Inventory)" },
-  { key: "pos", label: "Kasir Penjualan (POS)" },
-  { key: "employees", label: "Karyawan (Employees)" },
-  { key: "payroll", label: "Slip Gaji (Payroll)" },
-  { key: "accounts", label: "Bagan Akun (Chart of Accounts)" },
-  { key: "expenses", label: "Pengeluaran (Expenses)" },
-  { key: "ledger", label: "Buku Besar (General Ledger)" },
-  { key: "reports", label: "Laporan Keuangan" },
-  { key: "tax", label: "Ekspor Pajak (e-Faktur)" },
-  { key: "assets", label: "Aset & Penyusutan" },
-  { key: "report", label: "Analisis Penjualan" },
-  { key: "settings", label: "Pengaturan (Settings)" }
-];
-
 export default function TeamSettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,8 +43,6 @@ export default function TeamSettingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalWarning, setModalWarning] = useState("");
   const [emailInput, setEmailInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [showPasswordPlainText, setShowPasswordPlainText] = useState(false);
   const [roleInput, setRoleInput] = useState("staff");
   const [customPermissions, setCustomPermissions] = useState<Record<string, boolean>>({});
   
@@ -84,7 +57,7 @@ export default function TeamSettingsPage() {
   // Initialize permissions Map
   useEffect(() => {
     const initialPerms: Record<string, boolean> = {};
-    AVAILABLE_PERMISSIONS.forEach(p => {
+    ALL_AVAILABLE_PERMISSIONS.forEach(p => {
       initialPerms[p.key] = false;
     });
     setCustomPermissions(initialPerms);
@@ -167,7 +140,7 @@ export default function TeamSettingsPage() {
     
     // Initialize permissions
     const perms: Record<string, boolean> = {};
-    AVAILABLE_PERMISSIONS.forEach(p => {
+    ALL_AVAILABLE_PERMISSIONS.forEach(p => {
       perms[p.key] = member.permissions?.[p.key] || false;
     });
     setEditCustomPermissions(perms);
@@ -224,40 +197,66 @@ export default function TeamSettingsPage() {
     try {
       setSubmitting(true);
       setModalError("");
+      const supabase = createWebBrowserClient();
 
-      const res = await fetch("/api/admin/employees/auth-create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailInput.trim(),
-          password: passwordInput.trim() || undefined,
+      // Look up user by email in the public.users table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, email")
+        .ilike("email", emailInput.trim())
+        .maybeSingle();
+
+      if (userError) throw userError;
+
+      if (!userData) {
+        setModalError(
+          locale === "en" 
+            ? "User with this email is not registered yet. Ask them to sign up to invoice.co.id first." 
+            : "Alamat email ini belum terdaftar di invoice.co.id. Silakan minta pengguna tersebut untuk membuat akun terlebih dahulu."
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      // Check unique constraint manually to show beautiful alert
+      const isAlreadyMember = members.some(m => m.user_id === userData.id);
+      if (isAlreadyMember) {
+        setModalError(
+          locale === "en"
+            ? "This user is already a member of this business."
+            : "Pengguna ini sudah menjadi bagian dari tim bisnis Anda."
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      // Insert new member
+      const { error: insertError } = await supabase
+        .from("business_members")
+        .insert({
           business_id: activeBusiness.id,
+          user_id: userData.id,
           role: roleInput,
           permissions: roleInput === "custom" ? customPermissions : {}
-        })
-      });
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || (locale === "en" ? "Failed to add member" : "Gagal menambahkan anggota"));
-      }
+      if (insertError) throw insertError;
 
       // Reset Form & Refetch
       setEmailInput("");
-      setPasswordInput("");
       setRoleInput("staff");
       // Reset permissions checklist
       const resetPerms: Record<string, boolean> = {};
-      AVAILABLE_PERMISSIONS.forEach(p => {
+      ALL_AVAILABLE_PERMISSIONS.forEach(p => {
         resetPerms[p.key] = false;
       });
       setCustomPermissions(resetPerms);
       
       setShowAddModal(false);
       await fetchMembers();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error adding team member:", err);
-      setModalError(err.message || (locale === "en" ? "Failed to add team member." : "Gagal menambahkan anggota tim."));
+      setModalError(locale === "en" ? "Failed to add team member." : "Gagal menambahkan anggota tim.");
     } finally {
       setSubmitting(false);
     }
@@ -300,117 +299,151 @@ export default function TeamSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header breadcrumb */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-        <button onClick={() => router.push("/settings")} className="hover:text-blue-600 transition flex items-center gap-1">
-          <ArrowLeft className="w-3.5 h-3.5" /> Pengaturan
-        </button>
-        <span>/</span>
-        <span className="text-slate-800">Manajemen Anggota & Hak Akses</span>
-      </div>
-
-      {/* Title */}
-      <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-600" /> Anggota Tim & Hak Akses
-          </h2>
-          <p className="text-sm text-slate-500 mt-1 font-medium">
-            Kelola akses staf divisi ke modul invoice, inventaris, ledger keuangan, payroll, dan slip gaji secara aman.
-          </p>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 font-sans">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/settings"
+              className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                Pengguna &amp; Hak Akses
+              </h1>
+              <p className="text-xs md:text-sm text-slate-500 font-medium">
+                Kelola anggota tim dan atur perizinan akses menu per divisi
+              </p>
+            </div>
+          </div>
         </div>
-        
+
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Tambah Anggota Tim
+          <Plus className="w-4 h-4" />
+          <span>Undang Anggota Tim</span>
         </button>
       </div>
 
-      {/* POS Access Information Card */}
-      <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 flex gap-3 text-xs text-blue-800 leading-relaxed shadow-sm">
-        <AlertCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+      {/* POS Role Guidance Banner */}
+      <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-150 p-4.5 rounded-2xl flex items-start gap-3.5 shadow-2xs">
+        <div className="p-2 bg-blue-600 text-white rounded-xl shrink-0 mt-0.5 shadow-xs">
+          <Shield className="w-4.5 h-4.5" />
+        </div>
         <div className="space-y-1">
-          <span className="font-bold text-blue-900 block">Informasi Akses Kasir (POS)</span>
-          <p>
-            Modul <strong className="font-bold text-blue-950">Kasir Penjualan (POS)</strong> secara bawaan (default) dapat diakses oleh peran:
-          </p>
-          <ul className="list-disc pl-4 mt-1 space-y-0.5 font-semibold text-blue-950">
-            <li>Employee (Staff biasa)</li>
-            <li>Sales (Bagian Penjualan)</li>
-            <li>Finance (Bagian Keuangan)</li>
-          </ul>
-          <p className="pt-1">
-            Jika menggunakan <strong className="font-bold text-blue-950">Peran Kustom (Custom Role)</strong>, pastikan Anda mencentang opsi <strong className="font-bold text-blue-950">Kasir Penjualan (POS)</strong> pada daftar perizinan saat menambahkan atau mengatur akses anggota.
+          <h4 className="text-xs font-bold text-blue-950">
+            Panduan Hak Akses Karyawan &amp; Kasir POS:
+          </h4>
+          <p className="text-[11px] leading-relaxed text-blue-900/80">
+            Karyawan dengan peran <strong className="font-bold text-blue-950">Staff Umum</strong> hanya dapat mengakses profil &amp; modul mandiri karyawan (slip gaji dan absensi). Untuk staf toko/kasir, pilih peran <strong className="font-bold text-blue-950">Divisi Sales</strong> atau <strong className="font-bold text-blue-950">Peran Kustom</strong> dan centang submenu yang diinginkan (termasuk modul Kasir POS, Gudang, atau Laporan).
           </p>
         </div>
       </div>
 
-      {/* Members List Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      {/* Team Members List Table */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+        <div className="p-5 border-b border-slate-150 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Daftar Anggota Tim</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Total {members.length} pengguna terdaftar pada bisnis ini</p>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-150 bg-slate-50/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                 <th className="px-6 py-3.5">Email Pengguna</th>
                 <th className="px-6 py-3.5">Peran / Divisi</th>
                 <th className="px-6 py-3.5">Hak Akses Menu</th>
-                <th className="px-6 py-3.5">Tanggal Bergabung</th>
+                <th className="px-6 py-3.5">Bergabung Pada</th>
                 <th className="px-6 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-              {members.length === 0 ? (
+            <tbody className="divide-y divide-slate-150 font-medium text-slate-600">
+              {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-400">
-                    Belum ada anggota tim terdaftar.
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Memuat data anggota...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : members.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    Belum ada anggota tim tambahan pada bisnis ini.
                   </td>
                 </tr>
               ) : (
                 members.map((m) => {
+                  const activePermKeys = Object.keys(m.permissions || {}).filter(k => m.permissions[k]);
                   return (
-                    <tr key={m.id} className="hover:bg-slate-50/50 transition">
+                    <tr key={m.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800">{m.users?.email || "Tidak diketahui"}</span>
+                          <span className="font-bold text-slate-900">{m.users?.email || "Tidak diketahui"}</span>
                           <span className="text-[10px] text-slate-400 mt-0.5">UID: {m.user_id}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide uppercase ${
                           m.role === "owner" 
-                            ? "bg-amber-50 text-amber-700 border border-amber-100" 
+                            ? "bg-amber-50 text-amber-700 border border-amber-200" 
                             : m.role === "admin"
-                            ? "bg-blue-50 text-blue-700 border border-blue-100"
-                            : "bg-slate-100 text-slate-700 border border-slate-150"
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
                         }`}>
                           <Shield className="w-3 h-3 shrink-0" />
                           {m.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 max-w-[240px]">
-                        <span className="text-slate-500 leading-normal line-clamp-2">
-                          {m.role === "owner" || m.role === "admin" ? (
-                            "Semua Menu (Akses Penuh)"
-                          ) : m.role === "sales" ? (
-                            "Dashboard, Invoices, Quotations, Customers, Sales Orders, Delivery Orders, Catalog, Kasir Penjualan (POS)"
-                          ) : m.role === "purchasing" ? (
-                            "Dashboard, Vendors, Purchase Orders, Inventory, Catalog"
-                          ) : m.role === "warehouse" ? (
-                            "Dashboard, Catalog, Inventory, Delivery Orders"
-                          ) : m.role === "finance" ? (
-                            "Dashboard, Invoices, Payments, Accounts, Expenses, Ledger, Reports, Tax, Assets, Kasir Penjualan (POS)"
+                      <td className="px-6 py-4 max-w-[280px]">
+                        {m.role === "owner" || m.role === "admin" ? (
+                          <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px]">
+                            Semua Menu (Akses Penuh)
+                          </span>
+                        ) : m.role === "sales" ? (
+                          <span className="text-slate-600 leading-normal line-clamp-2">
+                            Dashboard, Invoices, Quotations, Customers, Sales Orders, Delivery Orders, Catalog, Kasir Penjualan (POS)
+                          </span>
+                        ) : m.role === "purchasing" ? (
+                          <span className="text-slate-600 leading-normal line-clamp-2">
+                            Dashboard, Vendors, Purchase Orders, Inventory, Catalog
+                          </span>
+                        ) : m.role === "warehouse" ? (
+                          <span className="text-slate-600 leading-normal line-clamp-2">
+                            Dashboard, Catalog, Inventory, Delivery Orders
+                          </span>
+                        ) : m.role === "finance" ? (
+                          <span className="text-slate-600 leading-normal line-clamp-2">
+                            Dashboard, Invoices, Payments, Accounts, Expenses, Ledger, Reports, Tax, Assets
+                          </span>
+                        ) : (
+                          // Custom Role Display
+                          activePermKeys.length === 0 ? (
+                            <span className="text-slate-400 italic">Tidak ada hak akses</span>
                           ) : (
-                            // Custom
-                            Object.keys(m.permissions || {})
-                              .filter(k => m.permissions[k])
-                              .map(k => AVAILABLE_PERMISSIONS.find(ap => ap.key === k)?.label)
-                              .filter(Boolean)
-                              .join(", ") || "Tidak ada hak akses"
-                          )}
-                        </span>
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 text-blue-700 font-extrabold bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] w-fit">
+                                <Check className="w-3 h-3 text-blue-600" />
+                                {activePermKeys.length} Submenu Aktif
+                              </span>
+                              <span className="text-[10px] text-slate-400 leading-tight line-clamp-1">
+                                {activePermKeys.map(k => ALL_AVAILABLE_PERMISSIONS.find(ap => ap.key === k)?.label || k).join(", ")}
+                              </span>
+                            </div>
+                          )
+                        )}
                       </td>
                       <td className="px-6 py-4 text-slate-400">
                         {new Date(m.created_at).toLocaleDateString("id-ID", {
@@ -422,16 +455,16 @@ export default function TeamSettingsPage() {
                       <td className="px-6 py-4 text-right">
                         {m.role !== "owner" && (
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openEditModal(m)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              title="Ubah Akses/Peran"
+                            <Link
+                              href={`/settings/users/${m.id}?from=users`}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                              title="Kelola Hak Akses & Peran"
                             >
                               <Edit2 className="w-4.5 h-4.5" />
-                            </button>
+                            </Link>
                             <button
                               onClick={() => handleDeleteMember(m)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                               title="Hapus Anggota"
                             >
                               <Trash2 className="w-4.5 h-4.5" />
@@ -450,15 +483,15 @@ export default function TeamSettingsPage() {
 
       {/* Add Member Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className={`bg-white rounded-2xl w-full ${roleInput === "custom" ? "max-w-4xl" : "max-w-lg"} shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] transition-all`}>
             <div className="px-6 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                 <Users className="w-4.5 h-4.5 text-blue-600" /> Undang Anggota Divisi Baru
               </h3>
               <button 
                 onClick={handleCloseAddModal} 
-                className="p-1.5 text-slate-400 hover:text-slate-850 hover:bg-slate-100 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-850 hover:bg-slate-100 rounded-lg transition cursor-pointer"
               >
                 <X className="w-4.5 h-4.5" />
               </button>
@@ -491,30 +524,8 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none"
                 />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Kata Sandi Akun (Password)
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswordPlainText ? "text" : "password"}
-                    placeholder="Wajib diisi jika akun baru (min. 6 karakter)"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    className="w-full border border-slate-200 pl-3.5 pr-10 py-2.5 rounded-xl text-xs focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswordPlainText(!showPasswordPlainText)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPasswordPlainText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
                 <span className="text-[10px] text-slate-400 block mt-1 font-medium">
-                  Jika pengguna belum memiliki akun, sistem akan otomatis mendaftarkannya dengan kata sandi ini.
+                  Catatan: Akun email ini harus sudah terdaftar di platform.
                 </span>
               </div>
 
@@ -527,39 +538,25 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setRoleInput(e.target.value)}
                   className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs focus:outline-none"
                 >
-                  <option value="staff">Staff Umum (Hanya Dashboard)</option>
+                  <option value="staff">Staff Umum / Karyawan (Dashboard & Menu Karyawan Mandiri - Tanpa POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
-                  <option value="sales">Divisi Sales (SO, DO, Invoices, Customers)</option>
+                  <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog)</option>
-                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices)</option>
-                  <option value="custom">Peran Kustom (Atur Akses Menu Sendiri)</option>
+                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
+                  <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>
               </div>
 
               {roleInput === "custom" && (
                 <div className="space-y-3 pt-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1.5">
-                    Daftar Menu & Modul yang Diizinkan:
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block border-b border-slate-100 pb-1.5">
+                    Pilih Menu &amp; Submenu yang Diizinkan:
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                    {AVAILABLE_PERMISSIONS.map((p) => {
-                      return (
-                        <label 
-                          key={p.key} 
-                          className="flex items-center gap-2.5 p-2 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/10 rounded-xl cursor-pointer transition select-none text-[11px] font-medium"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!customPermissions[p.key]}
-                            onChange={() => handlePermissionChange(p.key)}
-                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-slate-700">{p.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <GroupedPermissionSelector
+                    permissions={customPermissions}
+                    onChange={setCustomPermissions}
+                  />
                 </div>
               )}
 
@@ -567,24 +564,25 @@ export default function TeamSettingsPage() {
                 <button
                   type="button"
                   onClick={handleCloseAddModal}
-                  className="px-4 py-2.5 border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-xl text-xs transition"
+                  className="px-4 py-2.5 border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-xl text-xs transition cursor-pointer"
                   disabled={submitting}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer"
                   disabled={submitting}
                 >
                   {submitting ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Menyimpan...
+                      <span>Menyimpan...</span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" /> Simpan Anggota
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Simpan &amp; Beri Akses</span>
                     </>
                   )}
                 </button>
@@ -596,11 +594,11 @@ export default function TeamSettingsPage() {
 
       {/* Edit Member Modal */}
       {showEditModal && editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className={`bg-white rounded-2xl w-full ${editRoleInput === "custom" ? "max-w-4xl" : "max-w-lg"} shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] transition-all`}>
             <div className="px-6 py-4 border-b border-slate-150 flex items-center justify-between bg-slate-50">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <Edit2 className="w-4.5 h-4.5 text-blue-600" /> Ubah Peran & Hak Akses Anggota
+                <Edit2 className="w-4.5 h-4.5 text-blue-600" /> Ubah Peran &amp; Hak Akses Anggota
               </h3>
               <button 
                 onClick={() => {
@@ -608,7 +606,7 @@ export default function TeamSettingsPage() {
                   setEditingMember(null);
                   setModalError("");
                 }} 
-                className="p-1.5 text-slate-400 hover:text-slate-850 hover:bg-slate-100 rounded-lg transition"
+                className="p-1.5 text-slate-400 hover:text-slate-850 hover:bg-slate-100 rounded-lg transition cursor-pointer"
               >
                 <X className="w-4.5 h-4.5" />
               </button>
@@ -643,39 +641,25 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setEditRoleInput(e.target.value)}
                   className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs focus:outline-none"
                 >
-                  <option value="staff">Staff Umum (Hanya Dashboard)</option>
+                  <option value="staff">Staff Umum / Karyawan (Dashboard & Menu Karyawan Mandiri - Tanpa POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
-                  <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, POS)</option>
+                  <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog)</option>
-                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices, POS)</option>
-                  <option value="custom">Peran Kustom (Atur Akses Menu Sendiri)</option>
+                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
+                  <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>
               </div>
 
               {editRoleInput === "custom" && (
                 <div className="space-y-3 pt-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1.5">
-                    Daftar Menu & Modul yang Diizinkan:
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block border-b border-slate-100 pb-1.5">
+                    Pilih Menu &amp; Submenu yang Diizinkan:
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                    {AVAILABLE_PERMISSIONS.map((p) => {
-                      return (
-                        <label 
-                          key={p.key} 
-                          className="flex items-center gap-2.5 p-2 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/10 rounded-xl cursor-pointer transition select-none text-[11px] font-medium"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!editCustomPermissions[p.key]}
-                            onChange={() => handleEditPermissionChange(p.key)}
-                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-slate-700">{p.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <GroupedPermissionSelector
+                    permissions={editCustomPermissions}
+                    onChange={setEditCustomPermissions}
+                  />
                 </div>
               )}
 
@@ -687,24 +671,25 @@ export default function TeamSettingsPage() {
                     setEditingMember(null);
                     setModalError("");
                   }}
-                  className="px-4 py-2.5 border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-xl text-xs transition"
+                  className="px-4 py-2.5 border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-xl text-xs transition cursor-pointer"
                   disabled={submitting}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer"
                   disabled={submitting}
                 >
                   {submitting ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Menyimpan...
+                      <span>Menyimpan...</span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" /> Simpan Perubahan
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Simpan Perubahan</span>
                     </>
                   )}
                 </button>

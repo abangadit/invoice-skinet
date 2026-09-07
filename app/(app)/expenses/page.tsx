@@ -156,7 +156,7 @@ export default function ExpensesPage() {
 
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeBusiness) return;
+    if (!activeBusiness || saving) return;
     if (!formData.accountId || !formData.paymentAccountId || !formData.amount) {
       setErrorMsg("Harap lengkapi semua kolom wajib!");
       return;
@@ -198,10 +198,17 @@ export default function ExpensesPage() {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus catatan pengeluaran ini? Entri jurnal yang terkait juga akan otomatis dihapus jika terikat secara cascade.")) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus catatan pengeluaran ini? Entri jurnal yang terkait pada Buku Besar juga akan otomatis dihapus secara bersih.")) return;
     try {
       setLoading(true);
       const supabase = createWebBrowserClient();
+
+      // Hapus entri jurnal terkait (EXPENSE) terlebih dahulu untuk memastikan tidak ada sisa di Ledger
+      await supabase
+        .from("journal_entries")
+        .delete()
+        .eq("reference_source", "EXPENSE")
+        .eq("reference_id", id);
 
       const { error } = await supabase
         .from("expenses")

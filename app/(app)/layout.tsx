@@ -46,82 +46,118 @@ import { createWebBrowserClient } from "../../lib/supabase/client";
 import { BusinessProvider, useBusiness } from "../../lib/context/BusinessContext";
 import { useLanguage } from "../../lib/context/LanguageContext";
 import Logo from "../../components/Logo";
+import { hasPermission, ROLE_PRESETS } from "../../lib/utils/permissions";
 
 function checkPathPermission(path: string, role: string | null, permissions: any = {}, isEmployee: boolean = false): boolean {
   if (!role) return true;
   const cleanPath = path.split('?')[0].split('#')[0];
   
   if (cleanPath === "/unauthorized") return true;
-  if (role === 'owner' || role === 'admin') return true;
+  if (role === 'owner' || role === 'admin' || role === 'superadmin') return true;
 
   const match = (prefix: string) => cleanPath === prefix || cleanPath.startsWith(prefix + '/');
 
-  const getMenuKey = (): string | null => {
-    if (cleanPath === "/") return "dashboard";
-    if (match("/project")) return "project";
-    if (match("/invoice")) return "invoice";
-    if (match("/quotation")) return "quotation";
-    if (match("/customer")) return "customer";
-    if (match("/payment")) return "payment";
-    if (match("/catalog")) return "catalog";
-    if (match("/vendor")) return "vendor";
-    if (match("/sales")) return "sales";
-    if (match("/delivery")) return "delivery";
-    if (match("/purchase")) return "purchase";
-    if (match("/inventory")) return "inventory";
-    if (match("/pos")) return "pos";
-    if (match("/employees/leave")) return "employee_leave";
-    if (match("/employees/reimbursement")) return "employee_reimbursement";
-    if (match("/employees/attendance")) return "employee_attendance";
-    if (match("/employees/payslips")) return "employee_payslips";
-    if (match("/employees")) return "employees";
-    if (match("/payroll")) return "payroll";
-    if (match("/accounts")) return "accounts";
-    if (match("/expenses")) return "expenses";
-    if (match("/ledger")) return "ledger";
-    if (match("/reports")) return "reports";
-    if (match("/tax")) return "tax";
-    if (match("/assets")) return "assets";
-    if (match("/report")) return "report";
-    if (match("/settings/security")) return "settings_security";
-    if (match("/settings")) return "settings";
-    if (match("/help")) return "help";
-    if (match("/admin")) return "admin";
+  const getSubmenuAndParentKey = (): { key: string; parentKey?: string } | null => {
+    if (cleanPath === "/") return { key: "dashboard" };
+    
+    // POS
+    if (match("/pos/history")) return { key: "pos_history", parentKey: "pos" };
+    if (match("/pos")) return { key: "pos", parentKey: "pos" };
+    
+    // Project & After Sales
+    if (match("/after-sales")) return { key: "after_sales", parentKey: "project" };
+    if (match("/project")) return { key: "project", parentKey: "project" };
+
+    // Sales & CRM
+    if (match("/leads")) return { key: "leads", parentKey: "sales" };
+    if (match("/landing-page")) return { key: "landing_page", parentKey: "sales" };
+    if (match("/invoice/due")) return { key: "invoice_due", parentKey: "invoice" };
+    if (match("/invoice")) return { key: "invoice", parentKey: "sales" };
+    if (match("/quotation")) return { key: "quotation", parentKey: "sales" };
+    if (match("/customer")) return { key: "customer", parentKey: "sales" };
+    if (match("/payment")) return { key: "payment", parentKey: "sales" };
+    if (match("/sales")) return { key: "sales", parentKey: "sales" };
+    if (match("/delivery")) return { key: "delivery", parentKey: "sales" };
+
+    // Purchasing & Inventory
+    if (match("/purchase/due")) return { key: "purchase_due", parentKey: "purchase" };
+    if (match("/purchase")) return { key: "purchase", parentKey: "purchase" };
+    if (match("/vendor")) return { key: "vendor", parentKey: "purchase" };
+    if (match("/catalog")) return { key: "catalog", parentKey: "purchase" };
+    if (match("/inventory/stock-card")) return { key: "inventory_stock_card", parentKey: "inventory" };
+    if (match("/inventory/adjustments")) return { key: "inventory_adjustments", parentKey: "inventory" };
+    if (match("/inventory/transfer")) return { key: "inventory_transfer", parentKey: "inventory" };
+    if (match("/inventory/stock-out")) return { key: "inventory_stock_out", parentKey: "inventory" };
+    if (match("/inventory/production")) return { key: "inventory_production", parentKey: "inventory" };
+    if (match("/inventory/warehouses")) return { key: "inventory_warehouses", parentKey: "inventory" };
+    if (match("/inventory")) return { key: "inventory_stock", parentKey: "inventory" };
+
+    // HR & Payroll
+    if (match("/employees/leave")) return { key: "employee_leave", parentKey: "employees" };
+    if (match("/employees/reimbursement")) return { key: "employee_reimbursement", parentKey: "employees" };
+    if (match("/employees/attendance")) return { key: "employee_attendance", parentKey: "employees" };
+    if (match("/employees/payslips")) return { key: "employee_payslips", parentKey: "employees" };
+    if (match("/employees")) return { key: "employees", parentKey: "employees" };
+    if (match("/payroll")) return { key: "payroll", parentKey: "hr" };
+
+    // Finance & Accounts
+    if (match("/accounts/reconciliation")) return { key: "accounts_reconciliation", parentKey: "accounts" };
+    if (match("/accounts")) return { key: "accounts", parentKey: "accounts" };
+    if (match("/expenses")) return { key: "expenses", parentKey: "finance" };
+    if (match("/ledger")) return { key: "ledger", parentKey: "finance" };
+    if (match("/tax")) return { key: "tax", parentKey: "finance" };
+    if (match("/assets")) return { key: "assets", parentKey: "finance" };
+
+    // Reports
+    if (match("/reports/sales")) return { key: "reports_sales", parentKey: "reports" };
+    if (match("/reports/invoice")) return { key: "reports_invoice", parentKey: "reports" };
+    if (match("/reports/inventory")) return { key: "reports_inventory", parentKey: "reports" };
+    if (match("/reports/financial")) return { key: "reports_financial", parentKey: "reports" };
+    if (match("/reports/attendance")) return { key: "reports_attendance", parentKey: "reports" };
+    if (match("/reports/pos")) return { key: "reports_pos", parentKey: "reports" };
+    if (match("/reports")) return { key: "reports", parentKey: "reports" };
+
+    // Settings
+    if (match("/settings/security")) return { key: "settings_security", parentKey: "settings" };
+    if (match("/settings/users")) return { key: "settings_users", parentKey: "settings" };
+    if (match("/settings/sidebar")) return { key: "settings_sidebar", parentKey: "settings" };
+    if (match("/settings/shifts")) return { key: "settings_shifts", parentKey: "settings" };
+    if (match("/settings/audit-logs")) return { key: "settings_audit_logs", parentKey: "settings" };
+    if (match("/settings/import")) return { key: "settings_import", parentKey: "settings" };
+    if (match("/settings")) return { key: "settings_profile", parentKey: "settings" };
+    
+    if (match("/help")) return { key: "help" };
+    if (match("/admin")) return { key: "admin" };
+    
     return null;
   };
 
-  const menuKey = getMenuKey();
-  if (!menuKey || menuKey === "help") return true;
+  const menuInfo = getSubmenuAndParentKey();
+  if (!menuInfo || menuInfo.key === "help" || menuInfo.key === "settings_security") return true;
 
-  if (["employee_attendance", "employee_payslips"].includes(menuKey)) {
+  const { key: menuKey, parentKey } = menuInfo;
+
+  // Personal employee routes are always accessible for employees
+  if (["employee_attendance", "employee_payslips", "settings_security"].includes(menuKey)) {
     return true;
   }
 
-  if (isEmployee && ["employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "pos", "settings_security"].includes(menuKey)) {
+  if (isEmployee && ["employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"].includes(menuKey)) {
     return true;
   }
 
-  if (role === 'employee') {
-    const allowed = ["dashboard", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "pos", "settings_security"];
-    return allowed.includes(menuKey);
+  if (role === 'employee' || role === 'staff') {
+    const allowed = ["dashboard", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
+    return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
   }
 
   if (role === 'custom') {
-    return !!permissions?.[menuKey];
+    return hasPermission(permissions, menuKey, parentKey);
   }
 
-  // Superadmin selalu boleh akses semua termasuk /admin
-  if (role === 'superadmin') return true;
-
-  const rolePresets: Record<string, string[]> = {
-    sales: ["dashboard", "invoice", "quotation", "customer", "sales", "delivery", "catalog", "pos", "project"],
-    purchasing: ["dashboard", "vendor", "purchase", "inventory", "catalog"],
-    warehouse: ["dashboard", "catalog", "inventory", "delivery"],
-    finance: ["dashboard", "invoice", "payment", "accounts", "expenses", "ledger", "reports", "tax", "assets", "pos", "project"]
-  };
-
-  const allowedMenus = rolePresets[role] || [];
-  return allowedMenus.includes(menuKey);
+  // Check preset roles
+  const allowed = ROLE_PRESETS[role] || [];
+  return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
 }
 
 function AppLayoutInner({
@@ -450,14 +486,14 @@ function AppLayoutInner({
     );
   };
 
-  const showLink = (menuKey: string) => {
+  const showLink = (menuKey: string, parentKey?: string): boolean => {
     if (loading || !userRole) return false;
     // Admin menu hanya untuk superadmin
     if (menuKey.startsWith("admin_")) {
       return userRole === "superadmin";
     }
     if (menuKey === "pos") {
-      return checkPathPermission("/pos", userRole, userPermissions, isEmployee);
+      return !!checkPathPermission("/pos", userRole, userPermissions, isEmployee);
     }
     if (["employee_attendance", "employee_payslips"].includes(menuKey)) {
       return true;
@@ -466,24 +502,52 @@ function AppLayoutInner({
       return true;
     }
     if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") return true;
-    if (userRole === "employee") {
-      return menuKey === "employees";
+    if (userRole === "employee" || userRole === "staff") {
+      const allowed = ["dashboard", "employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
+      return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
     }
-    if (userRole === "custom") return !!userPermissions?.[menuKey];
+    if (userRole === "custom") {
+      return hasPermission(userPermissions, menuKey, parentKey);
+    }
     
     const rolePresets: Record<string, string[]> = {
-      sales: ["dashboard", "invoice", "quotation", "customer", "sales", "delivery", "catalog", "pos", "reports", "reports_sales"],
-      purchasing: ["dashboard", "vendor", "purchase", "inventory", "catalog", "reports", "reports_inventory"],
-      warehouse: ["dashboard", "catalog", "inventory", "delivery", "reports", "reports_inventory"],
-      finance: ["dashboard", "invoice", "payment", "accounts", "expenses", "ledger", "reports", "tax", "assets", "pos", "reports_sales", "reports_financial"]
+      staff: ["dashboard", "employee_attendance", "employee_payslips", "settings_security"],
+      employee: ["dashboard", "employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
+      pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos"],
+      sales: [
+        "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
+        "delivery", "catalog", "pos", "pos_history", "reports", "reports_sales", 
+        "reports_invoice", "reports_pos", "project", "after_sales", "leads", "landing_page"
+      ],
+      purchasing: [
+        "dashboard", "vendor", "purchase", "purchase_due", "catalog", 
+        "inventory", "inventory_stock", "inventory_stock_card", "reports", "reports_inventory"
+      ],
+      warehouse: [
+        "dashboard", "catalog", "delivery", "inventory", "inventory_stock", 
+        "inventory_stock_card", "inventory_adjustments", "inventory_transfer", 
+        "inventory_stock_out", "inventory_production", "inventory_warehouses", 
+        "reports", "reports_inventory"
+      ],
+      finance: [
+        "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
+        "accounts_reconciliation", "expenses", "ledger", "reports", "tax", "assets", 
+        "reports_sales", "reports_financial"
+      ],
+      hr: [
+        "dashboard", "employees", "payroll", "employee_attendance", 
+        "employee_leave", "employee_reimbursement", "employee_payslips", 
+        "reports_attendance", "settings_shifts"
+      ]
     };
     
-    return (rolePresets[userRole] || []).includes(menuKey);
+    const allowed = rolePresets[userRole] || [];
+    return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
   };
 
-  const showHRSection = showLink("employees") || showLink("payroll") || showLink("employee_attendance") || showLink("employee_payslips");
-  const showFinanceSection = showLink("accounts") || showLink("expenses") || showLink("ledger") || showLink("tax") || showLink("assets");
-  const showReportsSection = showLink("reports") || showLink("reports_sales") || showLink("reports_financial") || showLink("reports_inventory") || showLink("reports_attendance");
+  const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
+  const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
+  const showReportsSection = showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports");
 
   if (loading) {
     return (
@@ -496,11 +560,11 @@ function AppLayoutInner({
     );
   }
 
-  const showMainSection = showLink("dashboard") || showLink("pos");
-  const showProjectSection = showLink("project");
-  const showSalesSection = showLink("invoice") || showLink("quotation") || showLink("customer") || showLink("payment") || showLink("sales") || showLink("delivery");
-  const showPurchaseSection = showLink("inventory") || showLink("purchase") || showLink("vendor") || showLink("catalog");
-  const showSystemSection = showLink("settings");
+  const showMainSection = showLink("dashboard", "main") || showLink("pos", "main") || showLink("pos_history", "main");
+  const showProjectSection = showLink("project", "project") || showLink("after_sales", "project");
+  const showSalesSection = showLink("invoice", "sales") || showLink("invoice_due", "sales") || showLink("quotation", "sales") || showLink("customer", "sales") || showLink("payment", "sales") || showLink("sales", "sales") || showLink("delivery", "sales") || showLink("leads", "sales") || showLink("landing_page", "sales");
+  const showPurchaseSection = showLink("inventory_stock", "purchase") || showLink("inventory", "purchase") || showLink("inventory_stock_out", "purchase") || showLink("purchase", "purchase") || showLink("purchase_due", "purchase") || showLink("vendor", "purchase") || showLink("catalog", "purchase");
+  const showSystemSection = showLink("settings_profile", "system") || showLink("settings_users", "system") || showLink("settings_sidebar", "system") || showLink("settings_shifts", "system") || showLink("settings_audit_logs", "system") || showLink("settings_import", "system") || showLink("settings", "system");
   const showAdminSection = userRole === "superadmin";
 
   const renderNavigationItems = () => {
@@ -524,9 +588,9 @@ function AppLayoutInner({
         title: locale === "en" ? "Overview" : "Menu Utama",
         show: showMainSection,
         items: [
-          { id: "dashboard", menuKey: "dashboard", href: "/", icon: <Layers className="w-5 h-5" />, label: t("dashboard"), show: showLink("dashboard") },
-          { id: "pos", menuKey: "pos", href: "/pos", icon: <ShoppingCart className="w-5 h-5" />, label: locale === "en" ? "POS (Cashier)" : "POS (Kasir)", show: showLink("pos") },
-          { id: "download_pos_apk", menuKey: "download_pos_apk", href: "/api/download/apk", isExternal: true, icon: <Download className="w-5 h-5 text-emerald-600" />, label: locale === "en" ? "Download POS APK" : "Download APK Kasir", show: showLink("pos"), badge: <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">APK</span> }
+          { id: "dashboard", menuKey: "dashboard", href: "/", icon: <Layers className="w-5 h-5" />, label: t("dashboard"), show: showLink("dashboard", "main") },
+          { id: "pos", menuKey: "pos", href: "/pos", icon: <ShoppingCart className="w-5 h-5" />, label: locale === "en" ? "POS (Cashier)" : "POS (Kasir)", show: showLink("pos", "main") },
+          { id: "download_pos_apk", menuKey: "download_pos_apk", href: "/api/download/apk", isExternal: true, icon: <Download className="w-5 h-5 text-emerald-600" />, label: locale === "en" ? "Download POS APK" : "Download APK Kasir", show: showLink("pos", "main"), badge: <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">APK</span> }
         ]
       },
       {
@@ -534,7 +598,7 @@ function AppLayoutInner({
         title: locale === "en" ? "Projects & Operations" : "Proyek & Operasional",
         show: showProjectSection,
         items: [
-          { id: "project", menuKey: "project", href: "/project", icon: <Briefcase className="w-5 h-5" />, label: locale === "en" ? "Projects" : "Manajemen Proyek", show: showLink("project") }
+          { id: "project", menuKey: "project", href: "/project", icon: <Briefcase className="w-5 h-5" />, label: locale === "en" ? "Projects" : "Manajemen Proyek", show: showLink("project", "project") }
         ]
       },
       {
@@ -542,20 +606,20 @@ function AppLayoutInner({
         title: locale === "en" ? "Sales & Receivables" : "Penjualan & Piutang",
         show: showSalesSection,
         items: [
-          { id: "leads", menuKey: "sales", href: "/leads", icon: <Target className="w-5 h-5" />, label: locale === "en" ? "Leads & Follow-up" : "Prospek (Leads)", show: true },
-          { id: "invoice", menuKey: "invoice", href: "/invoice", icon: <FileText className="w-5 h-5" />, label: t("invoices"), show: showLink("invoice") },
-          { id: "invoice_due", menuKey: "invoice", href: "/invoice/due", icon: <Clock className="w-5 h-5" />, label: locale === "en" ? "Due Alerts" : "Nota Jatuh Tempo", show: showLink("invoice") },
-          { id: "sales", menuKey: "sales", href: "/sales", icon: <ClipboardCheck className="w-5 h-5" />, label: t("salesOrders"), show: showLink("sales") },
-          { id: "delivery", menuKey: "delivery", href: "/delivery", icon: <Truck className="w-5 h-5" />, label: t("deliveryOrders"), show: showLink("delivery") },
-          { id: "quotation", menuKey: "quotation", href: "/quotation", icon: <FileSpreadsheet className="w-5 h-5" />, label: t("quotations"), show: showLink("quotation") },
-          { id: "customer", menuKey: "customer", href: "/customer", icon: <Users className="w-5 h-5" />, label: t("customers"), show: showLink("customer") },
+          { id: "leads", menuKey: "leads", href: "/leads", icon: <Target className="w-5 h-5" />, label: locale === "en" ? "Leads & Follow-up" : "Prospek (Leads)", show: showLink("leads", "sales") },
+          { id: "invoice", menuKey: "invoice", href: "/invoice", icon: <FileText className="w-5 h-5" />, label: t("invoices"), show: showLink("invoice", "sales") },
+          { id: "invoice_due", menuKey: "invoice_due", href: "/invoice/due", icon: <Clock className="w-5 h-5" />, label: locale === "en" ? "Due Alerts" : "Nota Jatuh Tempo", show: showLink("invoice_due", "invoice") },
+          { id: "sales", menuKey: "sales", href: "/sales", icon: <ClipboardCheck className="w-5 h-5" />, label: t("salesOrders"), show: showLink("sales", "sales") },
+          { id: "delivery", menuKey: "delivery", href: "/delivery", icon: <Truck className="w-5 h-5" />, label: t("deliveryOrders"), show: showLink("delivery", "sales") },
+          { id: "quotation", menuKey: "quotation", href: "/quotation", icon: <FileSpreadsheet className="w-5 h-5" />, label: t("quotations"), show: showLink("quotation", "sales") },
+          { id: "customer", menuKey: "customer", href: "/customer", icon: <Users className="w-5 h-5" />, label: t("customers"), show: showLink("customer", "sales") },
           { 
             id: "payment", 
             menuKey: "payment", 
             href: "/payment", 
             icon: <CreditCard className="w-5 h-5" />, 
             label: t("payment"), 
-            show: showLink("payment"),
+            show: showLink("payment", "sales"),
             badge: pendingProofsCount > 0 ? (
               <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
                 {pendingProofsCount}
@@ -569,11 +633,11 @@ function AppLayoutInner({
         title: locale === "en" ? "Purchasing & Inventory" : "Pembelian & Gudang",
         show: showPurchaseSection,
         items: [
-          { id: "inventory", menuKey: "inventory", href: "/inventory", icon: <Package className="w-5 h-5" />, label: t("inventory"), show: showLink("inventory") },
-          { id: "stock_out", menuKey: "inventory", href: "/inventory/stock-out", icon: <Package className="w-5 h-5 text-red-500" />, label: locale === "en" ? "Stock Out (No Inv)" : "Barang Keluar", show: showLink("inventory") },
-          { id: "purchase", menuKey: "purchase", href: "/purchase", icon: <Truck className="w-5 h-5" />, label: t("purchaseOrders"), show: showLink("purchase") },
-          { id: "vendor", menuKey: "vendor", href: "/vendor", icon: <Building2 className="w-5 h-5" />, label: t("vendors"), show: showLink("vendor") },
-          { id: "catalog", menuKey: "catalog", href: "/catalog", icon: <Briefcase className="w-5 h-5" />, label: t("catalog"), show: showLink("catalog") }
+          { id: "inventory", menuKey: "inventory_stock", href: "/inventory", icon: <Package className="w-5 h-5" />, label: t("inventory"), show: showLink("inventory_stock", "inventory") },
+          { id: "stock_out", menuKey: "inventory_stock_out", href: "/inventory/stock-out", icon: <Package className="w-5 h-5 text-red-500" />, label: locale === "en" ? "Stock Out (No Inv)" : "Barang Keluar", show: showLink("inventory_stock_out", "inventory") },
+          { id: "purchase", menuKey: "purchase", href: "/purchase", icon: <Truck className="w-5 h-5" />, label: t("purchaseOrders"), show: showLink("purchase", "purchase") },
+          { id: "vendor", menuKey: "vendor", href: "/vendor", icon: <Building2 className="w-5 h-5" />, label: t("vendors"), show: showLink("vendor", "purchase") },
+          { id: "catalog", menuKey: "catalog", href: "/catalog", icon: <Briefcase className="w-5 h-5" />, label: t("catalog"), show: showLink("catalog", "purchase") }
         ]
       },
       {
@@ -581,12 +645,12 @@ function AppLayoutInner({
         title: locale === "en" ? "HR & Payroll" : "SDM & HR",
         show: showHRSection,
         items: [
-          { id: "employees", menuKey: "employees", href: "/employees", icon: <Users className="w-5 h-5" />, label: t("employees"), show: showLink("employees") && (userRole === "owner" || userRole === "admin" || userRole === "superadmin") },
-          { id: "employee_leave", menuKey: "employee_leave", href: "/employees/leave", icon: <Calendar className="w-5 h-5" />, label: t("leave"), show: showLink("employees") },
-          { id: "employee_reimbursement", menuKey: "employee_reimbursement", href: "/employees/reimbursement", icon: <FileText className="w-5 h-5" />, label: t("reimbursements"), show: showLink("employees") },
-          { id: "employee_attendance", menuKey: "employee_attendance", href: "/employees/attendance", icon: <ClipboardCheck className="w-5 h-5" />, label: t("attendance"), show: showLink("employee_attendance") },
-          { id: "employee_payslips", menuKey: "employee_payslips", href: "/employees/payslips", icon: <Wallet className="w-5 h-5" />, label: locale === "en" ? "My Payslips" : "Slip Gaji Saya", show: showLink("employee_payslips") },
-          { id: "payroll", menuKey: "payroll", href: "/payroll", icon: <CreditCard className="w-5 h-5" />, label: t("payroll"), show: showLink("payroll") }
+          { id: "employees", menuKey: "employees", href: "/employees", icon: <Users className="w-5 h-5" />, label: t("employees"), show: showLink("employees", "hr") && (userRole === "owner" || userRole === "admin" || userRole === "superadmin") },
+          { id: "employee_leave", menuKey: "employee_leave", href: "/employees/leave", icon: <Calendar className="w-5 h-5" />, label: t("leave"), show: showLink("employee_leave", "hr") },
+          { id: "employee_reimbursement", menuKey: "employee_reimbursement", href: "/employees/reimbursement", icon: <FileText className="w-5 h-5" />, label: t("reimbursements"), show: showLink("employee_reimbursement", "hr") },
+          { id: "employee_attendance", menuKey: "employee_attendance", href: "/employees/attendance", icon: <ClipboardCheck className="w-5 h-5" />, label: t("attendance"), show: showLink("employee_attendance", "hr") },
+          { id: "employee_payslips", menuKey: "employee_payslips", href: "/employees/payslips", icon: <Wallet className="w-5 h-5" />, label: locale === "en" ? "My Payslips" : "Slip Gaji Saya", show: showLink("employee_payslips", "hr") },
+          { id: "payroll", menuKey: "payroll", href: "/payroll", icon: <CreditCard className="w-5 h-5" />, label: t("payroll"), show: showLink("payroll", "hr") }
         ]
       },
       {
@@ -594,11 +658,11 @@ function AppLayoutInner({
         title: locale === "en" ? "Finance & Accounts" : "Akuntansi & Keuangan",
         show: showFinanceSection,
         items: [
-          { id: "accounts", menuKey: "accounts", href: "/accounts", icon: <Grid className="w-5 h-5" />, label: t("chartOfAccounts"), show: showLink("accounts") },
-          { id: "expenses", menuKey: "expenses", href: "/expenses", icon: <Wallet className="w-5 h-5" />, label: t("expenses"), show: showLink("expenses") },
-          { id: "ledger", menuKey: "ledger", href: "/ledger", icon: <BookOpen className="w-5 h-5" />, label: t("generalLedger"), show: showLink("ledger") },
+          { id: "accounts", menuKey: "accounts", href: "/accounts", icon: <Grid className="w-5 h-5" />, label: t("chartOfAccounts"), show: showLink("accounts", "finance") },
+          { id: "expenses", menuKey: "expenses", href: "/expenses", icon: <Wallet className="w-5 h-5" />, label: t("expenses"), show: showLink("expenses", "finance") },
+          { id: "ledger", menuKey: "ledger", href: "/ledger", icon: <BookOpen className="w-5 h-5" />, label: t("generalLedger"), show: showLink("ledger", "finance") },
           { id: "tax", menuKey: "tax", href: "/tax", icon: <Percent className="w-5 h-5" />, label: t("taxExport"), show: false },
-          { id: "assets", menuKey: "assets", href: "/assets", icon: <Layers className="w-5 h-5" />, label: t("assets"), show: showLink("assets") }
+          { id: "assets", menuKey: "assets", href: "/assets", icon: <Layers className="w-5 h-5" />, label: t("assets"), show: showLink("assets", "finance") }
         ]
       },
       {
@@ -606,13 +670,13 @@ function AppLayoutInner({
         title: locale === "en" ? "Business Reports" : "Laporan Bisnis",
         show: showReportsSection,
         items: [
-          { id: "reports_hub", menuKey: "reports", href: "/reports", icon: <Grid className="w-5 h-5" />, label: locale === "en" ? "Reports Hub" : "Pusat Laporan", show: showLink("reports") },
-          { id: "reports_invoice", menuKey: "reports_sales", href: "/reports/invoice", icon: <FileCheck className="w-5 h-5 text-blue-500" />, label: locale === "en" ? "Invoice Report" : "Laporan Invoice", show: showLink("reports_sales") },
-          { id: "reports_sales", menuKey: "reports_sales", href: "/reports/sales", icon: <FileText className="w-5 h-5" />, label: locale === "en" ? "Sales Report" : "Laporan Penjualan", show: showLink("reports_sales") },
-          { id: "reports_financial", menuKey: "reports_financial", href: "/reports/financial", icon: <TrendingUp className="w-5 h-5" />, label: locale === "en" ? "Financial Report" : "Laporan Keuangan", show: showLink("reports_financial") },
-          { id: "reports_inventory", menuKey: "reports_inventory", href: "/reports/inventory", icon: <Package className="w-5 h-5" />, label: locale === "en" ? "Inventory Valuation" : "Laporan Stok & Gudang", show: showLink("reports_inventory") },
-          { id: "reports_attendance", menuKey: "reports_attendance", href: "/reports/attendance", icon: <Clock className="w-5 h-5" />, label: locale === "en" ? "Attendance Report" : "Laporan Absensi", show: showLink("reports_attendance") },
-          { id: "reports_pos", menuKey: "reports_sales", href: "/reports/pos", icon: <ClipboardCheck className="w-5 h-5 text-rose-500" />, label: locale === "en" ? "POS Shift Report" : "Laporan POS & Shift", show: showLink("reports_sales") }
+          { id: "reports_hub", menuKey: "reports", href: "/reports", icon: <Grid className="w-5 h-5" />, label: locale === "en" ? "Reports Hub" : "Pusat Laporan", show: showLink("reports", "reports") },
+          { id: "reports_invoice", menuKey: "reports_invoice", href: "/reports/invoice", icon: <FileCheck className="w-5 h-5 text-blue-500" />, label: locale === "en" ? "Invoice Report" : "Laporan Invoice", show: showLink("reports_invoice", "reports") },
+          { id: "reports_sales", menuKey: "reports_sales", href: "/reports/sales", icon: <FileText className="w-5 h-5" />, label: locale === "en" ? "Sales Report" : "Laporan Penjualan", show: showLink("reports_sales", "reports") },
+          { id: "reports_financial", menuKey: "reports_financial", href: "/reports/financial", icon: <TrendingUp className="w-5 h-5" />, label: locale === "en" ? "Financial Report" : "Laporan Keuangan", show: showLink("reports_financial", "reports") },
+          { id: "reports_inventory", menuKey: "reports_inventory", href: "/reports/inventory", icon: <Package className="w-5 h-5" />, label: locale === "en" ? "Inventory Valuation" : "Laporan Stok & Gudang", show: showLink("reports_inventory", "reports") },
+          { id: "reports_attendance", menuKey: "reports_attendance", href: "/reports/attendance", icon: <Clock className="w-5 h-5" />, label: locale === "en" ? "Attendance Report" : "Laporan Absensi", show: showLink("reports_attendance", "reports") },
+          { id: "reports_pos", menuKey: "reports_pos", href: "/reports/pos", icon: <ClipboardCheck className="w-5 h-5 text-rose-500" />, label: locale === "en" ? "POS Shift Report" : "Laporan POS & Shift", show: showLink("reports_pos", "reports") }
         ]
       },
       {
@@ -622,7 +686,7 @@ function AppLayoutInner({
         items: [
           
           { id: "settings_security", menuKey: "settings_security", href: "/settings/security", icon: <Lock className="w-5 h-5" />, label: locale === "en" ? "Security & Sessions" : "Keamanan & Sesi", show: true },
-          { id: "settings", menuKey: "settings", href: "/settings", icon: <Settings className="w-5 h-5" />, label: t("settings"), show: showLink("settings") },
+          { id: "settings", menuKey: "settings_profile", href: "/settings", icon: <Settings className="w-5 h-5" />, label: t("settings"), show: showLink("settings_profile", "settings") || showLink("settings", "settings") },
           { id: "help", menuKey: "help", href: "/help", icon: <HelpCircle className="w-5 h-5 text-blue-600" />, label: locale === "en" ? "Help & Tutorials" : "Pusat Panduan & Tutorial", show: true }
         ]
       },
