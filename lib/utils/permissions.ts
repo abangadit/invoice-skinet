@@ -156,7 +156,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
     "inventory_stock", "inventory_stock_card", "reports_inventory"
   ],
   warehouse: [
-    "dashboard", "delivery", "catalog", "inventory_stock", "inventory_stock_card", 
+    "delivery", "catalog", "inventory_stock", "inventory_stock_card", 
     "inventory_adjustments", "inventory_transfer", "inventory_stock_out", 
     "inventory_production", "inventory_warehouses", "reports_inventory"
   ],
@@ -171,7 +171,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
     "reports_attendance", "settings_shifts"
   ],
   staff: [
-    "dashboard", "employee_attendance", "employee_payslips"
+    "employee_attendance", "employee_payslips"
   ]
 };
 

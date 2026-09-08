@@ -160,6 +160,13 @@ export default function GroupedPermissionSelector({
             </button>
             <button
               type="button"
+              onClick={() => handleApplyPreset("staff")}
+              className="px-3 py-1.5 bg-white hover:bg-slate-700 hover:text-white border border-slate-200 text-slate-800 font-bold text-[11px] rounded-xl transition shadow-2xs cursor-pointer"
+            >
+              👤 Staf Umum (Mandiri)
+            </button>
+            <button
+              type="button"
               onClick={() => handleApplyPreset("warehouse")}
               className="px-3 py-1.5 bg-white hover:bg-amber-600 hover:text-white border border-amber-200 text-amber-900 font-bold text-[11px] rounded-xl transition shadow-2xs cursor-pointer"
             >

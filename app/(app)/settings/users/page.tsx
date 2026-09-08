@@ -563,11 +563,11 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setRoleInput(e.target.value)}
                   className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs focus:outline-none"
                 >
-                  <option value="staff">Staff Umum / Karyawan (Dashboard & Menu Karyawan Mandiri - Tanpa POS)</option>
+                  <option value="staff">Staff Umum / Karyawan (Menu Karyawan Mandiri / ESS - Tanpa Dashboard & POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
-                  <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog)</option>
+                  <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
                   <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
                   <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>
@@ -666,11 +666,11 @@ export default function TeamSettingsPage() {
                   onChange={(e) => setEditRoleInput(e.target.value)}
                   className="w-full bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs focus:outline-none"
                 >
-                  <option value="staff">Staff Umum / Karyawan (Dashboard & Menu Karyawan Mandiri - Tanpa POS)</option>
+                  <option value="staff">Staff Umum / Karyawan (Menu Karyawan Mandiri / ESS - Tanpa Dashboard & POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
-                  <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog)</option>
+                  <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
                   <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
                   <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>

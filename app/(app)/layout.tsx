@@ -147,7 +147,7 @@ function checkPathPermission(path: string, role: string | null, permissions: any
   }
 
   if (role === 'employee' || role === 'staff') {
-    const allowed = ["dashboard", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
+    const allowed = ["employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
     return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
   }
 
@@ -312,12 +312,24 @@ function AppLayoutInner({
       if (userRole) {
         const allowed = checkPathPermission(pathname, userRole, userPermissions, isEmployee);
         if (!allowed) {
+          if (pathname === "/") {
+            if (userRole === "staff" || userRole === "employee" || isEmployee) {
+              router.push("/employees/attendance");
+              return;
+            }
+            if (userRole === "warehouse") {
+              router.push("/inventory");
+              return;
+            }
+            if (userRole === "pos_cashier") {
+              router.push("/pos");
+              return;
+            }
+          }
           router.push("/unauthorized");
           return;
         }
       }
-
-      
     }
   }, [pathname, userRole, userPermissions, loading, router, isEmployee]);
 
@@ -503,7 +515,7 @@ function AppLayoutInner({
     }
     if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") return true;
     if (userRole === "employee" || userRole === "staff") {
-      const allowed = ["dashboard", "employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
+      const allowed = ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
       return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
     }
     if (userRole === "custom") {
@@ -511,8 +523,8 @@ function AppLayoutInner({
     }
     
     const rolePresets: Record<string, string[]> = {
-      staff: ["dashboard", "employee_attendance", "employee_payslips", "settings_security"],
-      employee: ["dashboard", "employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
+      staff: ["employee_attendance", "employee_payslips", "settings_security"],
+      employee: ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
       pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos"],
       sales: [
         "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
@@ -524,7 +536,7 @@ function AppLayoutInner({
         "inventory", "inventory_stock", "inventory_stock_card", "reports", "reports_inventory"
       ],
       warehouse: [
-        "dashboard", "catalog", "delivery", "inventory", "inventory_stock", 
+        "catalog", "delivery", "inventory", "inventory_stock", 
         "inventory_stock_card", "inventory_adjustments", "inventory_transfer", 
         "inventory_stock_out", "inventory_production", "inventory_warehouses", 
         "reports", "reports_inventory"

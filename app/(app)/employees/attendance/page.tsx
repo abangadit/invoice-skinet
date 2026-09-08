@@ -101,7 +101,7 @@ export default function AttendancePage() {
     longitude: "",
     radius: "100",
     geofenceEnabled: true,
-    faceRecognitionEnabled: true,
+    faceRecognitionEnabled: false,
     defaultStartTime: "09:00"
   });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -113,7 +113,7 @@ export default function AttendancePage() {
   // Load dynamically Vladmandic face-api CDN script if face recognition is enabled
   useEffect(() => {
     if (!activeBusiness) return;
-    const isFaceRecEnabled = activeBusiness.attendance_face_recognition_enabled ?? true;
+    const isFaceRecEnabled = activeBusiness.attendance_face_recognition_enabled ?? false;
     if (!isFaceRecEnabled) return;
 
     const scriptId = "face-api-cdn-script";
@@ -296,7 +296,7 @@ export default function AttendancePage() {
         longitude: activeBusiness.longitude?.toString() || "",
         radius: activeBusiness.geofence_radius_meters?.toString() || "100",
         geofenceEnabled: activeBusiness.attendance_geofence_enabled ?? true,
-        faceRecognitionEnabled: activeBusiness.attendance_face_recognition_enabled ?? true,
+        faceRecognitionEnabled: activeBusiness.attendance_face_recognition_enabled ?? false,
         defaultStartTime: activeBusiness.default_attendance_start_time?.substring(0, 5) || "09:00"
       });
 
@@ -584,7 +584,7 @@ export default function AttendancePage() {
       }
     }
 
-    const isFaceRecEnabled = activeBusiness.attendance_face_recognition_enabled ?? true;
+    const isFaceRecEnabled = activeBusiness.attendance_face_recognition_enabled ?? false;
     if (isFaceRecEnabled) {
       if (!currentEmployee.face_descriptor || currentEmployee.face_descriptor.length === 0) {
         alert("Absensi Gagal: Anda belum mendaftarkan wajah di sistem!");
@@ -954,14 +954,14 @@ export default function AttendancePage() {
           {/* Camera / Direct Attendance Panel */}
           <div className="md:col-span-2 space-y-4">
             <h3 className="text-sm font-bold text-slate-900">
-              {(activeBusiness?.attendance_face_recognition_enabled ?? true)
+              {(activeBusiness?.attendance_face_recognition_enabled ?? false)
                 ? "Verifikasi Kamera Biometrik"
                 : "Pencatatan Kehadiran"}
             </h3>
             
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col items-center justify-center min-h-[380px] card-shadow relative">
               
-              {!(activeBusiness?.attendance_face_recognition_enabled ?? true) ? (
+              {!(activeBusiness?.attendance_face_recognition_enabled ?? false) ? (
                 // Face Recognition is Disabled: Show simple direct check-in buttons
                 <div className="text-center p-8 max-w-sm space-y-5 flex flex-col items-center">
                   <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center border border-blue-100">

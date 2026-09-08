@@ -252,11 +252,11 @@ export default function UserPermissionDetailPage() {
               disabled={role === "owner"}
               className="bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-500 transition"
             >
-              <option value="staff">Staff Umum (Dashboard & ESS Mandiri - Tanpa POS)</option>
+              <option value="staff">Staff Umum (Menu Mandiri / ESS - Tanpa Dashboard & POS)</option>
               <option value="admin">Admin Bisnis (Akses Penuh ke Seluruh Sistem)</option>
               <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
               <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
-              <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog)</option>
+              <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
               <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
               <option value="custom">Kustomisasi Hak Akses Spesifik (Atur Sendiri)</option>
             </select>
