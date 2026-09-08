@@ -281,6 +281,21 @@ export default function AttendancePage() {
         }
       }
 
+      if (emp && emp.shift_id && !emp.working_shifts) {
+        try {
+          const { data: shiftData } = await supabase
+            .from("working_shifts")
+            .select("name, start_time, end_time")
+            .eq("id", emp.shift_id)
+            .maybeSingle();
+          if (shiftData) {
+            emp.working_shifts = shiftData as any;
+          }
+        } catch (sErr) {
+          console.error("Error fetching employee shift fallback:", sErr);
+        }
+      }
+
       setCurrentEmployee(emp);
 
       // Route default view
