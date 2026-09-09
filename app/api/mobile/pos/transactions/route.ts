@@ -62,14 +62,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 1. Hitung total amount dari item
+    // 1. Hitung total amount dan diskon dari item
+    let computedGrossSubtotal = 0;
+    let computedTotalDiscount = 0;
     let computedSubtotal = 0;
+
     const validatedItems: Array<{
       item_id: string | null;
       name: string;
       unit: string;
       quantity: number;
       unit_price: number;
+      discount_type: string | null;
+      discount_value: number;
+      discount_amount: number;
       subtotal: number;
     }> = [];
 
@@ -77,7 +83,26 @@ export async function POST(request: NextRequest) {
       const item = items[i];
       const qty = Number(item.qty || item.quantity) || 1;
       const price = Number(item.unit_price || item.price) || 0;
-      const subtotal = qty * price;
+      const gross = qty * price;
+
+      const discType = item.discount_type === "percentage" || item.discount_type === "fixed" ? item.discount_type : null;
+      const discVal = Number(item.discount_value || 0);
+      let discAmount = Number(item.discount_amount);
+      if (isNaN(discAmount)) {
+        if (discType === "percentage") {
+          discAmount = (gross * (discVal / 100));
+        } else if (discType === "fixed") {
+          discAmount = discVal * qty;
+        } else {
+          discAmount = 0;
+        }
+      }
+      discAmount = Math.max(0, Math.min(discAmount, gross));
+
+      const subtotal = item.subtotal !== undefined ? Number(item.subtotal) : (gross - discAmount);
+
+      computedGrossSubtotal += gross;
+      computedTotalDiscount += discAmount;
       computedSubtotal += subtotal;
 
       validatedItems.push({
@@ -86,6 +111,9 @@ export async function POST(request: NextRequest) {
         unit: item.unit || "pcs",
         quantity: qty,
         unit_price: price,
+        discount_type: discType,
+        discount_value: discVal,
+        discount_amount: discAmount,
         subtotal: subtotal,
       });
     }
@@ -120,8 +148,8 @@ export async function POST(request: NextRequest) {
         issue_date: todayStr,
         due_date: todayStr,
         currency: "IDR",
-        subtotal: totalAmount,
-        discount_amount: 0,
+        subtotal: computedGrossSubtotal,
+        discount_amount: computedTotalDiscount,
         taxes_amount: 0,
         shipping_amount: 0,
         total_amount: totalAmount,
@@ -153,6 +181,9 @@ export async function POST(request: NextRequest) {
       quantity: v.quantity,
       unit: v.unit,
       unit_price: v.unit_price,
+      discount_type: v.discount_type,
+      discount_value: v.discount_value,
+      discount_amount: v.discount_amount,
       subtotal: v.subtotal,
       tax_included: true,
     }));
