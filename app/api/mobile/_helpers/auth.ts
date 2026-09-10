@@ -1,4 +1,50 @@
 import { createClient } from "@supabase/supabase-js";
+import { SignJWT, jwtVerify } from "jose";
+
+function getMobileJwtSecret(): Uint8Array {
+  const secret =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.JWT_SECRET ||
+    "fallback-pos-secret-skinet-secure-key-2026";
+  return new TextEncoder().encode(secret);
+}
+
+/**
+ * Menghasilkan token JWT khusus mobile POS tanpa batas kedaluwarsa (100 tahun)
+ */
+export async function generateMobilePosToken(userId: string, email: string): Promise<string> {
+  const secret = getMobileJwtSecret();
+  return await new SignJWT({
+    sub: userId,
+    email: email.toLowerCase(),
+    type: "mobile_pos_token",
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("100y")
+    .sign(secret);
+}
+
+/**
+ * Memverifikasi apakah token adalah Mobile POS JWT valid
+ */
+export async function verifyMobilePosToken(
+  token: string
+): Promise<{ userId: string; email: string } | null> {
+  try {
+    const secret = getMobileJwtSecret();
+    const { payload } = await jwtVerify(token, secret);
+    if (payload && payload.sub && payload.type === "mobile_pos_token") {
+      return {
+        userId: payload.sub as string,
+        email: (payload.email as string) || "",
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export function getSupabaseUrl() {
   return (
@@ -85,19 +131,33 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
   }
 
   const supabaseAdmin = getSupabaseAdmin();
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let userId = "";
+  let userEmail = "";
+  let userMetadataName: string | undefined = undefined;
 
-  if (authError || !user) {
-    throw new Error("UNAUTHORIZED: Token is invalid or has expired");
+  // 1. Cek apakah ini Mobile POS Token (Non-Expiring)
+  const mobilePayload = await verifyMobilePosToken(token);
+  if (mobilePayload) {
+    userId = mobilePayload.userId;
+    userEmail = (mobilePayload.email || "").toLowerCase();
+  } else {
+    // 2. Fallback ke Supabase Gotrue token (backward compatibility)
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      throw new Error("UNAUTHORIZED: Token is invalid or has expired");
+    }
+
+    userId = user.id;
+    userEmail = (user.email || "").toLowerCase();
+    userMetadataName = user.user_metadata?.full_name;
   }
-
-  const userEmail = (user.email || "").toLowerCase();
 
   // 1. Cek di tabel business_members (Sistem Tim & Hak Akses Menu Web)
   const { data: member } = await supabaseAdmin
     .from("business_members")
     .select("id, business_id, role, permissions, businesses ( id, name )")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -112,7 +172,7 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
     const { data: linkedEmp } = await supabaseAdmin
       .from("employees")
       .select("id, name")
-      .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+      .or(`user_id.eq.${userId},email.ilike.${userEmail}`)
       .eq("business_id", member.business_id)
       .limit(1)
       .maybeSingle();
@@ -121,12 +181,12 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
     const bizName = bizObj?.name || "Bisnis";
 
     return {
-      userId: user.id,
-      email: user.email || "",
+      userId: userId,
+      email: userEmail,
       businessId: member.business_id,
       businessName: bizName,
       employeeId: linkedEmp?.id,
-      name: linkedEmp?.name || user.user_metadata?.full_name || userEmail.split("@")[0],
+      name: linkedEmp?.name || userMetadataName || userEmail.split("@")[0],
       role: member.role || "staff",
       isOwner: member.role === "owner",
     };
@@ -136,7 +196,7 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
   const { data: employee } = await supabaseAdmin
     .from("employees")
     .select("id, name, email, business_id, is_pos_access, is_active, role")
-    .or(`user_id.eq.${user.id},email.ilike.${userEmail}`)
+    .or(`user_id.eq.${userId},email.ilike.${userEmail}`)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -159,8 +219,8 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
       .maybeSingle();
 
     return {
-      userId: user.id,
-      email: user.email || employee.email,
+      userId: userId,
+      email: userEmail || employee.email,
       businessId: employee.business_id,
       businessName: business?.name || "Bisnis",
       employeeId: employee.id,
@@ -174,16 +234,16 @@ export async function validateMobileToken(request: Request): Promise<Authenticat
   const { data: business } = await supabaseAdmin
     .from("businesses")
     .select("id, name, user_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (business) {
     return {
-      userId: user.id,
-      email: user.email || "",
+      userId: userId,
+      email: userEmail,
       businessId: business.id,
       businessName: business.name,
-      name: user.user_metadata?.full_name || userEmail.split("@")[0] || "Owner",
+      name: userMetadataName || userEmail.split("@")[0] || "Owner",
       role: "owner",
       isOwner: true,
     };

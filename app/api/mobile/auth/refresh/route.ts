@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSupabaseAnon } from "../../_helpers/auth";
+import { getSupabaseAnon, verifyMobilePosToken, generateMobilePosToken } from "../../_helpers/auth";
 import { jsonResponse, handleOptions } from "../../_helpers/cors";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +20,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanRefreshToken = refresh_token.trim();
+
+    // 1. Jika token adalah Mobile POS Token, verifikasi dan kembalikan token valid
+    const mobileUser = await verifyMobilePosToken(cleanRefreshToken);
+    if (mobileUser) {
+      const newToken = await generateMobilePosToken(mobileUser.userId, mobileUser.email);
+      return jsonResponse({
+        success: true,
+        token: newToken,
+        refresh_token: newToken,
+        expires_in: 3153600000, // 100 tahun
+      });
+    }
+
+    // 2. Fallback ke Supabase refreshSession untuk token lama, dan auto-upgrade ke Mobile POS Token
     const supabaseAnon = getSupabaseAnon();
 
     const { data, error } = await supabaseAnon.auth.refreshSession({
-      refresh_token: refresh_token.trim(),
+      refresh_token: cleanRefreshToken,
     });
 
     if (error || !data.session) {
@@ -37,14 +52,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { session } = data;
+    const { user } = data;
+    const mobileToken = user ? await generateMobilePosToken(user.id, user.email || "") : data.session.access_token;
 
     return jsonResponse({
       success: true,
-      token: session.access_token,
-      refresh_token: session.refresh_token,
-      expires_in: session.expires_in,
-      expires_at: session.expires_at,
+      token: mobileToken,
+      refresh_token: mobileToken,
+      expires_in: 3153600000,
     });
   } catch (err: any) {
     console.error("Refresh Session Error:", err);

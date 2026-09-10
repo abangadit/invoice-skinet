@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSupabaseAnon, getSupabaseAdmin, checkHasPosPermission } from "../../_helpers/auth";
+import { getSupabaseAnon, getSupabaseAdmin, checkHasPosPermission, generateMobilePosToken } from "../../_helpers/auth";
 import { jsonResponse, handleOptions } from "../../_helpers/cors";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
     const session = authData.session;
     const supabaseAdmin = getSupabaseAdmin();
 
+    // Terbitkan Mobile POS Token tanpa batas expired untuk aplikasi Android
+    const mobileToken = await generateMobilePosToken(user.id, user.email || cleanEmail);
+
     // 2. Cek di tabel business_members (Sistem Tim & Hak Akses Web)
     const { data: member } = await supabaseAdmin
       .from("business_members")
@@ -79,8 +82,8 @@ export async function POST(request: NextRequest) {
 
       return jsonResponse({
         success: true,
-        token: session.access_token,
-        refresh_token: session.refresh_token,
+        token: mobileToken,
+        refresh_token: mobileToken,
         user: {
           id: user.id,
           email: user.email,
@@ -135,8 +138,8 @@ export async function POST(request: NextRequest) {
 
       return jsonResponse({
         success: true,
-        token: session.access_token,
-        refresh_token: session.refresh_token,
+        token: mobileToken,
+        refresh_token: mobileToken,
         user: {
           id: user.id,
           email: user.email,
@@ -160,8 +163,8 @@ export async function POST(request: NextRequest) {
     if (business) {
       return jsonResponse({
         success: true,
-        token: session.access_token,
-        refresh_token: session.refresh_token,
+        token: mobileToken,
+        refresh_token: mobileToken,
         user: {
           id: user.id,
           email: user.email,
