@@ -1,39 +1,75 @@
 import { createClient } from "@supabase/supabase-js";
-import { SignJWT, jwtVerify } from "jose";
+import crypto from "crypto";
 
-function getMobileJwtSecret(): Uint8Array {
-  const secret =
+function getMobileJwtSecret(): string {
+  return (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.JWT_SECRET ||
-    "fallback-pos-secret-skinet-secure-key-2026";
-  return new TextEncoder().encode(secret);
+    "fallback-pos-secret-skinet-secure-key-2026"
+  );
+}
+
+function base64UrlEncode(str: string | Buffer): string {
+  const buf = typeof str === "string" ? Buffer.from(str, "utf-8") : str;
+  return buf.toString("base64url");
+}
+
+function base64UrlDecode(str: string): string {
+  return Buffer.from(str, "base64url").toString("utf-8");
 }
 
 /**
- * Menghasilkan token JWT khusus mobile POS tanpa batas kedaluwarsa (100 tahun)
+ * Menghasilkan token JWT khusus mobile POS tanpa batas kedaluwarsa (100 tahun) menggunakan crypto bawaan Node.js
  */
 export async function generateMobilePosToken(userId: string, email: string): Promise<string> {
   const secret = getMobileJwtSecret();
-  return await new SignJWT({
-    sub: userId,
-    email: email.toLowerCase(),
-    type: "mobile_pos_token",
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("100y")
-    .sign(secret);
+  const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const now = Math.floor(Date.now() / 1000);
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      sub: userId,
+      email: email.toLowerCase(),
+      type: "mobile_pos_token",
+      iat: now,
+      exp: now + 100 * 365 * 24 * 3600, // 100 tahun
+    })
+  );
+
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  return `${header}.${payload}.${signature}`;
 }
 
 /**
- * Memverifikasi apakah token adalah Mobile POS JWT valid
+ * Memverifikasi apakah token adalah Mobile POS JWT valid menggunakan crypto bawaan Node.js
  */
 export async function verifyMobilePosToken(
   token: string
 ): Promise<{ userId: string; email: string } | null> {
   try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const [headerB64, payloadB64, signature] = parts;
     const secret = getMobileJwtSecret();
-    const { payload } = await jwtVerify(token, secret);
+
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(`${headerB64}.${payloadB64}`)
+      .digest("base64url");
+
+    // Bandingkan signature secara konstan untuk mencegah timing attack
+    if (signature.length !== expectedSignature.length) return null;
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSignature);
+    if (!crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
+
+    const payload = JSON.parse(base64UrlDecode(payloadB64));
     if (payload && payload.sub && payload.type === "mobile_pos_token") {
       return {
         userId: payload.sub as string,
