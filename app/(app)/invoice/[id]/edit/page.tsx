@@ -124,6 +124,7 @@ export default function EditInvoicePage() {
   const [templateColor, setTemplateColor] = useState("#004de6");
   const [paidAmount, setPaidAmount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [originalInvoice, setOriginalInvoice] = useState<any>(null);
 
   // Load existing invoice details
   const loadInvoiceData = async () => {
@@ -135,11 +136,12 @@ export default function EditInvoicePage() {
       // Fetch invoice first to retrieve business_id
       const { data: inv, error: invError } = await supabase
         .from("invoices")
-        .select("*")
+        .select("*, customers(name)")
         .eq("id", params.id)
         .single();
 
       if (invError) throw invError;
+      setOriginalInvoice(inv);
 
       const currentBizId = inv.business_id;
       setSelectedBusinessId(currentBizId);
@@ -639,6 +641,87 @@ export default function EditInvoicePage() {
             language: locale
           })
         }).catch(err => console.error("Error triggering Resend email:", err));
+      }
+
+      // 6. Explicitly record audit log for invoice changes
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const oldCustName = originalInvoice?.customer_snapshot?.name || originalInvoice?.customers?.name || "";
+        const newCustName = clientInfo.name || "";
+
+        const oldData = {
+          customer_name: oldCustName,
+          status: originalInvoice?.status,
+          total_amount: originalInvoice?.total_amount,
+          subtotal: originalInvoice?.subtotal,
+          due_date: originalInvoice?.due_date,
+          notes: originalInvoice?.notes
+        };
+
+        const newData = {
+          customer_name: newCustName,
+          status: invoiceStatus,
+          total_amount: tot,
+          subtotal: sub,
+          due_date: dueDate || null,
+          notes: notes || null
+        };
+
+        await supabase.from("audit_logs").insert({
+          business_id: selectedBusinessId,
+          user_id: currentUser?.id || null,
+          action_type: "UPDATE",
+          table_name: "invoices",
+          record_id: params.id,
+          old_data: oldData,
+          new_data: newData
+        });
+      } catch (logErr) {
+        console.warn("Could not save audit log:", logErr);
+      }
+
+      // 7. Sync Financial Reports & Journal Entries if nominal or issue date updated
+      try {
+        const { data: existingJournals } = await supabase
+          .from("journal_entries")
+          .select("id")
+          .eq("business_id", selectedBusinessId)
+          .eq("reference_id", params.id);
+
+        if (existingJournals && existingJournals.length > 0) {
+          for (const jEntry of existingJournals) {
+            await supabase
+              .from("journal_entries")
+              .update({
+                entry_date: issueDate,
+                description: `Penjualan Invoice #${invoiceNumber} (${clientInfo.name || 'Pelanggan'})`
+              })
+              .eq("id", jEntry.id);
+
+            const { data: jItems } = await supabase
+              .from("journal_items")
+              .select("id, account_id, accounts(code)")
+              .eq("journal_entry_id", jEntry.id);
+
+            if (jItems && jItems.length > 0) {
+              for (const jItem of jItems) {
+                const code = (jItem.accounts as any)?.code;
+                if (code === "1103") {
+                  // Piutang Dagang (Debit) = total invoice
+                  await supabase.from("journal_items").update({ debit: tot, credit: 0 }).eq("id", jItem.id);
+                } else if (code === "4101") {
+                  // Pendapatan Penjualan (Credit) = subtotal
+                  await supabase.from("journal_items").update({ debit: 0, credit: sub }).eq("id", jItem.id);
+                } else if (code === "2102") {
+                  // Utang Pajak PPN (Credit) = tax
+                  await supabase.from("journal_items").update({ debit: 0, credit: tax }).eq("id", jItem.id);
+                }
+              }
+            }
+          }
+        }
+      } catch (jErr) {
+        console.warn("Could not sync journal entries:", jErr);
       }
 
       await reloadBusiness();

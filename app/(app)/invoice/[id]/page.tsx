@@ -1246,17 +1246,28 @@ export default function InvoiceDetailPage() {
                 {auditLogs.map((log) => {
                   const changedFields: string[] = [];
                   if (log.old_data && log.new_data) {
-                    if (log.old_data.status !== log.new_data.status) {
+                    const oldCust = log.old_data.customer_name || log.old_data.customer_snapshot?.name || "";
+                    const newCust = log.new_data.customer_name || log.new_data.customer_snapshot?.name || "";
+                    if (oldCust && newCust && oldCust.trim() !== newCust.trim()) {
+                      changedFields.push(`Pelanggan: "${oldCust}" ➔ "${newCust}"`);
+                    } else if (!oldCust && newCust) {
+                      changedFields.push(`Pelanggan: "${newCust}"`);
+                    }
+
+                    if (log.old_data.status && log.new_data.status && log.old_data.status !== log.new_data.status) {
                       changedFields.push(`Status: "${log.old_data.status}" ➔ "${log.new_data.status}"`);
                     }
-                    if (Number(log.old_data.total_amount) !== Number(log.new_data.total_amount)) {
-                      changedFields.push(`Total: ${formatCurrency(Number(log.old_data.total_amount))} ➔ ${formatCurrency(Number(log.new_data.total_amount))}`);
+                    if (Number(log.old_data.total_amount || 0) !== Number(log.new_data.total_amount || 0)) {
+                      changedFields.push(`Total: ${formatCurrency(Number(log.old_data.total_amount || 0))} ➔ ${formatCurrency(Number(log.new_data.total_amount || 0))}`);
                     }
-                    if (Number(log.old_data.subtotal) !== Number(log.new_data.subtotal)) {
-                      changedFields.push(`Subtotal: ${formatCurrency(Number(log.old_data.subtotal))} ➔ ${formatCurrency(Number(log.new_data.subtotal))}`);
+                    if (Number(log.old_data.subtotal || 0) !== Number(log.new_data.subtotal || 0)) {
+                      changedFields.push(`Subtotal: ${formatCurrency(Number(log.old_data.subtotal || 0))} ➔ ${formatCurrency(Number(log.new_data.subtotal || 0))}`);
                     }
                     if (log.old_data.due_date !== log.new_data.due_date) {
                       changedFields.push(`Jatuh Tempo: ${log.old_data.due_date || '-'} ➔ ${log.new_data.due_date || '-'}`);
+                    }
+                    if (log.old_data.notes !== log.new_data.notes) {
+                      changedFields.push(`Catatan diubah`);
                     }
                   }
 
