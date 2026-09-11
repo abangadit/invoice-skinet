@@ -19,9 +19,6 @@ export default function LoginPage() {
     setErrorMsg(null);
 
     const supabase = createWebBrowserClient();
-    
-    // Bersihkan sesi lama sebelum mencoba login baru untuk menghindari token race/konflik
-    await supabase.auth.signOut().catch(() => {});
 
     const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
@@ -44,7 +41,7 @@ export default function LoginPage() {
         }
       }
 
-      // Hard redirect agar seluruh React Context (BusinessProvider, dsb) diinisialisasi bersih dari server
+      router.refresh();
       const targetUrl = role === "superadmin" ? "/admin/dashboard" : "/";
       window.location.href = targetUrl;
     }
