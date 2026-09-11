@@ -145,25 +145,29 @@ export function getAllPermissionKeys(): string[] {
 // Preset permissions by role for quick 1-click configuration
 export const ROLE_PRESETS: Record<string, string[]> = {
   admin: getAllPermissionKeys(),
-  pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos"],
+  pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
   sales: [
     "dashboard", "pos", "pos_history", "leads", "landing_page", "quotation", 
     "sales", "delivery", "invoice", "invoice_due", "customer", "payment", 
-    "catalog", "reports_pos", "project", "after_sales"
+    "catalog", "reports_pos", "project", "after_sales",
+    "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   purchasing: [
     "dashboard", "purchase", "purchase_due", "vendor", "catalog", 
-    "inventory_stock", "inventory_stock_card", "reports_inventory"
+    "inventory_stock", "inventory_stock_card",
+    "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   warehouse: [
     "delivery", "catalog", "inventory_stock", "inventory_stock_card", 
     "inventory_adjustments", "inventory_transfer", "inventory_stock_out", 
-    "inventory_production", "inventory_warehouses", "reports_inventory"
+    "inventory_production", "inventory_warehouses",
+    "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   finance: [
     "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
     "accounts_reconciliation", "expenses", "ledger", "reports_sales", 
-    "reports_invoice", "reports_financial", "tax", "assets", "project"
+    "reports_invoice", "reports_financial", "tax", "assets", "project",
+    "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   hr: [
     "dashboard", "employees", "payroll", "employee_attendance", 
@@ -171,7 +175,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
     "reports_attendance", "settings_shifts"
   ],
   staff: [
-    "employee_attendance", "employee_payslips"
+    "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ]
 };
 

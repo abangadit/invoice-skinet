@@ -26,9 +26,9 @@ export default function ReportsHubPage() {
     const rolePresets: Record<string, string[]> = {
       sales: [],
       pos_cashier: ["reports_pos"],
-      purchasing: ["reports_inventory"],
+      purchasing: [],
       warehouse: ["reports_inventory"],
-      finance: ["reports_sales", "reports_financial"],
+      finance: ["reports_sales", "reports_invoice", "reports_financial"],
       hr: ["reports_attendance"]
     };
     

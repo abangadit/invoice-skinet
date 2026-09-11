@@ -138,7 +138,7 @@ function checkPathPermission(path: string, role: string | null, permissions: any
   const { key: menuKey, parentKey } = menuInfo;
 
   // Personal employee routes are always accessible for employees
-  if (["employee_attendance", "employee_payslips", "settings_security"].includes(menuKey)) {
+  if (["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement", "settings_security"].includes(menuKey)) {
     return true;
   }
 
@@ -507,7 +507,7 @@ function AppLayoutInner({
     if (menuKey === "pos") {
       return !!checkPathPermission("/pos", userRole, userPermissions, isEmployee);
     }
-    if (["employee_attendance", "employee_payslips"].includes(menuKey)) {
+    if (["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"].includes(menuKey)) {
       return true;
     }
     if (menuKey === "employees" && isEmployee) {
@@ -523,27 +523,30 @@ function AppLayoutInner({
     }
     
     const rolePresets: Record<string, string[]> = {
-      staff: ["employee_attendance", "employee_payslips", "settings_security"],
+      staff: ["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement", "settings_security"],
       employee: ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
-      pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos"],
+      pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
       sales: [
         "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
-        "delivery", "catalog", "pos", "pos_history", "reports_pos", "project", "after_sales", "leads", "landing_page"
+        "delivery", "catalog", "pos", "pos_history", "reports_pos", "project", "after_sales", "leads", "landing_page",
+        "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       purchasing: [
         "dashboard", "vendor", "purchase", "purchase_due", "catalog", 
-        "inventory", "inventory_stock", "inventory_stock_card", "reports", "reports_inventory"
+        "inventory", "inventory_stock", "inventory_stock_card",
+        "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       warehouse: [
         "catalog", "delivery", "inventory", "inventory_stock", 
         "inventory_stock_card", "inventory_adjustments", "inventory_transfer", 
-        "inventory_stock_out", "inventory_production", "inventory_warehouses", 
-        "reports", "reports_inventory"
+        "inventory_stock_out", "inventory_production", "inventory_warehouses",
+        "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       finance: [
         "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
         "accounts_reconciliation", "expenses", "ledger", "reports", "tax", "assets", 
-        "reports_sales", "reports_financial"
+        "reports_sales", "reports_invoice", "reports_financial",
+        "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       hr: [
         "dashboard", "employees", "payroll", "employee_attendance", 
@@ -558,7 +561,7 @@ function AppLayoutInner({
 
   const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
   const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
-  const showReportsSection = userRole !== "sales" && (showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports"));
+  const showReportsSection = userRole !== "sales" && userRole !== "purchasing" && (showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports"));
 
   if (loading) {
     return (
