@@ -62,8 +62,19 @@ interface Employee {
 }
 
 export default function LeavePage() {
-  const { activeBusiness, userRole, systemRole } = useBusiness();
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr" || userRole === "superadmin" || systemRole === "superadmin";
+  const { activeBusiness, userRole, systemRole, userPermissions } = useBusiness();
+  const isOwnerOrAdmin = 
+    userRole === "owner" || 
+    userRole === "admin" || 
+    userRole === "hr" || 
+    userRole === "superadmin" || 
+    systemRole === "superadmin" ||
+    (userRole === "custom" && (
+      Boolean(userPermissions?.employee_leave) ||
+      Boolean(userPermissions?.employees) ||
+      Boolean(userPermissions?.hr) ||
+      Boolean(userPermissions?.all)
+    ));
   const [activeTab, setActiveTab] = useState<"ess" | "admin">("ess");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -288,9 +299,7 @@ export default function LeavePage() {
 
       // Routing tab default view
       if (isOwnerOrAdmin) {
-        if (!emp) {
-          setActiveTab("admin");
-        }
+        setActiveTab("admin");
       }
 
       if (emp) {
@@ -309,7 +318,7 @@ export default function LeavePage() {
 
   useEffect(() => {
     initializeUserSession();
-  }, [activeBusiness, userRole, systemRole]);
+  }, [activeBusiness, userRole, systemRole, userPermissions]);
 
   // Handle Apply Leave
   const handleApplyLeave = async (e: React.FormEvent) => {

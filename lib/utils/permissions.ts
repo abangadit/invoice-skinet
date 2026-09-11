@@ -208,6 +208,8 @@ export function hasPermission(
   if (specificKey.startsWith("inventory_") && permissions["inventory"] === true) return true;
   if (specificKey.startsWith("reports_") && permissions["reports"] === true) return true;
   if (specificKey.startsWith("settings_") && permissions["settings"] === true) return true;
+  if (specificKey.startsWith("employee_") && (permissions["employees"] === true || permissions["hr"] === true)) return true;
+  if ((specificKey === "employees" || specificKey === "payroll") && permissions["hr"] === true) return true;
   if (specificKey === "invoice_due" && permissions["invoice"] === true) return true;
   if (specificKey === "purchase_due" && permissions["purchase"] === true) return true;
   if (specificKey === "pos_history" && permissions["pos"] === true) return true;

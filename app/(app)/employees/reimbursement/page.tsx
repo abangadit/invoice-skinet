@@ -63,8 +63,19 @@ interface Employee {
 }
 
 export default function ReimbursementPage() {
-  const { activeBusiness, userRole, systemRole } = useBusiness();
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr" || userRole === "superadmin" || systemRole === "superadmin";
+  const { activeBusiness, userRole, systemRole, userPermissions } = useBusiness();
+  const isOwnerOrAdmin = 
+    userRole === "owner" || 
+    userRole === "admin" || 
+    userRole === "hr" || 
+    userRole === "superadmin" || 
+    systemRole === "superadmin" ||
+    (userRole === "custom" && (
+      Boolean(userPermissions?.employee_reimbursement) ||
+      Boolean(userPermissions?.employees) ||
+      Boolean(userPermissions?.hr) ||
+      Boolean(userPermissions?.all)
+    ));
   const [activeTab, setActiveTab] = useState<"ess" | "admin">("ess");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -230,9 +241,7 @@ export default function ReimbursementPage() {
 
       // Routing tab default view
       if (isOwnerOrAdmin) {
-        if (!emp) {
-          setActiveTab("admin");
-        }
+        setActiveTab("admin");
       }
 
       if (emp) {
@@ -251,7 +260,7 @@ export default function ReimbursementPage() {
 
   useEffect(() => {
     initializeUserSession();
-  }, [activeBusiness, userRole, systemRole]);
+  }, [activeBusiness, userRole, systemRole, userPermissions]);
 
   // Handle File Input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

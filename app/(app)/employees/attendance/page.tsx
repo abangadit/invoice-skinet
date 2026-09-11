@@ -72,8 +72,19 @@ const getLocalDateString = () => {
 };
 
 export default function AttendancePage() {
-  const { activeBusiness, userRole, systemRole, reloadBusiness } = useBusiness();
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr" || userRole === "superadmin" || systemRole === "superadmin";
+  const { activeBusiness, userRole, systemRole, reloadBusiness, userPermissions } = useBusiness();
+  const isOwnerOrAdmin = 
+    userRole === "owner" || 
+    userRole === "admin" || 
+    userRole === "hr" || 
+    userRole === "superadmin" || 
+    systemRole === "superadmin" ||
+    (userRole === "custom" && (
+      Boolean(userPermissions?.employee_attendance) ||
+      Boolean(userPermissions?.employees) ||
+      Boolean(userPermissions?.hr) ||
+      Boolean(userPermissions?.all)
+    ));
   const [activeTab, setActiveTab] = useState<"portal" | "history" | "logs" | "settings">("portal");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -347,7 +358,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     initializeUserSession();
-  }, [activeBusiness, userRole, systemRole]);
+  }, [activeBusiness, userRole, systemRole, userPermissions]);
 
   // Stream reference state to keep track of the stream
   const [stream, setStream] = useState<MediaStream | null>(null);

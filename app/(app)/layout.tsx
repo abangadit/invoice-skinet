@@ -657,7 +657,7 @@ function AppLayoutInner({
         title: locale === "en" ? "HR & Payroll" : "SDM & HR",
         show: showHRSection,
         items: [
-          { id: "employees", menuKey: "employees", href: "/employees", icon: <Users className="w-5 h-5" />, label: t("employees"), show: showLink("employees", "hr") && (userRole === "owner" || userRole === "admin" || userRole === "superadmin") },
+          { id: "employees", menuKey: "employees", href: "/employees", icon: <Users className="w-5 h-5" />, label: t("employees"), show: showLink("employees", "hr") },
           { id: "employee_leave", menuKey: "employee_leave", href: "/employees/leave", icon: <Calendar className="w-5 h-5" />, label: t("leave"), show: showLink("employee_leave", "hr") },
           { id: "employee_reimbursement", menuKey: "employee_reimbursement", href: "/employees/reimbursement", icon: <FileText className="w-5 h-5" />, label: t("reimbursements"), show: showLink("employee_reimbursement", "hr") },
           { id: "employee_attendance", menuKey: "employee_attendance", href: "/employees/attendance", icon: <ClipboardCheck className="w-5 h-5" />, label: t("attendance"), show: showLink("employee_attendance", "hr") },
