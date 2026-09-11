@@ -53,6 +53,12 @@ function checkPathPermission(path: string, role: string | null, permissions: any
   const cleanPath = path.split('?')[0].split('#')[0];
   
   if (cleanPath === "/unauthorized") return true;
+
+  // Laporan HANYA bisa diakses oleh owner PT (dan platform superadmin)
+  if (cleanPath === "/reports" || cleanPath.startsWith("/reports/")) {
+    return role === "owner" || role === "superadmin";
+  }
+
   if (role === 'owner' || role === 'admin' || role === 'superadmin') return true;
 
   const match = (prefix: string) => cleanPath === prefix || cleanPath.startsWith(prefix + '/');
@@ -513,6 +519,12 @@ function AppLayoutInner({
     if (menuKey === "employees" && isEmployee) {
       return true;
     }
+
+    // Laporan HANYA bisa diakses oleh owner PT (dan platform superadmin)
+    if (parentKey === "reports" || menuKey === "reports" || menuKey.startsWith("reports_")) {
+      return userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
+    }
+
     if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") return true;
     if (userRole === "employee" || userRole === "staff") {
       const allowed = ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
@@ -525,10 +537,10 @@ function AppLayoutInner({
     const rolePresets: Record<string, string[]> = {
       staff: ["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement", "settings_security"],
       employee: ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
-      pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
+      pos_cashier: ["dashboard", "pos", "pos_history", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
       sales: [
         "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
-        "delivery", "catalog", "pos", "pos_history", "reports_pos", "project", "after_sales", "leads", "landing_page",
+        "delivery", "catalog", "pos", "pos_history", "project", "after_sales", "leads", "landing_page",
         "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       purchasing: [
@@ -544,14 +556,13 @@ function AppLayoutInner({
       ],
       finance: [
         "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
-        "accounts_reconciliation", "expenses", "ledger", "reports", "tax", "assets", 
-        "reports_sales", "reports_invoice", "reports_financial", "reports_inventory",
+        "accounts_reconciliation", "expenses", "ledger", "tax", "assets",
         "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       hr: [
         "dashboard", "employees", "payroll", "employee_attendance", 
         "employee_leave", "employee_reimbursement", "employee_payslips", 
-        "reports_attendance", "settings_shifts"
+        "settings_shifts"
       ]
     };
     
@@ -562,17 +573,8 @@ function AppLayoutInner({
   const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
   const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
   
-  // Laporan Bisnis hanya boleh tampil untuk: Owner, Admin Bisnis, Finance, HRD, dan Custom (jika diizinkan)
-  const allowedReportsRoles = ["owner", "admin", "superadmin", "finance", "hr", "custom"];
-  const showReportsSection = allowedReportsRoles.includes(userRole || "") && (
-    userRole === "owner" || userRole === "admin" || userRole === "superadmin" ||
-    showLink("reports", "reports") || 
-    showLink("reports_sales", "reports") || 
-    showLink("reports_invoice", "reports") || 
-    showLink("reports_financial", "reports") || 
-    showLink("reports_inventory", "reports") || 
-    showLink("reports_attendance", "reports")
-  );
+  // Laporan Bisnis HANYA boleh tampil untuk: Owner PT (dan platform superadmin)
+  const showReportsSection = userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
 
   if (loading) {
     return (

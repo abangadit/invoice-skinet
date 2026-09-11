@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   FileText, 
   TrendingUp, 
@@ -14,26 +15,22 @@ import {
 import { useBusiness } from "../../../lib/context/BusinessContext";
 
 export default function ReportsHubPage() {
-  const { activeBusiness, userRole, systemRole, userPermissions, loading } = useBusiness();
+  const router = useRouter();
+  const { activeBusiness, userRole, systemRole, loading } = useBusiness();
 
-  // Helper check consistent with layout role presets
-  const showLink = (menuKey: string) => {
+  // Guard: Hanya Owner PT (dan superadmin) yang boleh membuka laporan
+  useEffect(() => {
+    if (!loading && userRole) {
+      if (userRole !== "owner" && userRole !== "superadmin" && systemRole !== "superadmin") {
+        router.push("/unauthorized");
+      }
+    }
+  }, [userRole, systemRole, loading, router]);
+
+  // Hanya owner PT (dan superadmin) yang boleh melihat kartu laporan
+  const showLink = (_menuKey: string) => {
     if (loading || !userRole) return false;
-    if (userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin") return true;
-    if (userRole === "employee") return false;
-    if (userRole === "custom") return !!userPermissions?.[menuKey];
-    
-    const rolePresets: Record<string, string[]> = {
-      sales: [],
-      pos_cashier: [],
-      purchasing: [],
-      warehouse: [],
-      finance: ["reports_sales", "reports_invoice", "reports_financial", "reports_inventory"],
-      hr: ["reports_attendance"],
-      staff: []
-    };
-    
-    return (rolePresets[userRole] || []).includes(menuKey);
+    return userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
   };
 
   const reportsList = [

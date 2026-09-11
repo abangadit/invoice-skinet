@@ -985,13 +985,15 @@ export default function POSPage() {
             >
               <History className="w-3.5 h-3.5 text-slate-400" /> Riwayat Penjualan
             </button>
-            <button
-              type="button"
-              onClick={() => router.push("/reports/pos")}
-              className="text-indigo-600 hover:text-indigo-800 text-[11px] font-bold flex items-center gap-1.5 transition py-1"
-            >
-              <FileText className="w-3.5 h-3.5 text-indigo-500" /> Laporan Shift Kasir
-            </button>
+            {(userRole === "owner" || userRole === "superadmin") && (
+              <button
+                type="button"
+                onClick={() => router.push("/reports/pos")}
+                className="text-indigo-600 hover:text-indigo-800 text-[11px] font-bold flex items-center gap-1.5 transition py-1"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-500" /> Laporan Shift Kasir
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -1053,13 +1055,15 @@ export default function POSPage() {
           </div>
 
           <div className="flex items-center flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/reports/pos")}
-              className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 text-[11px]"
-            >
-              <FileText className="w-4 h-4 text-indigo-600" /> Laporan Shift
-            </button>
+            {(userRole === "owner" || userRole === "superadmin") && (
+              <button
+                type="button"
+                onClick={() => router.push("/reports/pos")}
+                className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 text-[11px]"
+              >
+                <FileText className="w-4 h-4 text-indigo-600" /> Laporan Shift
+              </button>
+            )}
             <button
               type="button"
               onClick={() => router.push("/pos/history")}

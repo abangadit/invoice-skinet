@@ -144,12 +144,12 @@ export function getAllPermissionKeys(): string[] {
 
 // Preset permissions by role for quick 1-click configuration
 export const ROLE_PRESETS: Record<string, string[]> = {
-  admin: getAllPermissionKeys(),
-  pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
+  admin: getAllPermissionKeys().filter(k => !k.startsWith("reports")),
+  pos_cashier: ["dashboard", "pos", "pos_history", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
   sales: [
     "dashboard", "pos", "pos_history", "leads", "landing_page", "quotation", 
     "sales", "delivery", "invoice", "invoice_due", "customer", "payment", 
-    "catalog", "reports_pos", "project", "after_sales",
+    "catalog", "project", "after_sales",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   purchasing: [
@@ -165,14 +165,13 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   ],
   finance: [
     "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
-    "accounts_reconciliation", "expenses", "ledger", "reports_sales", 
-    "reports_invoice", "reports_financial", "reports_inventory", "tax", "assets", "project",
+    "accounts_reconciliation", "expenses", "ledger", "tax", "assets", "project",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   hr: [
     "dashboard", "employees", "payroll", "employee_attendance", 
     "employee_leave", "employee_reimbursement", "employee_payslips", 
-    "reports_attendance", "settings_shifts"
+    "settings_shifts"
   ],
   staff: [
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"

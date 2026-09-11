@@ -289,15 +289,17 @@ export default function POSHistoryPage() {
             Pantau performa penjualan kasir, jumlah barang terjual, dan cetak ulang struk transaksi.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push("/reports/pos")}
-            className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 text-xs cursor-pointer"
-          >
-            <FileText className="w-4 h-4 text-indigo-600" /> Laporan Shift Kasir
-          </button>
-        </div>
+        {(userRole === "owner" || userRole === "superadmin") && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/reports/pos")}
+              className="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 text-xs cursor-pointer"
+            >
+              <FileText className="w-4 h-4 text-indigo-600" /> Laporan Shift Kasir
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Metrics Summary Cards */}
