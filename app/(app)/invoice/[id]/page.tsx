@@ -192,14 +192,38 @@ export default function InvoiceDetailPage() {
       setLoading(true);
       const supabase = createWebBrowserClient();
 
-      // Fetch invoice
-      const { data: invData, error: invError } = await supabase
+      // Fetch invoice with customers join fallback
+      let invData: any = null;
+      const res1 = await supabase
         .from("invoices")
-        .select("*")
+        .select("*, customers(name)")
         .eq("id", params.id)
         .single();
 
-      if (invError) throw invError;
+      if (!res1.error && res1.data) {
+        invData = res1.data;
+      } else {
+        const res2 = await supabase
+          .from("invoices")
+          .select("*")
+          .eq("id", params.id)
+          .single();
+        if (res2.error) throw res2.error;
+        invData = res2.data;
+      }
+
+      const custObj = Array.isArray(invData?.customers) ? invData.customers[0] : invData?.customers;
+      const fallbackCustName = custObj?.name || "";
+      if ((!invData.customer_snapshot?.name || !invData.customer_snapshot.name.trim()) && fallbackCustName) {
+        invData = {
+          ...invData,
+          customer_snapshot: {
+            ...invData.customer_snapshot,
+            name: fallbackCustName
+          }
+        };
+      }
+
       setInvoice(invData);
       setAttText(invData?.attachment_text || "");
 

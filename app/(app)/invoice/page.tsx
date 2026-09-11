@@ -64,15 +64,57 @@ export default function InvoiceListPage() {
       setLoading(true);
       const supabase = createWebBrowserClient();
 
-      const { data, error } = await supabase
+      let queryData: any[] | null = null;
+
+      // 1. Try selecting with created_by, created_by_name and customer relation
+      const res1 = await supabase
         .from("invoices")
-        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, created_by, created_by_name")
+        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name")
         .eq("business_id", activeBusiness.id)
         .eq("type", "invoice")
         .order("issue_date", { ascending: false });
 
-      if (error) throw error;
-      setInvoices(data || []);
+      if (!res1.error && res1.data) {
+        queryData = res1.data;
+      } else {
+        // 2. Fallback without created_by / created_by_name if column not migrated yet in DB
+        const res2 = await supabase
+          .from("invoices")
+          .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name)")
+          .eq("business_id", activeBusiness.id)
+          .eq("type", "invoice")
+          .order("issue_date", { ascending: false });
+
+        if (!res2.error && res2.data) {
+          queryData = res2.data;
+        } else {
+          // 3. Fallback to basic query
+          const res3 = await supabase
+            .from("invoices")
+            .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot")
+            .eq("business_id", activeBusiness.id)
+            .eq("type", "invoice")
+            .order("issue_date", { ascending: false });
+
+          if (res3.error) throw res3.error;
+          queryData = res3.data;
+        }
+      }
+
+      const formatted = (queryData || []).map((inv: any) => {
+        const custObj = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
+        const fallbackName = custObj?.name || "Pelanggan Umum";
+        const currentName = (inv.customer_snapshot?.name || "").trim();
+        return {
+          ...inv,
+          customer_snapshot: {
+            ...inv.customer_snapshot,
+            name: currentName || fallbackName
+          }
+        };
+      });
+
+      setInvoices(formatted);
     } catch (err) {
       console.error("Error fetching invoices:", err);
     } finally {
