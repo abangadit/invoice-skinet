@@ -25,11 +25,12 @@ export default function ReportsHubPage() {
     
     const rolePresets: Record<string, string[]> = {
       sales: [],
-      pos_cashier: ["reports_pos"],
+      pos_cashier: [],
       purchasing: [],
-      warehouse: ["reports_inventory"],
-      finance: ["reports_sales", "reports_invoice", "reports_financial"],
-      hr: ["reports_attendance"]
+      warehouse: [],
+      finance: ["reports_sales", "reports_invoice", "reports_financial", "reports_inventory"],
+      hr: ["reports_attendance"],
+      staff: []
     };
     
     return (rolePresets[userRole] || []).includes(menuKey);

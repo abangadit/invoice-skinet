@@ -166,7 +166,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   finance: [
     "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
     "accounts_reconciliation", "expenses", "ledger", "reports_sales", 
-    "reports_invoice", "reports_financial", "tax", "assets", "project",
+    "reports_invoice", "reports_financial", "reports_inventory", "tax", "assets", "project",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   hr: [

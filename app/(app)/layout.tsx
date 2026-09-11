@@ -545,7 +545,7 @@ function AppLayoutInner({
       finance: [
         "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
         "accounts_reconciliation", "expenses", "ledger", "reports", "tax", "assets", 
-        "reports_sales", "reports_invoice", "reports_financial",
+        "reports_sales", "reports_invoice", "reports_financial", "reports_inventory",
         "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       hr: [
@@ -561,7 +561,18 @@ function AppLayoutInner({
 
   const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
   const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
-  const showReportsSection = userRole !== "sales" && userRole !== "purchasing" && (showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports"));
+  
+  // Laporan Bisnis hanya boleh tampil untuk: Owner, Admin Bisnis, Finance, HRD, dan Custom (jika diizinkan)
+  const allowedReportsRoles = ["owner", "admin", "superadmin", "finance", "hr", "custom"];
+  const showReportsSection = allowedReportsRoles.includes(userRole || "") && (
+    userRole === "owner" || userRole === "admin" || userRole === "superadmin" ||
+    showLink("reports", "reports") || 
+    showLink("reports_sales", "reports") || 
+    showLink("reports_invoice", "reports") || 
+    showLink("reports_financial", "reports") || 
+    showLink("reports_inventory", "reports") || 
+    showLink("reports_attendance", "reports")
+  );
 
   if (loading) {
     return (
