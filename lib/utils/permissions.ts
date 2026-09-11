@@ -149,7 +149,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   sales: [
     "dashboard", "pos", "pos_history", "leads", "landing_page", "quotation", 
     "sales", "delivery", "invoice", "invoice_due", "customer", "payment", 
-    "catalog", "reports_sales", "reports_invoice", "project", "after_sales"
+    "catalog", "reports_pos", "project", "after_sales"
   ],
   purchasing: [
     "dashboard", "purchase", "purchase_due", "vendor", "catalog", 

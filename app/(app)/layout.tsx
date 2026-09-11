@@ -528,8 +528,7 @@ function AppLayoutInner({
       pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos"],
       sales: [
         "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
-        "delivery", "catalog", "pos", "pos_history", "reports", "reports_sales", 
-        "reports_invoice", "reports_pos", "project", "after_sales", "leads", "landing_page"
+        "delivery", "catalog", "pos", "pos_history", "reports_pos", "project", "after_sales", "leads", "landing_page"
       ],
       purchasing: [
         "dashboard", "vendor", "purchase", "purchase_due", "catalog", 
@@ -559,7 +558,7 @@ function AppLayoutInner({
 
   const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
   const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
-  const showReportsSection = showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports");
+  const showReportsSection = userRole !== "sales" && (showLink("reports", "reports") || showLink("reports_sales", "reports") || showLink("reports_invoice", "reports") || showLink("reports_financial", "reports") || showLink("reports_inventory", "reports") || showLink("reports_attendance", "reports") || showLink("reports_pos", "reports"));
 
   if (loading) {
     return (

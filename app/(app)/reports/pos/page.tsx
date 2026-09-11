@@ -63,7 +63,7 @@ interface ShiftData {
 }
 
 export default function POSReportsPage() {
-  const { activeBusiness } = useBusiness();
+  const { activeBusiness, userRole } = useBusiness();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -209,12 +209,20 @@ export default function POSReportsPage() {
       
       {/* Header section */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-4">
-        <Link 
-          href="/reports"
-          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition"
+        <button 
+          type="button"
+          onClick={() => {
+            if (userRole === "sales" || userRole === "pos_cashier") {
+              router.push("/pos");
+            } else {
+              router.push("/reports");
+            }
+          }}
+          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition cursor-pointer"
+          title={userRole === "sales" || userRole === "pos_cashier" ? "Kembali ke Kasir POS" : "Kembali ke Pusat Laporan"}
         >
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             Laporan POS & Shift Kasir

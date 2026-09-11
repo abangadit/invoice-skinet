@@ -24,10 +24,12 @@ export default function ReportsHubPage() {
     if (userRole === "custom") return !!userPermissions?.[menuKey];
     
     const rolePresets: Record<string, string[]> = {
-      sales: ["reports_sales"],
+      sales: [],
+      pos_cashier: ["reports_pos"],
       purchasing: ["reports_inventory"],
       warehouse: ["reports_inventory"],
-      finance: ["reports_sales", "reports_financial"]
+      finance: ["reports_sales", "reports_financial"],
+      hr: ["reports_attendance"]
     };
     
     return (rolePresets[userRole] || []).includes(menuKey);
@@ -89,7 +91,7 @@ export default function ReportsHubPage() {
       accent: "border-t-indigo-500"
     },
     {
-      key: "reports_sales",
+      key: "reports_pos",
       href: "/reports/pos",
       title: "Laporan POS & Shift Kasir",
       description: "Analisis pendapatan kas masuk/keluar dari buka-tutup shift kasir dan perbandingan kas riil.",
