@@ -145,9 +145,9 @@ export function getAllPermissionKeys(): string[] {
 // Preset permissions by role for quick 1-click configuration
 export const ROLE_PRESETS: Record<string, string[]> = {
   admin: getAllPermissionKeys().filter(k => !k.startsWith("reports")),
-  pos_cashier: ["dashboard", "pos", "pos_history", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
+  pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
   sales: [
-    "dashboard", "pos", "pos_history", "leads", "landing_page", "quotation", 
+    "dashboard", "pos", "pos_history", "reports_pos", "leads", "landing_page", "quotation", 
     "sales", "delivery", "invoice", "invoice_due", "customer", "payment", 
     "catalog", "project", "after_sales",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"

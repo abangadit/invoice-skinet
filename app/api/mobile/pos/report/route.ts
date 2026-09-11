@@ -18,6 +18,17 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("start_date"); // YYYY-MM-DD
     const endDate = searchParams.get("end_date");     // YYYY-MM-DD
     const isOngoing = searchParams.get("is_ongoing") === "true";
+    const cashierId = searchParams.get("cashier_id") || searchParams.get("employee_id");
+
+    // Ambil daftar seluruh karyawan/kasir bisnis untuk opsi filter dan resolusi nama
+    const { data: allEmps } = await supabaseAdmin
+      .from("employees")
+      .select("id, name, role, user_id, is_active")
+      .eq("business_id", authUser.businessId)
+      .order("name", { ascending: true });
+
+    const employeeMap = new Map<string, any>();
+    (allEmps || []).forEach((e) => employeeMap.set(e.id, e));
 
     // 1. Ambil list shift berdasarkan filter
     let shiftQuery = supabaseAdmin
@@ -43,6 +54,17 @@ export async function GET(request: NextRequest) {
       shiftQuery = shiftQuery.eq("status", "open");
     }
 
+    if (cashierId && cashierId !== "all") {
+      shiftQuery = shiftQuery.eq("employee_id", cashierId);
+    }
+
+    if (startDate) {
+      shiftQuery = shiftQuery.gte("opened_at", `${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      shiftQuery = shiftQuery.lte("opened_at", `${endDate}T23:59:59.999Z`);
+    }
+
     const { data: rawShifts, error: shiftErr } = await shiftQuery.limit(50);
     if (shiftErr) {
       console.error("Error fetching shifts:", shiftErr);
@@ -50,17 +72,6 @@ export async function GET(request: NextRequest) {
 
     const shifts = rawShifts || [];
     const shiftIds = shifts.map((s) => s.id);
-
-    // Ambil info nama karyawan kasir jika ada
-    const employeeIds = Array.from(new Set(shifts.map((s) => s.employee_id).filter(Boolean)));
-    const employeeMap = new Map<string, any>();
-    if (employeeIds.length > 0) {
-      const { data: emps } = await supabaseAdmin
-        .from("employees")
-        .select("id, name, role")
-        .in("id", employeeIds);
-      (emps || []).forEach((e) => employeeMap.set(e.id, e));
-    }
 
     // 2. Ambil seluruh faktur yang lunas (persis seperti pola riwayat penjualan)
     let invoicesQuery = supabaseAdmin
@@ -193,8 +204,11 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 4. Kumpulkan faktur sisa yang belum terasosiasi ke shift spesifik
-    const unassignedInvoices = (invoices || []).filter((inv) => !assignedInvoiceIds.has(inv.id));
+    // 4. Kumpulkan faktur sisa yang belum terasosiasi ke shift spesifik (hanya jika tidak difilter ke kasir spesifik)
+    const isFilteredBySpecificCashier = Boolean(cashierId && cashierId !== "all");
+    const unassignedInvoices = isFilteredBySpecificCashier
+      ? []
+      : (invoices || []).filter((inv) => !assignedInvoiceIds.has(inv.id));
     if (unassignedInvoices.length > 0) {
       let unRevenue = 0;
       let unCost = 0;
@@ -294,6 +308,7 @@ export async function GET(request: NextRequest) {
       success: true,
       summary: grandSummary,
       shifts: shiftReports,
+      cashiers: (allEmps || []).filter((e) => e.is_active !== false).map((e) => ({ id: e.id, name: e.name, role: e.role })),
     });
   } catch (err: any) {
     const message = err.message || "";

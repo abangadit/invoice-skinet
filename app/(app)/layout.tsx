@@ -516,18 +516,30 @@ function AppLayoutInner({
     if (["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"].includes(menuKey)) {
       return true;
     }
-    if (menuKey === "employees" && isEmployee) {
-      return true;
+
+    // Role finance tidak boleh melihat menu Data Karyawan (employees)
+    if (userRole === "finance" && menuKey === "employees") {
+      return false;
     }
 
-    // Laporan HANYA bisa diakses oleh owner PT (dan platform superadmin)
+    // Laporan POS & Shift dapat diakses oleh owner, superadmin, admin, pos_cashier, sales, atau izin reports_pos
+    if (menuKey === "reports_pos") {
+      if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") return true;
+      if (userRole === "pos_cashier" || userRole === "sales") return true;
+      if (userRole === "custom") return hasPermission(userPermissions, "reports_pos", "reports");
+      return false;
+    }
+
+    // Laporan lainnya HANYA bisa diakses oleh owner PT (dan platform superadmin) atau izin custom
     if (parentKey === "reports" || menuKey === "reports" || menuKey.startsWith("reports_")) {
-      return userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
+      if (userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin") return true;
+      if (userRole === "custom") return hasPermission(userPermissions, menuKey, parentKey);
+      return false;
     }
 
     if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") return true;
     if (userRole === "employee" || userRole === "staff") {
-      const allowed = ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
+      const allowed = ["employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"];
       return allowed.includes(menuKey) || (parentKey ? allowed.includes(parentKey) : false);
     }
     if (userRole === "custom") {
@@ -536,11 +548,11 @@ function AppLayoutInner({
     
     const rolePresets: Record<string, string[]> = {
       staff: ["employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement", "settings_security"],
-      employee: ["employees", "employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
-      pos_cashier: ["dashboard", "pos", "pos_history", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
+      employee: ["employee_leave", "employee_reimbursement", "employee_attendance", "employee_payslips", "settings_security"],
+      pos_cashier: ["dashboard", "pos", "pos_history", "reports_pos", "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"],
       sales: [
         "dashboard", "invoice", "invoice_due", "quotation", "customer", "sales", 
-        "delivery", "catalog", "pos", "pos_history", "project", "after_sales", "leads", "landing_page",
+        "delivery", "catalog", "pos", "pos_history", "reports_pos", "project", "after_sales", "leads", "landing_page",
         "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
       ],
       purchasing: [
@@ -573,8 +585,17 @@ function AppLayoutInner({
   const showHRSection = showLink("employees", "hr") || showLink("payroll", "hr") || showLink("employee_attendance", "hr") || showLink("employee_payslips", "hr") || showLink("employee_leave", "hr") || showLink("employee_reimbursement", "hr");
   const showFinanceSection = showLink("accounts", "finance") || showLink("expenses", "finance") || showLink("ledger", "finance") || showLink("tax", "finance") || showLink("assets", "finance");
   
-  // Laporan Bisnis HANYA boleh tampil untuk: Owner PT (dan platform superadmin)
-  const showReportsSection = userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
+  // Laporan Bisnis tampil untuk Owner, Superadmin, atau jika ada hak akses ke salah satu laporan (misal: reports_pos untuk Sales/Kasir)
+  const showReportsSection = 
+    userRole === "owner" || 
+    userRole === "superadmin" || 
+    systemRole === "superadmin" ||
+    showLink("reports_pos", "reports") ||
+    showLink("reports_sales", "reports") ||
+    showLink("reports_financial", "reports") ||
+    showLink("reports_inventory", "reports") ||
+    showLink("reports_attendance", "reports") ||
+    showLink("reports_invoice", "reports");
 
   if (loading) {
     return (
