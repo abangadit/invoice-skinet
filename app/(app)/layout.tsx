@@ -54,8 +54,24 @@ function checkPathPermission(path: string, role: string | null, permissions: any
   
   if (cleanPath === "/unauthorized") return true;
 
-  // Laporan HANYA bisa diakses oleh owner PT (dan platform superadmin)
-  if (cleanPath === "/reports" || cleanPath.startsWith("/reports/")) {
+  // Khusus Laporan POS & Shift diizinkan untuk sales, pos_cashier, owner, admin, superadmin
+  if (cleanPath === "/reports/pos") {
+    if (role === "owner" || role === "admin" || role === "superadmin" || role === "sales" || role === "pos_cashier") {
+      return true;
+    }
+    return hasPermission(permissions, "reports_pos", "reports");
+  }
+
+  // Jika ke /reports (Pusat Laporan), izinkan jika memiliki hak akses minimal ke salah satu laporan
+  if (cleanPath === "/reports") {
+    if (role === "owner" || role === "superadmin" || role === "admin" || role === "sales" || role === "pos_cashier") {
+      return true;
+    }
+    return hasPermission(permissions, "reports", "reports") || hasPermission(permissions, "reports_pos", "reports");
+  }
+
+  // Laporan lainnya HANYA bisa diakses oleh owner PT (dan platform superadmin)
+  if (cleanPath.startsWith("/reports/")) {
     return role === "owner" || role === "superadmin";
   }
 

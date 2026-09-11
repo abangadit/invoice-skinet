@@ -18,19 +18,28 @@ export default function ReportsHubPage() {
   const router = useRouter();
   const { activeBusiness, userRole, systemRole, loading } = useBusiness();
 
-  // Guard: Hanya Owner PT (dan superadmin) yang boleh membuka laporan
+  // Guard: Boleh diakses oleh Owner PT, Superadmin, Admin, Sales, dan POS Cashier
   useEffect(() => {
     if (!loading && userRole) {
-      if (userRole !== "owner" && userRole !== "superadmin" && systemRole !== "superadmin") {
+      if (
+        userRole !== "owner" && 
+        userRole !== "superadmin" && 
+        systemRole !== "superadmin" &&
+        userRole !== "admin" &&
+        userRole !== "sales" &&
+        userRole !== "pos_cashier"
+      ) {
         router.push("/unauthorized");
       }
     }
   }, [userRole, systemRole, loading, router]);
 
-  // Hanya owner PT (dan superadmin) yang boleh melihat kartu laporan
-  const showLink = (_menuKey: string) => {
+  // Hanya kartu laporan yang diizinkan yang tampil
+  const showLink = (menuKey: string) => {
     if (loading || !userRole) return false;
-    return userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin";
+    if (userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin" || userRole === "admin") return true;
+    if (menuKey === "reports_pos" && (userRole === "sales" || userRole === "pos_cashier")) return true;
+    return false;
   };
 
   const reportsList = [
