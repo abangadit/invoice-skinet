@@ -1432,6 +1432,7 @@ export default function EmployeesPage() {
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
                     >
                       <option value="admin">Admin Bisnis (Akses Penuh Seluruh Menu)</option>
+                      <option value="hr">HRD / Personalia (Kelola Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                       <option value="sales">Sales & Penjualan (Faktur, Penawaran, Pelanggan, Kasir POS)</option>
                       <option value="purchasing">Pembelian & Pemasok (PO, Vendor, Stok)</option>
                       <option value="warehouse">Gudang & Inventori (Stok, Surat Jalan - Tanpa Dashboard)</option>

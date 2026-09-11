@@ -254,6 +254,7 @@ export default function UserPermissionDetailPage() {
             >
               <option value="staff">Staff Umum (Menu Mandiri / ESS - Tanpa Dashboard & POS)</option>
               <option value="admin">Admin Bisnis (Akses Penuh ke Seluruh Sistem)</option>
+              <option value="hr">Divisi HRD / Personalia (Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
               <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
               <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
               <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>

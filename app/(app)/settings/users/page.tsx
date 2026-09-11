@@ -391,16 +391,22 @@ export default function TeamSettingsPage() {
                             ? "bg-amber-50 text-amber-700 border border-amber-200" 
                             : m.role === "admin"
                             ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : m.role === "hr"
+                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                             : "bg-slate-100 text-slate-700 border border-slate-200"
                         }`}>
                           <Shield className="w-3 h-3 shrink-0" />
-                          {m.role}
+                          {m.role === "hr" ? "HRD" : m.role}
                         </span>
                       </td>
                       <td className="px-6 py-4 max-w-[280px]">
                         {m.role === "owner" || m.role === "admin" ? (
                           <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px]">
                             Semua Menu (Akses Penuh)
+                          </span>
+                        ) : m.role === "hr" ? (
+                          <span className="text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md text-[11px]">
+                            Divisi HRD (Karyawan, Cuti, Absensi, Slip Gaji, Payroll)
                           </span>
                         ) : m.role === "sales" ? (
                           <span className="text-slate-600 leading-normal line-clamp-2">
@@ -565,6 +571,7 @@ export default function TeamSettingsPage() {
                 >
                   <option value="staff">Staff Umum / Karyawan (Menu Karyawan Mandiri / ESS - Tanpa Dashboard & POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
+                  <option value="hr">Divisi HRD / Personalia (Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
@@ -668,6 +675,7 @@ export default function TeamSettingsPage() {
                 >
                   <option value="staff">Staff Umum / Karyawan (Menu Karyawan Mandiri / ESS - Tanpa Dashboard & POS)</option>
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
+                  <option value="hr">Divisi HRD / Personalia (Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
                   <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
