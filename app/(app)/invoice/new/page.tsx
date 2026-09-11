@@ -704,51 +704,66 @@ function NewInvoicePageContent() {
       }
 
       // 1. Insert Invoice (insert as draft first so items exist when status transitions to sent/paid)
-      const { data: invData, error: invError } = await supabase
+      const invoicePayload: any = {
+        business_id: selectedBusinessId,
+        customer_id: finalCustomerId,
+        customer_snapshot: clientInfo,
+        invoice_number: invoiceNumber,
+        type: "invoice",
+        status: "draft",
+        created_by: currentUser?.id || null,
+        created_by_name: creatorName,
+        issue_date: issueDate,
+        due_date: dueDate || null,
+        currency: currency,
+        exchange_rate: Number(exchangeRate || 1.0000),
+        subtotal: sub,
+        discount_type: globalDiscountType,
+        discount_value: globalDiscountValue,
+        discount_amount: globDisc,
+        tax_base: "after_discount",
+        taxes_snapshot: taxRate > 0 ? [{ name: `PPN ${taxRate}%`, rate: taxRate, amount: tax }] : [],
+        taxes_amount: tax,
+        pph23_amount: getPph23Amount(),
+        shipping_amount: Number(shippingAmount || 0),
+        shipping_label: shippingLabel || "Ongkos Kirim",
+        total_amount: tot,
+        remaining_amount: statusToSave === "paid" ? 0 : tot,
+        paid_amount: statusToSave === "paid" ? tot : 0,
+        warehouse_id: activeBusiness?.is_multi_warehouse_enabled ? (selectedWarehouseId || null) : null,
+        payment_methods: ["transfer_bank"],
+        payment_instructions: paymentInstructions || null,
+        notes: notes || null,
+        signature_text: signatureText || null,
+        signature_url: signatureUrl || null,
+        stamp_paid: stampPaid || (statusToSave === "paid"),
+        show_qris: showQris,
+        public_token: publicToken,
+        adjustments: adjustmentsList,
+        template_id: templateId,
+        template_color: templateColor,
+        project_id: projectId || null,
+        milestone_id: milestoneId || null
+      };
+
+      let { data: invData, error: invError } = await supabase
         .from("invoices")
-        .insert({
-          business_id: selectedBusinessId,
-          customer_id: finalCustomerId,
-          customer_snapshot: clientInfo,
-          invoice_number: invoiceNumber,
-          type: "invoice",
-          status: "draft",
-          created_by: currentUser?.id || null,
-          created_by_name: creatorName,
-          issue_date: issueDate,
-          due_date: dueDate || null,
-          currency: currency,
-          exchange_rate: Number(exchangeRate || 1.0000),
-          subtotal: sub,
-          discount_type: globalDiscountType,
-          discount_value: globalDiscountValue,
-          discount_amount: globDisc,
-          tax_base: "after_discount",
-          taxes_snapshot: taxRate > 0 ? [{ name: `PPN ${taxRate}%`, rate: taxRate, amount: tax }] : [],
-          taxes_amount: tax,
-          pph23_amount: getPph23Amount(),
-          shipping_amount: Number(shippingAmount || 0),
-          shipping_label: shippingLabel || "Ongkos Kirim",
-          total_amount: tot,
-          remaining_amount: statusToSave === "paid" ? 0 : tot,
-          paid_amount: statusToSave === "paid" ? tot : 0,
-          warehouse_id: activeBusiness?.is_multi_warehouse_enabled ? (selectedWarehouseId || null) : null,
-          payment_methods: ["transfer_bank"],
-          payment_instructions: paymentInstructions || null,
-          notes: notes || null,
-          signature_text: signatureText || null,
-          signature_url: signatureUrl || null,
-          stamp_paid: stampPaid || (statusToSave === "paid"),
-          show_qris: showQris,
-          public_token: publicToken,
-          adjustments: adjustmentsList,
-          template_id: templateId,
-          template_color: templateColor,
-          project_id: projectId || null,
-          milestone_id: milestoneId || null
-        })
+        .insert(invoicePayload)
         .select()
         .single();
+
+      // If created_by or created_by_name column does not exist yet on database, retry without them
+      if (invError && (invError.code === "PGRST204" || invError.message?.includes("created_by"))) {
+        delete invoicePayload.created_by;
+        delete invoicePayload.created_by_name;
+        const retry = await supabase
+          .from("invoices")
+          .insert(invoicePayload)
+          .select()
+          .single();
+        invData = retry.data;
+        invError = retry.error;
+      }
 
       if (invError) throw invError;
 
