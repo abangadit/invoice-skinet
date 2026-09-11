@@ -73,7 +73,7 @@ const getLocalDateString = () => {
 
 export default function AttendancePage() {
   const { activeBusiness, userRole, systemRole, reloadBusiness } = useBusiness();
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin";
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr" || userRole === "superadmin" || systemRole === "superadmin";
   const [activeTab, setActiveTab] = useState<"portal" | "history" | "logs" | "settings">("portal");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -261,23 +261,28 @@ export default function AttendancePage() {
       if (empByUid) {
         emp = empByUid as any;
       } else if (user.email) {
-        // Fallback: search by email & auto-link
+        // Fallback: search by email (case-insensitive) & auto-link
         const { data: empByEmail } = await supabase
           .from("employees")
           .select("id, name, email, user_id, face_descriptor, shift_id, working_shifts:shift_id (name, start_time, end_time)")
           .eq("business_id", activeBusiness.id)
-          .eq("email", user.email)
+          .ilike("email", user.email)
           .maybeSingle();
 
         if (empByEmail) {
-          console.log("Auto-linking employee record to user session...");
-          const { data: updatedEmp } = await supabase
-            .from("employees")
-            .update({ user_id: user.id })
-            .eq("id", empByEmail.id)
-            .select("id, name, email, user_id, face_descriptor, shift_id, working_shifts:shift_id (name, start_time, end_time)")
-            .single();
-          emp = updatedEmp as any;
+          emp = empByEmail as any;
+          if (!empByEmail.user_id) {
+            console.log("Auto-linking employee record to user session...");
+            const { data: updatedEmp } = await supabase
+              .from("employees")
+              .update({ user_id: user.id })
+              .eq("id", empByEmail.id)
+              .select("id, name, email, user_id, face_descriptor, shift_id, working_shifts:shift_id (name, start_time, end_time)")
+              .maybeSingle();
+            if (updatedEmp) {
+              emp = updatedEmp as any;
+            }
+          }
         }
       }
 

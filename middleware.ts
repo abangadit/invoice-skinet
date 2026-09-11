@@ -37,10 +37,19 @@ export async function middleware(request: NextRequest) {
     isAuthCallback || isPublicInvoice || isTermsPage ||
     isExpiredPage || isSuspendedPage || isStaticAsset;
 
+  // Helper to preserve refreshed session cookies on redirects
+  const createRedirect = (redirectUrl: URL) => {
+    const redirectRes = NextResponse.redirect(redirectUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectRes.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectRes;
+  };
+
   // /register -> redirect ke /login (self-register dinonaktifkan)
   if (isRegisterPage) {
     url.pathname = '/login';
-    return NextResponse.redirect(url);
+    return createRedirect(url);
   }
 
   // Public pages - lewatkan
@@ -51,13 +60,13 @@ export async function middleware(request: NextRequest) {
   // Belum login -> redirect ke /login
   if (!user) {
     url.pathname = '/login';
-    return NextResponse.redirect(url);
+    return createRedirect(url);
   }
 
   // Sudah login + buka /login -> redirect ke /
   if (user && isLoginPage) {
     url.pathname = '/';
-    return NextResponse.redirect(url);
+    return createRedirect(url);
   }
 
   // Cek status akun dari public.users
@@ -71,7 +80,7 @@ export async function middleware(request: NextRequest) {
     // Akun dinonaktifkan
     if (userProfile.is_active === false) {
       url.pathname = '/suspended';
-      return NextResponse.redirect(url);
+      return createRedirect(url);
     }
 
     // Masa aktif habis (hanya untuk selain superadmin)
@@ -81,19 +90,19 @@ export async function middleware(request: NextRequest) {
       new Date(userProfile.expires_at) < new Date()
     ) {
       url.pathname = '/expired';
-      return NextResponse.redirect(url);
+      return createRedirect(url);
     }
 
     // Route /admin hanya untuk superadmin
     if (path.startsWith('/admin') && userProfile.role !== 'superadmin') {
       url.pathname = '/';
-      return NextResponse.redirect(url);
+      return createRedirect(url);
     }
 
     // Redirect /admin persis ke /admin/dashboard
     if (path === '/admin') {
       url.pathname = '/admin/dashboard';
-      return NextResponse.redirect(url);
+      return createRedirect(url);
     }
   }
 

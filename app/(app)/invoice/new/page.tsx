@@ -689,6 +689,20 @@ function NewInvoicePageContent() {
         }
       }
 
+      // Get current user info for creator tracking
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      let creatorName = currentUser?.user_metadata?.full_name || currentUser?.email || "Admin";
+      if (currentUser) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("full_name, email")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+        if (userProfile?.full_name) {
+          creatorName = userProfile.full_name;
+        }
+      }
+
       // 1. Insert Invoice (insert as draft first so items exist when status transitions to sent/paid)
       const { data: invData, error: invError } = await supabase
         .from("invoices")
@@ -699,6 +713,8 @@ function NewInvoicePageContent() {
           invoice_number: invoiceNumber,
           type: "invoice",
           status: "draft",
+          created_by: currentUser?.id || null,
+          created_by_name: creatorName,
           issue_date: issueDate,
           due_date: dueDate || null,
           currency: currency,

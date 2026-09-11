@@ -63,7 +63,7 @@ interface Employee {
 
 export default function LeavePage() {
   const { activeBusiness, userRole, systemRole } = useBusiness();
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "superadmin" || systemRole === "superadmin";
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr" || userRole === "superadmin" || systemRole === "superadmin";
   const [activeTab, setActiveTab] = useState<"ess" | "admin">("ess");
   const [loading, setLoading] = useState(true);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
@@ -99,26 +99,27 @@ export default function LeavePage() {
   const [savingBalance, setSavingBalance] = useState(false);
 
   // Auto-calculation of days
-  const calculateTotalDays = (start: string, end: string) => {
+  const calculateTotalDays = (start: string, end: string, leaveType?: string) => {
     const sDate = new Date(start);
     const eDate = new Date(end);
     if (isNaN(sDate.getTime()) || isNaN(eDate.getTime())) return 0;
+    if (sDate > eDate) return 0;
     
     // Count days
     let count = 0;
     const cur = new Date(sDate);
     while (cur <= eDate) {
-      // Exclude weekends (Saturday = 6, Sunday = 0)
       const day = cur.getDay();
-      if (day !== 0 && day !== 6) {
+      // Untuk cuti sakit, seluruh hari kalender dihitung (tidak mengecualikan Sabtu/Minggu)
+      if (leaveType === "sick" || (day !== 0 && day !== 6)) {
         count++;
       }
       cur.setDate(cur.getDate() + 1);
     }
-    return count;
+    return Math.max(1, count);
   };
 
-  const currentTotalDays = calculateTotalDays(applyForm.startDate, applyForm.endDate);
+  const currentTotalDays = calculateTotalDays(applyForm.startDate, applyForm.endDate, applyForm.leaveType);
 
   const fetchESSData = async (employeeId: string) => {
     try {
@@ -258,23 +259,28 @@ export default function LeavePage() {
       if (empByUid) {
         emp = empByUid as any;
       } else if (user.email) {
-        // Fallback: search by email & auto-link
+        // Fallback: search by email (case-insensitive) & auto-link
         const { data: empByEmail } = await supabase
           .from("employees")
           .select("id, name, email, user_id")
           .eq("business_id", activeBusiness.id)
-          .eq("email", user.email)
+          .ilike("email", user.email)
           .maybeSingle();
 
         if (empByEmail) {
-          console.log("Auto-linking employee record to user session...");
-          const { data: updatedEmp } = await supabase
-            .from("employees")
-            .update({ user_id: user.id })
-            .eq("id", empByEmail.id)
-            .select("id, name, email, user_id")
-            .single();
-          emp = updatedEmp as any;
+          emp = empByEmail as any;
+          if (!empByEmail.user_id) {
+            console.log("Auto-linking employee record to user session...");
+            const { data: updatedEmp } = await supabase
+              .from("employees")
+              .update({ user_id: user.id })
+              .eq("id", empByEmail.id)
+              .select("id, name, email, user_id")
+              .maybeSingle();
+            if (updatedEmp) {
+              emp = updatedEmp as any;
+            }
+          }
         }
       }
 
@@ -379,7 +385,11 @@ export default function LeavePage() {
       alert("Pengajuan cuti Anda berhasil dikirim ke manajer.");
     } catch (err: any) {
       console.error("Error applying leave:", err);
-      setApplyError(err.message || "Gagal mengirimkan pengajuan cuti.");
+      let msg = err?.message || "Gagal mengirimkan pengajuan cuti.";
+      if (msg.includes("violates row-level security policy")) {
+        msg = "Gagal mengajukan cuti: Akun Anda belum terhubung secara sah ke data karyawan bisnis ini. Pastikan email akun Anda sesuai dengan data di modul Karyawan atau hubungi HR.";
+      }
+      setApplyError(msg);
     } finally {
       setSubmittingApply(false);
     }

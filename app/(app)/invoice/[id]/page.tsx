@@ -59,6 +59,18 @@ interface PaymentRecord {
   method: string;
   reference_number: string | null;
   notes: string | null;
+  proof_url?: string | null;
+}
+
+interface AuditLogItem {
+  id: string;
+  user_id: string | null;
+  action_type: string;
+  table_name: string;
+  old_data: any;
+  new_data: any;
+  created_at: string;
+  user_email?: string;
 }
 
 interface InvoiceDetail {
@@ -86,6 +98,8 @@ interface InvoiceDetail {
   public_token: string | null;
   public_token_created_at?: string | null;
   created_at?: string | null;
+  created_by?: string | null;
+  created_by_name?: string | null;
   customer_snapshot: any;
   type?: string | null;
   discount_type?: string | null;
@@ -122,8 +136,14 @@ export default function InvoiceDetailPage() {
   const [payMethod, setPayMethod] = useState("Transfer Bank");
   const [payRef, setPayRef] = useState("");
   const [payNotes, setPayNotes] = useState("");
+  const [payProofFile, setPayProofFile] = useState<File | null>(null);
+  const [previewProofUrl, setPreviewProofUrl] = useState<string | null>(null);
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [payExchangeRate, setPayExchangeRate] = useState<number | null>(null);
+
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
 
   // Fetch exchange rate on payDate change for valas invoices
   useEffect(() => {
@@ -196,17 +216,49 @@ export default function InvoiceDetailPage() {
       // Fetch payments
       const { data: paymentsData, error: payError } = await supabase
         .from("payments")
-        .select("id, amount, payment_date, method, reference_number, notes")
+        .select("id, amount, payment_date, method, reference_number, notes, proof_url")
         .eq("invoice_id", params.id)
         .order("payment_date", { ascending: false });
 
       if (payError) throw payError;
       setPayments(paymentsData || []);
 
+      // Fetch audit logs for changes
+      await fetchAuditLogs();
+
     } catch (err) {
       console.error("Error loading invoice detail:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+    if (!params.id) return;
+    try {
+      setLoadingAuditLogs(true);
+      const supabase = createWebBrowserClient();
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .eq("table_name", "invoices")
+        .eq("record_id", params.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      const logs: AuditLogItem[] = data || [];
+      const resolved = await Promise.all(
+        logs.map(async (l) => {
+          if (!l.user_id) return { ...l, user_email: "Sistem" };
+          const { data: u } = await supabase.from("users").select("email, full_name").eq("id", l.user_id).maybeSingle();
+          return { ...l, user_email: u?.full_name || u?.email || "User" };
+        })
+      );
+      setAuditLogs(resolved);
+    } catch (e) {
+      console.error("Error fetching invoice audit logs:", e);
+    } finally {
+      setLoadingAuditLogs(false);
     }
   };
 
@@ -448,6 +500,25 @@ export default function InvoiceDetailPage() {
       setSubmittingPayment(true);
       const supabase = createWebBrowserClient();
 
+      let uploadedProofUrl: string | null = null;
+      if (payProofFile) {
+        if (payProofFile.type.startsWith("image/")) {
+          uploadedProofUrl = await uploadImageToR2(payProofFile, "payments");
+        } else {
+          const formData = new FormData();
+          formData.append("file", payProofFile);
+          formData.append("folder", "payments");
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+          if (response.ok) {
+            const data = await response.json();
+            uploadedProofUrl = data.url;
+          }
+        }
+      }
+
       // 1. Insert into payments
       const { error: payError } = await supabase
         .from("payments")
@@ -457,7 +528,8 @@ export default function InvoiceDetailPage() {
           payment_date: payDate,
           method: payMethod,
           reference_number: payRef || null,
-          notes: payNotes || null
+          notes: payNotes || null,
+          proof_url: uploadedProofUrl
         });
 
       if (payError) throw payError;
@@ -468,6 +540,7 @@ export default function InvoiceDetailPage() {
       setPayAmount("");
       setPayRef("");
       setPayNotes("");
+      setPayProofFile(null);
       
       await fetchInvoiceDetails();
     } catch (err) {
@@ -687,9 +760,14 @@ export default function InvoiceDetailPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-mono font-bold text-slate-500">{invoice.invoice_number}</span>
               {getStatusBadge(invoice.status)}
+              {invoice.created_by_name && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
+                  <User className="w-3 h-3 text-slate-400" /> Dibuat oleh: {invoice.created_by_name}
+                </span>
+              )}
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1">
               {invoice.type === "quotation" 
@@ -1111,6 +1189,17 @@ export default function InvoiceDetailPage() {
                         {p.reference_number && <span>Ref: {p.reference_number}</span>}
                       </div>
                       {p.notes && <p className="text-[10px] text-slate-500 mt-1 italic">"{p.notes}"</p>}
+                      {p.proof_url && (
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewProofUrl(p.proof_url || null)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 transition"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Lihat Bukti Transfer
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -1119,6 +1208,62 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Audit Trail (Log Perubahan Invoice) */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <History className="w-4.5 h-4.5 text-blue-600" /> Riwayat Perubahan (Audit Trail)
+            </h4>
+
+            {loadingAuditLogs ? (
+              <p className="text-xs text-slate-400 py-2">Memuat jejak audit...</p>
+            ) : auditLogs.length > 0 ? (
+              <div className="space-y-3">
+                {auditLogs.map((log) => {
+                  const changedFields: string[] = [];
+                  if (log.old_data && log.new_data) {
+                    if (log.old_data.status !== log.new_data.status) {
+                      changedFields.push(`Status: "${log.old_data.status}" ➔ "${log.new_data.status}"`);
+                    }
+                    if (Number(log.old_data.total_amount) !== Number(log.new_data.total_amount)) {
+                      changedFields.push(`Total: ${formatCurrency(Number(log.old_data.total_amount))} ➔ ${formatCurrency(Number(log.new_data.total_amount))}`);
+                    }
+                    if (Number(log.old_data.subtotal) !== Number(log.new_data.subtotal)) {
+                      changedFields.push(`Subtotal: ${formatCurrency(Number(log.old_data.subtotal))} ➔ ${formatCurrency(Number(log.new_data.subtotal))}`);
+                    }
+                    if (log.old_data.due_date !== log.new_data.due_date) {
+                      changedFields.push(`Jatuh Tempo: ${log.old_data.due_date || '-'} ➔ ${log.new_data.due_date || '-'}`);
+                    }
+                  }
+
+                  return (
+                    <div key={log.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 flex items-center gap-1">
+                          <User className="w-3 h-3 text-slate-400" /> {log.user_email}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(log.created_at).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600">
+                        <span className="font-semibold uppercase text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 mr-1.5">
+                          {log.action_type}
+                        </span>
+                        {changedFields.length > 0 ? (
+                          <span>{changedFields.join(" | ")}</span>
+                        ) : (
+                          <span>Data faktur diperbarui</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 text-center py-2">Belum ada riwayat perubahan yang dicatat.</p>
+            )}
+          </div>
 
         </div>
 
@@ -1235,6 +1380,22 @@ export default function InvoiceDetailPage() {
                 />
               </div>
 
+              {/* Upload Proof of Payment Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Unggah Gambar Bukti Transfer / Resi (Opsional)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setPayProofFile(e.target.files?.[0] || null)}
+                  className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+                {payProofFile && (
+                  <p className="text-[10px] text-emerald-600 font-medium">File terpilih: {payProofFile.name}</p>
+                )}
+              </div>
+
               {/* Action Buttons */}
               <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                 <button 
@@ -1253,6 +1414,48 @@ export default function InvoiceDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* PREVIEW PROOF MODAL */}
+      {previewProofUrl && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" /> Bukti Transfer / Pembayaran
+              </h3>
+              <button
+                onClick={() => setPreviewProofUrl(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-50 flex items-center justify-center max-h-[70vh] overflow-auto">
+              {previewProofUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe src={previewProofUrl} className="w-full h-96 rounded-xl border border-slate-200" title="Bukti Transfer PDF" />
+              ) : (
+                <img src={previewProofUrl} alt="Bukti Pembayaran" className="max-h-[65vh] object-contain rounded-xl border border-slate-200 shadow-sm" />
+              )}
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 flex justify-end gap-2 bg-white">
+              <a
+                href={previewProofUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="py-1.5 px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 font-bold rounded-xl text-xs inline-flex items-center gap-1.5 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Buka Ukuran Asli
+              </a>
+              <button
+                onClick={() => setPreviewProofUrl(null)}
+                className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

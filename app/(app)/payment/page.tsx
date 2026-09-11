@@ -197,7 +197,8 @@ export default function PaymentPage() {
           payment_date: confirmDate,
           method: "Transfer Bank",
           reference_number: confirmRef || null,
-          notes: confirmNotes || null
+          notes: confirmNotes || null,
+          proof_url: confirmingProof.proof_url || null
         });
 
       if (payError) throw payError;

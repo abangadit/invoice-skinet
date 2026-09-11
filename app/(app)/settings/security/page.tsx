@@ -92,7 +92,7 @@ export default function SecuritySettingsPage() {
   const [mySessions, setMySessions] = useState<ActiveSession[]>([]);
   const [teamSessions, setTeamSessions] = useState<TeamSession[]>([]);
 
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
+  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin" || userRole === "hr";
 
   const fetchSessions = async (isSilent = false) => {
     if (!activeBusiness) return;

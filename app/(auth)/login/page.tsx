@@ -20,6 +20,9 @@ export default function LoginPage() {
 
     const supabase = createWebBrowserClient();
     
+    // Bersihkan sesi lama sebelum mencoba login baru untuk menghindari token race/konflik
+    await supabase.auth.signOut().catch(() => {});
+
     const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -41,13 +44,9 @@ export default function LoginPage() {
         }
       }
 
-      // Force a router refresh to update middleware state, then redirect
-      router.refresh();
-      if (role === "superadmin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/");
-      }
+      // Hard redirect agar seluruh React Context (BusinessProvider, dsb) diinisialisasi bersih dari server
+      const targetUrl = role === "superadmin" ? "/admin/dashboard" : "/";
+      window.location.href = targetUrl;
     }
   };
 
