@@ -145,6 +145,8 @@ export async function POST(request: NextRequest) {
         invoice_number: invoiceNumber,
         type: "invoice",
         status: "paid",
+        created_by: authUser.userId || null,
+        created_by_name: authUser.name || authUser.email || "Admin",
         issue_date: todayStr,
         due_date: todayStr,
         currency: "IDR",

@@ -414,7 +414,7 @@ export default function TeamSettingsPage() {
                           </span>
                         ) : m.role === "purchasing" ? (
                           <span className="text-slate-600 leading-normal line-clamp-2">
-                            Dashboard, Vendors, Purchase Orders, Inventory, Catalog
+                            Vendors, Purchase Orders, Inventory, Catalog
                           </span>
                         ) : m.role === "warehouse" ? (
                           <span className="text-slate-600 leading-normal line-clamp-2">
@@ -422,7 +422,7 @@ export default function TeamSettingsPage() {
                           </span>
                         ) : m.role === "finance" ? (
                           <span className="text-slate-600 leading-normal line-clamp-2">
-                            Dashboard, Invoices, Payments, Accounts, Expenses, Ledger, Reports, Tax, Assets
+                            Dashboard, Invoices, Payments, Accounts, Expenses, Ledger, Laporan Bisnis, Tax, Assets
                           </span>
                         ) : (
                           // Custom Role Display
@@ -573,9 +573,9 @@ export default function TeamSettingsPage() {
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
                   <option value="hr">Divisi HRD / Personalia (Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
-                  <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
+                  <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory - Tanpa Dashboard)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
-                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
+                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices, Laporan Bisnis - Tanpa POS)</option>
                   <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>
               </div>
@@ -677,9 +677,9 @@ export default function TeamSettingsPage() {
                   <option value="admin">Admin Bisnis (Akses Penuh)</option>
                   <option value="hr">Divisi HRD / Personalia (Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                   <option value="sales">Divisi Sales (SO, DO, Invoices, Customers, Kasir POS)</option>
-                  <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory)</option>
+                  <option value="purchasing">Divisi Purchasing (PO, Vendors, Inventory - Tanpa Dashboard)</option>
                   <option value="warehouse">Divisi Gudang (DO, Inventory, Catalog - Tanpa Dashboard)</option>
-                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices - Tanpa POS)</option>
+                  <option value="finance">Divisi Finance/Accounting (Ledger, Expenses, Invoices, Laporan Bisnis - Tanpa POS)</option>
                   <option value="custom">Peran Kustom (Atur Akses Granular Hingga Submenu)</option>
                 </select>
               </div>

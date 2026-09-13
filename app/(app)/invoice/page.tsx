@@ -66,10 +66,10 @@ export default function InvoiceListPage() {
 
       let queryData: any[] | null = null;
 
-      // 1. Try selecting with created_by, created_by_name and customer relation
+      // 1. Try selecting with created_by, created_by_name, customer relation, and pos_shifts cashier
       const res1 = await supabase
         .from("invoices")
-        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name")
+        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name, pos_shift_id, pos_shifts(id, employees(id, name))")
         .eq("business_id", activeBusiness.id)
         .eq("type", "invoice")
         .order("issue_date", { ascending: false });
@@ -77,10 +77,10 @@ export default function InvoiceListPage() {
       if (!res1.error && res1.data) {
         queryData = res1.data;
       } else {
-        // 2. Fallback without created_by / created_by_name if column not migrated yet in DB
+        // 2. Fallback without pos_shifts join if relation fails
         const res2 = await supabase
           .from("invoices")
-          .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name)")
+          .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name")
           .eq("business_id", activeBusiness.id)
           .eq("type", "invoice")
           .order("issue_date", { ascending: false });
@@ -105,8 +105,22 @@ export default function InvoiceListPage() {
         const custObj = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
         const fallbackName = custObj?.name || "Pelanggan Umum";
         const currentName = (inv.customer_snapshot?.name || "").trim();
+
+        // Resolusi creator:
+        // Jika inv.created_by_name bernilai "Admin" atau kosong dan transaksi berasal dari POS shift,
+        // ambil nama kasir dari relasi shift -> employees.
+        const shiftObj = Array.isArray(inv.pos_shifts) ? inv.pos_shifts[0] : inv.pos_shifts;
+        const shiftEmp = Array.isArray(shiftObj?.employees) ? shiftObj?.employees[0] : shiftObj?.employees;
+        const shiftCashierName = shiftEmp?.name?.trim();
+
+        let resolvedCreator = inv.created_by_name?.trim() || null;
+        if ((!resolvedCreator || resolvedCreator.toLowerCase() === "admin") && shiftCashierName) {
+          resolvedCreator = shiftCashierName;
+        }
+
         return {
           ...inv,
+          created_by_name: resolvedCreator,
           customer_snapshot: {
             ...inv.customer_snapshot,
             name: currentName || fallbackName

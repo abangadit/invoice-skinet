@@ -1434,7 +1434,7 @@ export default function EmployeesPage() {
                       <option value="admin">Admin Bisnis (Akses Penuh Seluruh Menu)</option>
                       <option value="hr">HRD / Personalia (Kelola Karyawan, Cuti, Absensi, Reimbursement, Slip Gaji, Payroll)</option>
                       <option value="sales">Sales & Penjualan (Faktur, Penawaran, Pelanggan, Kasir POS)</option>
-                      <option value="purchasing">Pembelian & Pemasok (PO, Vendor, Stok)</option>
+                      <option value="purchasing">Pembelian & Pemasok (PO, Vendor, Stok - Tanpa Dashboard)</option>
                       <option value="warehouse">Gudang & Inventori (Stok, Surat Jalan - Tanpa Dashboard)</option>
                       <option value="finance">Keuangan & Akuntansi (Pembayaran, Kas, Laporan)</option>
                       <option value="staff">Staff Umum / Karyawan Mandiri (Tanpa Dashboard & POS)</option>

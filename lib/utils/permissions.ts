@@ -153,7 +153,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   purchasing: [
-    "dashboard", "purchase", "purchase_due", "vendor", "catalog", 
+    "purchase", "purchase_due", "vendor", "catalog", 
     "inventory_stock", "inventory_stock_card",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
@@ -166,6 +166,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   finance: [
     "dashboard", "invoice", "invoice_due", "payment", "customer", "accounts", 
     "accounts_reconciliation", "expenses", "ledger", "tax", "assets", "project",
+    "reports", "reports_sales", "reports_invoice", "reports_inventory", "reports_financial", "reports_attendance", "reports_pos",
     "employee_attendance", "employee_payslips", "employee_leave", "employee_reimbursement"
   ],
   hr: [

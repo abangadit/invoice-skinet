@@ -52,7 +52,7 @@ interface CartItem {
 
 export default function POSPage() {
   const router = useRouter();
-  const { activeBusiness, userRole } = useBusiness();
+  const { activeBusiness, userRole, userFullName, userEmail } = useBusiness();
   
   // Auth & Employee States
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -644,13 +644,30 @@ export default function POSPage() {
       // POS Invoice number (INV-POS-[timestamp])
       const invNumber = `POS-${Date.now().toString().slice(-8)}`;
 
+      // Get current user info for creator tracking
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const effectiveUser = authUser || currentUser;
+      let creatorName = effectiveUser?.user_metadata?.full_name || employee?.name || userFullName || effectiveUser?.email || userEmail || "Admin";
+      if (effectiveUser) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("full_name, email")
+          .eq("id", effectiveUser.id)
+          .maybeSingle();
+        if (userProfile?.full_name) {
+          creatorName = userProfile.full_name;
+        }
+      }
+
       // 1. Create Invoice record (insert as draft first so items exist when triggering paid status)
-      const invoicePayload = {
+      const invoicePayload: any = {
         business_id: activeBusiness.id,
         customer_id: selectedCustomer?.id || null,
         invoice_number: invNumber,
         type: "invoice",
         status: "draft",
+        created_by: effectiveUser?.id || null,
+        created_by_name: creatorName,
         issue_date: new Date().toISOString().split("T")[0],
         due_date: new Date().toISOString().split("T")[0],
         currency: activeBusiness.default_currency || "IDR",
@@ -666,13 +683,25 @@ export default function POSPage() {
         public_token: publicToken
       };
 
-      const { data: invData, error: invError } = await supabase
+      let invInsertRes = await supabase
         .from("invoices")
         .insert(invoicePayload)
         .select()
         .single();
 
-      if (invError) throw invError;
+      // If created_by or created_by_name column not available in older schema, retry without them
+      if (invInsertRes.error && (invInsertRes.error.code === "PGRST204" || invInsertRes.error.message?.includes("created_by"))) {
+        delete invoicePayload.created_by;
+        delete invoicePayload.created_by_name;
+        invInsertRes = await supabase
+          .from("invoices")
+          .insert(invoicePayload)
+          .select()
+          .single();
+      }
+
+      if (invInsertRes.error) throw invInsertRes.error;
+      const invData = invInsertRes.data;
 
       // 2. Create Invoice Items
       const itemsPayload = cart.map((c, index) => ({
@@ -701,13 +730,14 @@ export default function POSPage() {
       if (updateInvError) throw updateInvError;
 
       // 3. Record Payment Proof
-      const paymentPayload = {
+      const paymentPayload: any = {
         invoice_id: invData.id,
         amount: finalTotal,
         payment_date: new Date().toISOString().split("T")[0],
         method: paymentMethod,
         reference_number: `POS-PAY-${invNumber}`,
-        notes: "Transaksi Kasir POS"
+        notes: "Transaksi Kasir POS",
+        created_by: effectiveUser?.id || null
       };
 
       const { error: payError } = await supabase

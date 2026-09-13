@@ -224,6 +224,22 @@ export default function InvoiceDetailPage() {
         };
       }
 
+      // If created_by_name is empty or 'Admin' and this invoice is from POS, resolve cashier from shift
+      if ((!invData.created_by_name || invData.created_by_name.toLowerCase() === "admin") && invData.pos_shift_id) {
+        const { data: shiftData } = await supabase
+          .from("pos_shifts")
+          .select("employees(name)")
+          .eq("id", invData.pos_shift_id)
+          .maybeSingle();
+        const empName = (shiftData?.employees as any)?.name;
+        if (empName) {
+          invData = {
+            ...invData,
+            created_by_name: empName
+          };
+        }
+      }
+
       setInvoice(invData);
       setAttText(invData?.attachment_text || "");
 

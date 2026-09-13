@@ -13,12 +13,13 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useBusiness } from "../../../lib/context/BusinessContext";
+import { hasPermission } from "../../../lib/utils/permissions";
 
 export default function ReportsHubPage() {
   const router = useRouter();
-  const { activeBusiness, userRole, systemRole, loading } = useBusiness();
+  const { activeBusiness, userRole, systemRole, userPermissions, loading } = useBusiness();
 
-  // Guard: Boleh diakses oleh Owner PT, Superadmin, Admin, Sales, dan POS Cashier
+  // Guard: Boleh diakses oleh Owner PT, Superadmin, Admin, Finance, Sales, POS Cashier, dan Custom
   useEffect(() => {
     if (!loading && userRole) {
       if (
@@ -26,8 +27,10 @@ export default function ReportsHubPage() {
         userRole !== "superadmin" && 
         systemRole !== "superadmin" &&
         userRole !== "admin" &&
+        userRole !== "finance" &&
         userRole !== "sales" &&
-        userRole !== "pos_cashier"
+        userRole !== "pos_cashier" &&
+        userRole !== "custom"
       ) {
         router.push("/unauthorized");
       }
@@ -37,14 +40,15 @@ export default function ReportsHubPage() {
   // Hanya kartu laporan yang diizinkan yang tampil
   const showLink = (menuKey: string) => {
     if (loading || !userRole) return false;
-    if (userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin" || userRole === "admin") return true;
+    if (userRole === "owner" || userRole === "superadmin" || systemRole === "superadmin" || userRole === "admin" || userRole === "finance") return true;
     if (menuKey === "reports_pos" && (userRole === "sales" || userRole === "pos_cashier")) return true;
+    if (userRole === "custom") return hasPermission(userPermissions, menuKey, "reports");
     return false;
   };
 
   const reportsList = [
     {
-      key: "reports_sales",
+      key: "reports_invoice",
       href: "/reports/invoice",
       title: "Laporan Invoice",
       description: "Rekapitulasi tagihan faktur penjualan terperinci, status pembayaran lunas/terlambat, dan sisa piutang.",
