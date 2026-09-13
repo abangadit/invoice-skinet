@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const isOngoing = searchParams.get("is_ongoing") === "true";
     const cashierId = searchParams.get("cashier_id") || searchParams.get("employee_id");
 
-    // Ambil daftar seluruh karyawan/kasir bisnis untuk opsi filter dan resolusi nama
+    // 1. Ambil daftar seluruh karyawan/kasir bisnis untuk opsi filter dan resolusi nama
     const { data: allEmps } = await supabaseAdmin
       .from("employees")
       .select("id, name, role, user_id, is_active")
@@ -28,9 +28,100 @@ export async function GET(request: NextRequest) {
       .order("name", { ascending: true });
 
     const employeeMap = new Map<string, any>();
-    (allEmps || []).forEach((e) => employeeMap.set(e.id, e));
+    (allEmps || []).forEach((e) => {
+      let cleanName = e.name;
+      if (cleanName && cleanName.includes("@")) {
+        const u = cleanName.split("@")[0];
+        cleanName = u.charAt(0).toUpperCase() + u.slice(1);
+      }
+      employeeMap.set(e.id, { ...e, name: cleanName });
+      if (e.user_id) {
+        employeeMap.set(e.user_id, { ...e, name: cleanName });
+      }
+    });
 
-    // 1. Ambil list shift berdasarkan filter
+    // 2. Ambil business_members (termasuk owner/admin)
+    const { data: bizMembers } = await supabaseAdmin
+      .from("business_members")
+      .select("user_id, role, users ( id, email, raw_user_meta_data )")
+      .eq("business_id", authUser.businessId);
+
+    const cashierMap = new Map<string, { id: string; name: string; role: string; user_id?: string }>();
+    (allEmps || []).filter((e) => e.is_active !== false).forEach((e) => {
+      let cleanName = e.name;
+      if (cleanName && cleanName.includes("@")) {
+        const u = cleanName.split("@")[0];
+        cleanName = u.charAt(0).toUpperCase() + u.slice(1);
+      }
+      cashierMap.set(e.id, { id: e.id, name: cleanName, role: e.role || "kasir", user_id: e.user_id });
+      if (e.user_id) {
+        cashierMap.set(e.user_id, { id: e.id, name: cleanName, role: e.role || "kasir", user_id: e.user_id });
+      }
+    });
+
+    const authCleanName = authUser.name && authUser.name.includes("@")
+      ? authUser.name.split("@")[0].charAt(0).toUpperCase() + authUser.name.split("@")[0].slice(1)
+      : (authUser.name || "Kasir");
+
+    const authId = authUser.employeeId || authUser.userId;
+    if (!cashierMap.has(authId) && !Array.from(cashierMap.values()).some((c) => c.name.toLowerCase() === authCleanName.toLowerCase())) {
+      cashierMap.set(authId, {
+        id: authId,
+        name: authCleanName,
+        role: authUser.role || "owner",
+        user_id: authUser.userId,
+      });
+    }
+
+    (bizMembers || []).forEach((m: any) => {
+      const uId = m.user_id;
+      const email = m.users?.email || "";
+      const metaName = m.users?.raw_user_meta_data?.full_name || m.users?.raw_user_meta_data?.name;
+      let mName = metaName || (email ? email.split("@")[0] : "");
+      if (mName) {
+        mName = mName.charAt(0).toUpperCase() + mName.slice(1);
+      }
+      if (uId && !cashierMap.has(uId) && !Array.from(cashierMap.values()).some((c) => c.name.toLowerCase() === mName.toLowerCase())) {
+        cashierMap.set(uId, {
+          id: uId,
+          name: mName || "Kasir",
+          role: m.role || "kasir",
+          user_id: uId,
+        });
+      }
+    });
+
+    const uniqueCashiers: { id: string; name: string; role: string }[] = [];
+    const seenNames = new Set<string>();
+    cashierMap.forEach((c) => {
+      const normName = c.name.trim().toLowerCase();
+      if (!seenNames.has(normName) && normName !== "admin" && normName !== "kasir") {
+        seenNames.add(normName);
+        uniqueCashiers.push({ id: c.id, name: c.name, role: c.role });
+      }
+    });
+    if (uniqueCashiers.length === 0) {
+      uniqueCashiers.push({ id: authId, name: authCleanName, role: authUser.role || "kasir" });
+    }
+
+    // Resolusi target kasir
+    let targetCashier: { id: string; name: string; role: string; user_id?: string } | undefined;
+    let targetUserId: string | null = null;
+    let targetName: string | null = null;
+    const targetIds: string[] = [];
+
+    if (cashierId && cashierId !== "all") {
+      targetCashier = Array.from(cashierMap.values()).find(
+        (c) => c.id === cashierId || c.user_id === cashierId
+      );
+      targetUserId = targetCashier?.user_id || (cashierId.length > 20 ? cashierId : null);
+      targetName = targetCashier?.name || null;
+
+      targetIds.push(cashierId);
+      if (targetUserId && targetUserId !== cashierId) targetIds.push(targetUserId);
+    }
+
+    // 3. Ambil list shift berdasarkan filter
     let shiftQuery = supabaseAdmin
       .from("pos_shifts")
       .select(`
@@ -55,8 +146,8 @@ export async function GET(request: NextRequest) {
       shiftQuery = shiftQuery.eq("status", "open");
     }
 
-    if (cashierId && cashierId !== "all") {
-      shiftQuery = shiftQuery.eq("employee_id", cashierId);
+    if (targetIds.length > 0) {
+      shiftQuery = shiftQuery.in("employee_id", targetIds);
     }
 
     if (startDate) {
@@ -265,6 +356,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: shift.id,
+        employee_id: shift.employee_id || null,
         cashier_name: resolvedCashierName,
         cashier_role: resolvedRole,
         cashier_initials: cashierInitials,
@@ -307,11 +399,15 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 4. Kumpulkan faktur sisa yang belum terasosiasi ke shift spesifik (hanya jika tidak difilter ke kasir spesifik)
+    // 4. Kumpulkan faktur sisa yang belum terasosiasi ke shift spesifik
     const isFilteredBySpecificCashier = Boolean(cashierId && cashierId !== "all");
-    const unassignedInvoices = isFilteredBySpecificCashier
-      ? []
-      : invoices.filter((inv) => !assignedInvoiceIds.has(inv.id));
+    const unassignedInvoices = invoices.filter((inv) => {
+      if (assignedInvoiceIds.has(inv.id)) return false;
+      if (!isFilteredBySpecificCashier) return true;
+      if (inv.created_by && targetIds.includes(inv.created_by)) return true;
+      if (targetName && inv.created_by_name && inv.created_by_name.toLowerCase().includes(targetName.toLowerCase())) return true;
+      return false;
+    });
     if (unassignedInvoices.length > 0) {
       let unRevenue = 0;
       let unCost = 0;
@@ -353,7 +449,7 @@ export async function GET(request: NextRequest) {
       const firstUnassignedCreator = unassignedInvoices.find(
         (inv) => inv.created_by_name && inv.created_by_name !== "Admin" && inv.created_by_name !== "Kasir"
       )?.created_by_name;
-      const directCashierName = firstUnassignedCreator || authUser.name || "Penjualan Langsung";
+      const directCashierName = targetName || firstUnassignedCreator || authUser.name || "Penjualan Langsung";
       const directWords = directCashierName.trim().split(/\s+/).filter(Boolean);
       const directInitials = (
         directWords.length >= 2
@@ -365,6 +461,7 @@ export async function GET(request: NextRequest) {
 
       shiftReports.unshift({
         id: "direct-sales",
+        employee_id: targetUserId || null,
         cashier_name: directCashierName,
         cashier_role: "penjualan",
         cashier_initials: directInitials,
@@ -397,8 +494,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Filter shiftReports jika cashierId spesifik dipilih
+    const finalShiftReports = isFilteredBySpecificCashier
+      ? shiftReports.filter((s: any) => {
+          if (s.id === "direct-sales") return true;
+          if (s.employee_id && targetIds.includes(s.employee_id)) return true;
+          if (targetName && s.cashier_name && s.cashier_name.toLowerCase().includes(targetName.toLowerCase())) return true;
+          return false;
+        })
+      : shiftReports;
+
     // Ringkasan Global dari Seluruh Shift yang Terfilter
-    const grandSummary = shiftReports.reduce(
+    const grandSummary = finalShiftReports.reduce(
       (acc, s) => {
         acc.total_revenue += s.total_revenue;
         acc.gross_profit += s.gross_profit;
@@ -425,8 +532,8 @@ export async function GET(request: NextRequest) {
     return jsonResponse({
       success: true,
       summary: grandSummary,
-      shifts: shiftReports,
-      cashiers: (allEmps || []).filter((e) => e.is_active !== false).map((e) => ({ id: e.id, name: e.name, role: e.role })),
+      shifts: finalShiftReports,
+      cashiers: uniqueCashiers,
     });
   } catch (err: any) {
     const message = err.message || "";
