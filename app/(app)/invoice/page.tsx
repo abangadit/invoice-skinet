@@ -32,6 +32,7 @@ interface Invoice {
   paid_amount: number;
   remaining_amount: number;
   currency: string;
+  created_at?: string | null;
   created_by?: string | null;
   created_by_name?: string | null;
 }
@@ -55,6 +56,24 @@ export default function InvoiceListPage() {
     setSelectedIds([]);
   }, [search, statusFilter, creatorFilter]);
 
+  const formatDateTime = (dateStr?: string | null) => {
+    if (!dateStr) return "-";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+      const seconds = pad(d.getSeconds());
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const fetchInvoices = async () => {
     if (!activeBusiness) {
       setLoading(false);
@@ -69,10 +88,10 @@ export default function InvoiceListPage() {
       // 1. Try selecting with created_by, created_by_name, customer relation, and pos_shifts cashier
       const res1 = await supabase
         .from("invoices")
-        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name, pos_shift_id, pos_shifts(id, employees(id, name))")
+        .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_at, created_by, created_by_name, pos_shift_id, pos_shifts(id, employees(id, name))")
         .eq("business_id", activeBusiness.id)
         .eq("type", "invoice")
-        .order("issue_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (!res1.error && res1.data) {
         queryData = res1.data;
@@ -80,10 +99,10 @@ export default function InvoiceListPage() {
         // 2. Fallback without pos_shifts join if relation fails
         const res2 = await supabase
           .from("invoices")
-          .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_by, created_by_name")
+          .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, customer_id, customers(name), created_at, created_by, created_by_name")
           .eq("business_id", activeBusiness.id)
           .eq("type", "invoice")
-          .order("issue_date", { ascending: false });
+          .order("created_at", { ascending: false });
 
         if (!res2.error && res2.data) {
           queryData = res2.data;
@@ -91,10 +110,10 @@ export default function InvoiceListPage() {
           // 3. Fallback to basic query
           const res3 = await supabase
             .from("invoices")
-            .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot")
+            .select("id, invoice_number, status, total_amount, paid_amount, remaining_amount, issue_date, due_date, currency, customer_snapshot, created_at")
             .eq("business_id", activeBusiness.id)
             .eq("type", "invoice")
-            .order("issue_date", { ascending: false });
+            .order("created_at", { ascending: false });
 
           if (res3.error) throw res3.error;
           queryData = res3.data;
@@ -126,6 +145,13 @@ export default function InvoiceListPage() {
             name: currentName || fallbackName
           }
         };
+      });
+
+      // Pastikan urutan selalu terurut created_at terbaru (descending)
+      formatted.sort((a: any, b: any) => {
+        const timeA = new Date(a.created_at || a.issue_date).getTime();
+        const timeB = new Date(b.created_at || b.issue_date).getTime();
+        return timeB - timeA;
       });
 
       setInvoices(formatted);
@@ -466,12 +492,15 @@ export default function InvoiceListPage() {
                     {inv.customer_snapshot?.name || "Pelanggan Umum"}
                   </h4>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                    <span className="flex items-center gap-1 font-mono text-[11px] text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md" title="Waktu Dibuat (Tanggal, Jam, Menit, Detik)">
+                      <Clock className="w-3.5 h-3.5 text-blue-600" /> {formatDateTime(inv.created_at)}
+                    </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" /> Issued: {inv.issue_date}
                     </span>
                     {inv.due_date && (
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" /> Due: {inv.due_date}
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" /> Due: {inv.due_date}
                       </span>
                     )}
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
