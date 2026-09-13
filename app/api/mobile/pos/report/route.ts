@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
         notes
       `)
       .eq("business_id", authUser.businessId)
-      .order("opened_at", { ascending: false });
+      .order("opened_at", { ascending: false })
+      .order("id", { ascending: false });
 
     if (shiftId) {
       shiftQuery = shiftQuery.eq("id", shiftId);
@@ -97,7 +98,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq("business_id", authUser.businessId)
       .eq("status", "paid")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
 
     if (shiftId) {
       invoicesQuery = invoicesQuery.eq("pos_shift_id", shiftId);
@@ -222,6 +224,12 @@ export async function GET(request: NextRequest) {
         resolvedCashierName = authUser.name || "Kasir";
       }
 
+      // Bersihkan jika nama berupa format email
+      if (resolvedCashierName.includes("@")) {
+        const username = resolvedCashierName.split("@")[0];
+        resolvedCashierName = username.charAt(0).toUpperCase() + username.slice(1);
+      }
+
       let resolvedRole = employeeObj?.role;
       if (!resolvedRole && employeeObj?.user_id && memberRoleMap.has(employeeObj.user_id)) {
         resolvedRole = memberRoleMap.get(employeeObj.user_id);
@@ -281,6 +289,10 @@ export async function GET(request: NextRequest) {
           let txCashier = inv.created_by_name;
           if (!txCashier || txCashier === "Admin" || txCashier === "Kasir") {
             txCashier = resolvedCashierName;
+          }
+          if (txCashier && txCashier.includes("@")) {
+            const u = txCashier.split("@")[0];
+            txCashier = u.charAt(0).toUpperCase() + u.slice(1);
           }
           return {
             id: inv.id,

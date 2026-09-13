@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
       .eq("business_id", authUser.businessId)
       .eq("status", "paid")
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(limit);
 
     if (shiftId) {
@@ -179,6 +180,12 @@ export async function GET(request: NextRequest) {
 
       if (!cashierName || cashierName.toLowerCase() === "kasir") {
         cashierName = authUser.name || "Kasir";
+      }
+
+      // Jika nama kasir berupa alamat email (contoh: sulaiman@gmail.com -> Sulaiman)
+      if (cashierName.includes("@")) {
+        const username = cashierName.split("@")[0];
+        cashierName = username.charAt(0).toUpperCase() + username.slice(1);
       }
 
       return {
