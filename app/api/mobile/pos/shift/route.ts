@@ -97,9 +97,9 @@ export async function POST(request: NextRequest) {
             .insert({
               business_id: authUser.businessId,
               user_id: authUser.userId,
-              name: authUser.name || "Kasir",
+              name: authUser.name || (authUser.email ? authUser.email.split("@")[0] : "Kasir"),
               email: authUser.email,
-              role: "kasir",
+              role: authUser.role || "kasir",
               is_pos_access: true,
               is_active: true,
             })

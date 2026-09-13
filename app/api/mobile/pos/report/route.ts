@@ -85,6 +85,8 @@ export async function GET(request: NextRequest) {
         payment_methods,
         pos_shift_id,
         created_at,
+        created_by,
+        created_by_name,
         invoice_items (
           id,
           name,
@@ -103,15 +105,52 @@ export async function GET(request: NextRequest) {
       invoicesQuery = invoicesQuery.in("pos_shift_id", shiftIds);
     }
 
-    const { data: invoices, error: invErr } = await invoicesQuery.limit(200);
+    const { data: rawInvoices, error: invErr } = await invoicesQuery.limit(200);
     if (invErr) {
       console.error("Error fetching invoices for report:", invErr);
     }
 
+    const invoices = (rawInvoices || []) as any[];
+
+    // Kumpulkan user ID potensial untuk resolusi nama (fallback jika employee tidak ada/bernama Kasir)
+    const userIdsToLookup = new Set<string>();
+    shifts.forEach((s) => {
+      if (s.employee_id) userIdsToLookup.add(s.employee_id);
+    });
+    (allEmps || []).forEach((e) => {
+      if (e.user_id) userIdsToLookup.add(e.user_id);
+    });
+    invoices.forEach((inv) => {
+      if (inv.created_by) userIdsToLookup.add(inv.created_by);
+    });
+    if (authUser.userId) userIdsToLookup.add(authUser.userId);
+
+    const userMap = new Map<string, { email?: string; name?: string }>();
+    if (userIdsToLookup.size > 0) {
+      const { data: usersData } = await supabaseAdmin
+        .from("users")
+        .select("id, email")
+        .in("id", Array.from(userIdsToLookup));
+      (usersData || []).forEach((u) => {
+        const username = u.email ? u.email.split("@")[0] : "";
+        userMap.set(u.id, {
+          email: u.email,
+          name: username ? username.charAt(0).toUpperCase() + username.slice(1) : "",
+        });
+      });
+    }
+
+    const { data: membersData } = await supabaseAdmin
+      .from("business_members")
+      .select("user_id, role")
+      .eq("business_id", authUser.businessId);
+    const memberRoleMap = new Map<string, string>();
+    (membersData || []).forEach((m) => memberRoleMap.set(m.user_id, m.role));
+
     // 3. Rekapitulasi Metrik Shift
     const assignedInvoiceIds = new Set<string>();
     const shiftReports = (shifts || []).map((shift) => {
-      const shiftInvoices = (invoices || []).filter((inv) => {
+      const shiftInvoices = invoices.filter((inv) => {
         if (inv.pos_shift_id === shift.id) {
           assignedInvoiceIds.add(inv.id);
           return true;
@@ -158,6 +197,50 @@ export async function GET(request: NextRequest) {
 
       const employeeObj = employeeMap.get(shift.employee_id);
 
+      // Multi-layer resolution nama kasir shift:
+      // 1. Cek created_by_name transaksi pertama di shift jika bukan generic "Admin"/"Kasir"
+      const invoiceCreatorName = shiftInvoices.find(
+        (inv) => inv.created_by_name && inv.created_by_name.trim() !== "" && inv.created_by_name !== "Admin" && inv.created_by_name !== "Kasir"
+      )?.created_by_name;
+
+      let resolvedCashierName = "";
+      if (employeeObj?.name && employeeObj.name.toLowerCase() !== "kasir") {
+        resolvedCashierName = employeeObj.name;
+      } else if (invoiceCreatorName) {
+        resolvedCashierName = invoiceCreatorName;
+      } else if (employeeObj?.user_id && userMap.has(employeeObj.user_id) && userMap.get(employeeObj.user_id)?.name) {
+        resolvedCashierName = userMap.get(employeeObj.user_id)!.name!;
+      } else if (shift.employee_id && userMap.has(shift.employee_id) && userMap.get(shift.employee_id)?.name) {
+        resolvedCashierName = userMap.get(shift.employee_id)!.name!;
+      } else if (employeeObj?.name) {
+        resolvedCashierName = employeeObj.name;
+      } else {
+        resolvedCashierName = authUser.name || "Kasir";
+      }
+
+      if (!resolvedCashierName || resolvedCashierName.toLowerCase() === "kasir") {
+        resolvedCashierName = authUser.name || "Kasir";
+      }
+
+      let resolvedRole = employeeObj?.role;
+      if (!resolvedRole && employeeObj?.user_id && memberRoleMap.has(employeeObj.user_id)) {
+        resolvedRole = memberRoleMap.get(employeeObj.user_id);
+      }
+      if (!resolvedRole && shift.employee_id && memberRoleMap.has(shift.employee_id)) {
+        resolvedRole = memberRoleMap.get(shift.employee_id);
+      }
+      resolvedRole = resolvedRole || "kasir";
+
+      // Hitung 2 huruf inisial avatar kasir
+      const words = resolvedCashierName.trim().split(/\s+/).filter(Boolean);
+      const cashierInitials = (
+        words.length >= 2
+          ? words[0].charAt(0) + words[1].charAt(0)
+          : words.length === 1
+          ? words[0].slice(0, 2)
+          : "KS"
+      ).toUpperCase();
+
       // Breakdown per jam (Hourly Analysis)
       const hourlyMap: { [hour: string]: { hour: string; count: number; revenue: number } } = {};
       shiftInvoices.forEach((inv) => {
@@ -174,8 +257,9 @@ export async function GET(request: NextRequest) {
 
       return {
         id: shift.id,
-        cashier_name: employeeObj?.name || "Kasir",
-        cashier_role: employeeObj?.role || "kasir",
+        cashier_name: resolvedCashierName,
+        cashier_role: resolvedRole,
+        cashier_initials: cashierInitials,
         status: shift.status,
         opened_at: shift.opened_at,
         closed_at: shift.closed_at,
@@ -193,14 +277,21 @@ export async function GET(request: NextRequest) {
         total_items_sold: totalItemsSold,
         notes: shift.notes,
         hourly_breakdown: hourlyBreakdown,
-        transactions: shiftInvoices.map((inv) => ({
-          id: inv.id,
-          invoice_number: inv.invoice_number,
-          time: inv.created_at || inv.issue_date,
-          total_amount: Number(inv.total_amount) || 0,
-          payment_method: Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0 ? inv.payment_methods[0] : "cash",
-          items_count: Array.isArray(inv.invoice_items) ? inv.invoice_items.length : 0,
-        })),
+        transactions: shiftInvoices.map((inv) => {
+          let txCashier = inv.created_by_name;
+          if (!txCashier || txCashier === "Admin" || txCashier === "Kasir") {
+            txCashier = resolvedCashierName;
+          }
+          return {
+            id: inv.id,
+            invoice_number: inv.invoice_number,
+            time: inv.created_at || inv.issue_date,
+            total_amount: Number(inv.total_amount) || 0,
+            payment_method: Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0 ? inv.payment_methods[0] : "cash",
+            items_count: Array.isArray(inv.invoice_items) ? inv.invoice_items.length : 0,
+            cashier_name: txCashier,
+          };
+        }),
       };
     });
 
@@ -208,7 +299,7 @@ export async function GET(request: NextRequest) {
     const isFilteredBySpecificCashier = Boolean(cashierId && cashierId !== "all");
     const unassignedInvoices = isFilteredBySpecificCashier
       ? []
-      : (invoices || []).filter((inv) => !assignedInvoiceIds.has(inv.id));
+      : invoices.filter((inv) => !assignedInvoiceIds.has(inv.id));
     if (unassignedInvoices.length > 0) {
       let unRevenue = 0;
       let unCost = 0;
@@ -247,10 +338,24 @@ export async function GET(request: NextRequest) {
         unHourlyMap[hourKey].revenue += invTotal;
       });
 
+      const firstUnassignedCreator = unassignedInvoices.find(
+        (inv) => inv.created_by_name && inv.created_by_name !== "Admin" && inv.created_by_name !== "Kasir"
+      )?.created_by_name;
+      const directCashierName = firstUnassignedCreator || authUser.name || "Penjualan Langsung";
+      const directWords = directCashierName.trim().split(/\s+/).filter(Boolean);
+      const directInitials = (
+        directWords.length >= 2
+          ? directWords[0].charAt(0) + directWords[1].charAt(0)
+          : directWords.length === 1
+          ? directWords[0].slice(0, 2)
+          : "PL"
+      ).toUpperCase();
+
       shiftReports.unshift({
         id: "direct-sales",
-        cashier_name: "Penjualan POS Langsung",
-        cashier_role: "kasir",
+        cashier_name: directCashierName,
+        cashier_role: "penjualan",
+        cashier_initials: directInitials,
         status: "closed",
         opened_at: unassignedInvoices[0]?.created_at || new Date().toISOString(),
         closed_at: unassignedInvoices[unassignedInvoices.length - 1]?.created_at || new Date().toISOString(),
@@ -275,6 +380,7 @@ export async function GET(request: NextRequest) {
           total_amount: Number(inv.total_amount) || 0,
           payment_method: Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0 ? inv.payment_methods[0] : "cash",
           items_count: Array.isArray(inv.invoice_items) ? inv.invoice_items.length : 0,
+          cashier_name: inv.created_by_name || directCashierName,
         })),
       });
     }

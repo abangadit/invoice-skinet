@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
     // 1. Ambil daftar kasir/karyawan aktif di bisnis untuk opsi filter
     const { data: activeEmployees } = await supabaseAdmin
       .from("employees")
-      .select("id, name, role")
+      .select("id, name, role, user_id")
       .eq("business_id", authUser.businessId)
       .eq("is_active", true)
       .order("name", { ascending: true });
 
-    const employeeMap = new Map<string, { id: string; name: string; role: string }>();
+    const employeeMap = new Map<string, { id: string; name: string; role: string; user_id?: string }>();
     (activeEmployees || []).forEach((e) => employeeMap.set(e.id, e));
 
     // Jika difilter berdasarkan kasir tertentu, cari shift yang dimiliki kasir tersebut
@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
         notes,
         created_at,
         pos_shift_id,
+        created_by,
+        created_by_name,
         invoice_items (
           id,
           name,
@@ -90,15 +92,17 @@ export async function GET(request: NextRequest) {
       query = query.lte("created_at", `${endDate}T23:59:59.999Z`);
     }
 
-    const { data: invoices, error } = await query;
+    const { data: rawInvoices, error } = await query;
 
     if (error) {
       console.error("Error fetching sales history:", error);
       return jsonResponse({ success: false, error: "Gagal memuat riwayat penjualan." }, { status: 500 });
     }
 
+    const invoices = (rawInvoices || []) as any[];
+
     // Resolusi nama kasir via pos_shift_id
-    const distinctShiftIds = Array.from(new Set((invoices || []).map((i) => i.pos_shift_id).filter(Boolean)));
+    const distinctShiftIds = Array.from(new Set(invoices.map((i) => i.pos_shift_id).filter(Boolean)));
     const shiftMap = new Map<string, any>();
     if (distinctShiftIds.length > 0) {
       const { data: shifts } = await supabaseAdmin
@@ -117,20 +121,65 @@ export async function GET(request: NextRequest) {
       if (additionalEmpIds.length > 0) {
         const { data: extraEmps } = await supabaseAdmin
           .from("employees")
-          .select("id, name, role")
+          .select("id, name, role, user_id")
           .in("id", additionalEmpIds);
         (extraEmps || []).forEach((e) => employeeMap.set(e.id, e));
       }
     }
 
-    const formatted = (invoices || []).map((inv) => {
+    // Resolusi fallback via tabel users (misal owner atau shift dibuka langsung oleh user)
+    const userIdsToLookup = new Set<string>();
+    invoices.forEach((inv) => {
+      if (inv.created_by) userIdsToLookup.add(inv.created_by);
+    });
+    employeeMap.forEach((e) => {
+      if (e.user_id) userIdsToLookup.add(e.user_id);
+    });
+
+    const userMap = new Map<string, string>();
+    if (userIdsToLookup.size > 0) {
+      const { data: usersData } = await supabaseAdmin
+        .from("users")
+        .select("id, email")
+        .in("id", Array.from(userIdsToLookup));
+      (usersData || []).forEach((u) => {
+        const username = u.email ? u.email.split("@")[0] : "";
+        if (username) {
+          userMap.set(u.id, username.charAt(0).toUpperCase() + username.slice(1));
+        }
+      });
+    }
+
+    const formatted = invoices.map((inv) => {
       const paymentMethod = Array.isArray(inv.payment_methods) && inv.payment_methods.length > 0
         ? inv.payment_methods[0]
         : "cash";
 
       const shift = inv.pos_shift_id ? shiftMap.get(inv.pos_shift_id) : null;
       const employee = shift?.employee_id ? employeeMap.get(shift.employee_id) : null;
-      const cashierName = employee?.name || (inv.pos_shift_id ? "Kasir" : "Penjualan Langsung");
+
+      // Multi-layer cashier name resolution:
+      // 1. created_by_name jika valid dan bukan generic "Admin"/"Kasir"
+      let cashierName = "";
+      if (inv.created_by_name && inv.created_by_name.trim() !== "" && inv.created_by_name !== "Admin" && inv.created_by_name !== "Kasir") {
+        cashierName = inv.created_by_name;
+      } else if (employee?.name && employee.name.toLowerCase() !== "kasir") {
+        cashierName = employee.name;
+      } else if (inv.created_by_name && inv.created_by_name.trim() !== "") {
+        cashierName = inv.created_by_name;
+      } else if (employee?.name) {
+        cashierName = employee.name;
+      } else if (inv.created_by && userMap.has(inv.created_by)) {
+        cashierName = userMap.get(inv.created_by)!;
+      } else if (shift?.employee_id && userMap.has(shift.employee_id)) {
+        cashierName = userMap.get(shift.employee_id)!;
+      } else {
+        cashierName = inv.pos_shift_id ? (authUser.name || "Kasir") : (authUser.name || "Penjualan Langsung");
+      }
+
+      if (!cashierName || cashierName.toLowerCase() === "kasir") {
+        cashierName = authUser.name || "Kasir";
+      }
 
       return {
         id: inv.id,
